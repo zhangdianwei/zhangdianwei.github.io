@@ -1,8 +1,10 @@
 # 游戏
 
+> 点击图片可以试玩
+
 ## 动态拼图游戏
 
-<a href="subject/jigsaw/index.html">
+<a href="subject/jigsaw/index.html" target="_blank">
 <img src="subject/jigsaw3.png" alt="jigsaw3" style="zoom:50%;" />
 </a>
 
@@ -12,7 +14,7 @@
 
 ## 田园风格的扫雷游戏
 
-<a href="subject/FarmMine/index.html">
+<a href="subject/FarmMine/index.html" target="_blank">
 <img src="subject/FarmMine1.png" alt="FarmMine1" style="zoom:50%;" />
 </a>
 
@@ -24,7 +26,7 @@
 
 平台跳跃吃金币游戏
 
-<a href="subject/CoinKnight/index.html">
+<a href="subject/CoinKnight/index.html" target="_blank">
 <img src="subject/CoinKnight.png" alt="FarmMine1" style="zoom:50%;" />
 </a>
 

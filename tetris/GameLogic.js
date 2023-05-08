@@ -1,10 +1,10 @@
-
 import { TetrisItem } from "./TetrisItem.js";
+import { Helper } from "./Helper.js"
 
 class GameLogic {
     constructor() {
         this.dropping = null; //正在下落的TetrisItem
-        this.bottoms = []; //已经落到地的所有TetrisItem
+        this.bottoms = []; //整个10x10x10的网格
         this.bound = { rows: 10, cols: 10, deps: 5 };
 
         this.scheduleObjs = [];
@@ -17,49 +17,7 @@ class GameLogic {
     }
 
     onKeyDown(event) {
-        // console.log(event.code);
-        if (this.dropping) {
-            if (event.code == "ArrowLeft") {
-                const rotH = this.dropping.rotH + 1;
-                if (this.canRotHTo(this.dropping, rotH)) {
-                    this.dropping.rotH = rotH;
-                }
-            }
-            else if (event.code == "ArrowRight") {
-                const rotH = this.dropping.rotH - 1;
-                if (this.canRotHTo(this.dropping, rotH)) {
-                    this.dropping.rotH = rotH;
-                }
-            }
-            else if (event.code == "KeyW") {
-                let grid = this.dropping.getGrid();
-                grid.row += 1;
-                if (this.canMoveTo(this.dropping, grid)) {
-                    this.dropping.setGrid(grid);
-                }
-            }
-            else if (event.code == "KeyS") {
-                let grid = this.dropping.getGrid();
-                grid.row -= 1;
-                if (this.canMoveTo(this.dropping, grid)) {
-                    this.dropping.setGrid(grid);
-                }
-            }
-            else if (event.code == "KeyA") {
-                let grid = this.dropping.getGrid();
-                grid.col -= 1;
-                if (this.canMoveTo(this.dropping, grid)) {
-                    this.dropping.setGrid(grid);
-                }
-            }
-            else if (event.code == "KeyD") {
-                let grid = this.dropping.getGrid();
-                grid.col += 1;
-                if (this.canMoveTo(this.dropping, grid)) {
-                    this.dropping.setGrid(grid);
-                }
-            }
-        }
+
     }
 
     onKeyUp(event) {
@@ -75,33 +33,58 @@ class GameLogic {
     }
 
     updateSecond(dt) {
-        if (!this.dropping && this.bottoms.length < 10) {
-            this.dropping = new TetrisItem("I");
-            this.dropping.setGrid({ row: 0, col: 0, dep: this.bound.deps });
-            window.game.scene.add(this.dropping.getThreeObject());
+        if (!this.dropping && this.bottoms.length < this.bound.deps) {
+            this.dropping = Helper.createShape("I");
+            this.dropping2 = Helper.createObjects(this.dropping);
+
+            this.dropping2.forEach((cube) => {
+                window.game.scene.add(cube);
+            });
+            Helper.reshapeCubes(this.dropping2, this.dropping);
         }
 
-        document.getElementById("debug_label").textContent = `
-            camera = ${window.game.camera.position.x.toFixed(0)}, ${window.game.camera.position.y.toFixed(0)}, ${window.game.camera.position.z.toFixed(0)}
-        `;
+        // document.getElementById("debug_label").textContent = `
+        //     camera = ${window.game.camera.position.x.toFixed(0)}, ${window.game.camera.position.y.toFixed(0)}, ${window.game.camera.position.z.toFixed(0)}
+        // `;
     }
 
     update(dt) {
-        if (this.dropping) {
+        if (this.dropping2) {
+            const wantDropY = dt / 1000;
+            const rcdsBound = Helper.getBound_RCD(this.dropping);
+            const cubeBound = Helper.getBound_Cubes(this.dropping2);
+            const bottomBound = Helper.getBound_Array(this.bottoms, this.bound);
+            const wantTargetY = cubeBound.minY - wantDropY;
+            const curTargetD = Math.floor(cubeBound.minY);
+            const wantTargetD = Math.floor(wantTargetY);
+            const canDropY = cubeBound.minY - (bottomBound.maxDep + 1);
 
-            const bottomTopY = this.getBottomTopY();
+            if (wantTargetD <= bottomBound.maxDep) { // 已经落到底了
+                this.dropping2.forEach((cube) => {
+                    cube.position.y = bottomBound.maxDep + 1;
+                });
 
-            let y = this.dropping.getThreeObject().position.y - dt / 1000;
-            if (y > bottomTopY) {
-                this.dropping.getThreeObject().position.y = y;
-            }
-            else {
-                this.dropping.getThreeObject().position.y = bottomTopY;
-
-                this.bottoms.push(this.dropping);
+                this.dropping.forEach((rcd, i) => {
+                    const index = Helper.getIndexByRCD(this.bound, rcd);
+                    this.bottoms[index] = this.dropping2[i];
+                });
                 this.dropping = null;
+                this.dropping2 = null;
             }
+            else if (wantTargetD < curTargetD) { // 正常下落，但是超过了一个格子
+                this.dropping.forEach((rcd) => {
+                    rcd.dep -= 1;
+                });
 
+                this.dropping2.forEach((cube) => {
+                    cube.position.y = wantTargetY;
+                });
+            }
+            else { // 正常下落，但是还在原来的格子里运动
+                this.dropping2.forEach((cube) => {
+                    cube.position.y = wantTargetY;
+                });
+            }
         }
 
         this.scheduleObjs.forEach((x, i) => {
@@ -144,19 +127,6 @@ class GameLogic {
         });
         return ret;
     }
-
-    getBottomTopY(){
-        let maxDep = 0;
-        for(let i=0; i<this.bottoms.length; ++i)
-        {
-            let bottom = this.bottoms[i];
-            let placeholders = bottom.tetrisShape.getPlaceholderGrid(bottom.getGrid(), bottom.rotH);
-            let deps = placeholders.map((x)=>x.dep);
-            maxDep = Math.max(Math.max(...deps)+1, maxDep);
-        }
-        return maxDep;
-    }
-
 }
 
 export { GameLogic }

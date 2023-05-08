@@ -2,31 +2,44 @@ import { TetrisShape } from "./TetrisShape.js"
 
 // 代表一个基本的元素，例如2x2方块，T拐等
 class TetrisItem {
-    constructor(shapeType) {
-        this.tetrisShape = new TetrisShape(shapeType);
-        this.threeObject = this.createThreeObject();
-        this.reshape();
+    // rcds: [RCD]
+    constructor(rcds) {
+        this.rcds = rcds;
     }
 
-    setGrid(grid) {
-        this.getThreeObject().position.set(grid.col, grid.dep, -grid.row);
+    // x=col, y=dep, z=-row
+
+    // // rcd: {row, col, dep}
+    // // posType: null=不设置位置，top=设置到网格最上面，bottom=设置到网格最下面
+    // setRCD(rcd, posType) {
+    //     this.rcd = rcd;
+
+    //     if (posType == "top") {
+    //         this.getObject().position.y = rcd.dep + 1;
+    //     }
+    //     else if (posType == "bottom") {
+    //         this.getObject().position.y = rcd.dep;
+    //     }
+    // }
+    // getRCD() {
+    //     return this.rcd;
+    // }
+
+    setRCDs(rcds) {
+        this.rcds = rcds;
+        this.rcds.forEach((rcd, i) => {
+            this.getObject().children[i].position.set(rcd.col + 0.5, rcd.dep + 0.5, -rcd.row - 0.5);
+        });
     }
-    getGrid() {
-        return {
-            row: -Math.floor(this.getThreeObject().position.z),
-            col: Math.floor(this.getThreeObject().position.x),
-            dep: Math.floor(this.getThreeObject().position.y),
+
+    getObject() {
+        if (!this.object) {
+            this.object = this.createObject();
         }
+        return this.object;
     }
 
-    get rotH() { return this.tetrisShape.rotH; }
-    set rotH(value) { this.tetrisShape.rotH = value; this.reshape(); }
-
-    getThreeObject() {
-        return this.threeObject;
-    }
-
-    createThreeObject() {
+    createObject() {
         let obj = new THREE.Object3D();
 
         const geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -38,7 +51,7 @@ class TetrisItem {
             opacity: 0.5,
         });
 
-        for (let i = 0; i < this.tetrisShape.shapeDefine.cube_count; ++i) {
+        for (let i = 0; i < this.rcds.length; ++i) {
             const cube = new THREE.Mesh(geometry, material);
             obj.add(cube);
         }
@@ -46,12 +59,12 @@ class TetrisItem {
         return obj;
     }
 
-    reshape() {
-        const placeholders = this.tetrisShape.placeholders;
-        placeholders.forEach((x, i) => {
-            this.threeObject.children[i].position.set(x.col + 0.5, x.dep + 0.5, -x.row - 0.5);
-        });
-    }
+    // reshape() {
+    //     const placeholders = this.tetrisShape.placeholders;
+    //     placeholders.forEach((x, i) => {
+    //         this.object.children[i].position.set(x.col + 0.5, x.dep + 0.5, -x.row - 0.5);
+    //     });
+    // }
 }
 
 export { TetrisItem }

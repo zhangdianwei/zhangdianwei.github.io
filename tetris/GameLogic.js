@@ -3,7 +3,7 @@ import { Helper } from "./Helper.js"
 
 class GameLogic {
     constructor() {
-        this.dropping = null; //正在下落的TetrisItem
+        this.dropCubes = null; //正在下落的cube
         this.bottoms = []; //整个10x10x10的网格
         this.bound = { rows: 10, cols: 10, deps: 5 };
 
@@ -17,7 +17,50 @@ class GameLogic {
     }
 
     onKeyDown(event) {
-
+        if (this.dropCubes) {
+            if (event.code == "KeyW") {
+                let moveToRCDs = Helper.getCube_RCD(this.dropCubes);
+                moveToRCDs.forEach((rcd) => rcd.row += 1);
+                if (this.canPlace(moveToRCDs)) {
+                    Helper.reshapeCubes2(this.dropCubes, moveToRCDs);
+                }
+            }
+            else if (event.code == "KeyS") {
+                let moveToRCDs = Helper.getCube_RCD(this.dropCubes);
+                moveToRCDs.forEach((rcd) => rcd.row -= 1);
+                if (this.canPlace(moveToRCDs)) {
+                    Helper.reshapeCubes2(this.dropCubes, moveToRCDs);
+                }
+            }
+            else if (event.code == "KeyA") {
+                let moveToRCDs = Helper.getCube_RCD(this.dropCubes);
+                moveToRCDs.forEach((rcd) => rcd.col -= 1);
+                if (this.canPlace(moveToRCDs)) {
+                    Helper.reshapeCubes2(this.dropCubes, moveToRCDs);
+                }
+            }
+            else if (event.code == "KeyD") {
+                let moveToRCDs = Helper.getCube_RCD(this.dropCubes);
+                moveToRCDs.forEach((rcd) => rcd.col += 1);
+                if (this.canPlace(moveToRCDs)) {
+                    Helper.reshapeCubes2(this.dropCubes, moveToRCDs);
+                }
+            }
+            else if (event.code == "ArrowLeft") {
+                let moveToRCDs = Helper.getCube_RCD(this.dropCubes);
+                Helper.rotateRCDsClockwise(moveToRCDs);
+                if (this.canPlace(moveToRCDs)) {
+                    Helper.reshapeCubes(this.dropCubes, moveToRCDs);
+                }
+            }
+            else if (event.code == "ArrowRight") {
+                let moveToRCDs = Helper.getCube_RCD(this.dropCubes);
+                Helper.rotateRCDsRight(moveToRCDs);
+                if (this.canPlace(moveToRCDs)) {
+                    Helper.reshapeCubes(this.dropCubes, moveToRCDs);
+                }
+            }
+        }
     }
 
     onKeyUp(event) {
@@ -33,14 +76,14 @@ class GameLogic {
     }
 
     updateSecond(dt) {
-        if (!this.dropping && this.bottoms.length < this.bound.deps) {
-            this.dropping = Helper.createShape("I");
-            this.dropping2 = Helper.createObjects(this.dropping);
+        if (!this.dropCubes && this.bottomCubeCount < 1) {
+            const rcds = Helper.createShape("J", { row: 0, col: 0, dep: 5 });
+            this.dropCubes = Helper.createObjects(rcds);
 
-            this.dropping2.forEach((cube) => {
+            this.dropCubes.forEach((cube) => {
                 window.game.scene.add(cube);
             });
-            Helper.reshapeCubes(this.dropping2, this.dropping);
+            Helper.reshapeCubes(this.dropCubes, rcds);
         }
 
         // document.getElementById("debug_label").textContent = `
@@ -49,39 +92,29 @@ class GameLogic {
     }
 
     update(dt) {
-        if (this.dropping2) {
+        if (this.dropCubes) {
             const wantDropY = dt / 1000;
-            const rcdsBound = Helper.getBound_RCD(this.dropping);
-            const cubeBound = Helper.getBound_Cubes(this.dropping2);
-            const bottomBound = Helper.getBound_Array(this.bottoms, this.bound);
-            const wantTargetY = cubeBound.minY - wantDropY;
-            const curTargetD = Math.floor(cubeBound.minY);
+            const curCubesMinY = Math.min(...this.dropCubes.map((cube) => cube.position.y));
+            const curCubesRCD = Helper.getCube_RCD(this.dropCubes);
+            const bottomMaxDep = this.getBottomMaxDep(curCubesRCD);
+            const wantTargetY = curCubesMinY - wantDropY;
             const wantTargetD = Math.floor(wantTargetY);
-            const canDropY = cubeBound.minY - (bottomBound.maxDep + 1);
 
-            if (wantTargetD <= bottomBound.maxDep) { // 已经落到底了
-                this.dropping2.forEach((cube) => {
-                    cube.position.y = bottomBound.maxDep + 1;
+            if (wantTargetD <= bottomMaxDep) { // 已经落到底了
+                this.dropCubes.forEach((cube) => {
+                    cube.position.y = bottomMaxDep + 1;
                 });
 
-                this.dropping.forEach((rcd, i) => {
-                    const index = Helper.getIndexByRCD(this.bound, rcd);
-                    this.bottoms[index] = this.dropping2[i];
-                });
-                this.dropping = null;
-                this.dropping2 = null;
+                // const rcds = Helper.getCube_RCD(this.dropCubes);
+
+                // this.dropCubes.forEach((cube, i) => {
+                //     const index = Helper.getIndexByRCD(this.bound, rcds[i]);
+                //     this.bottoms[index] = this.dropCubes[i];
+                // });
+                // this.dropCubes = null;
             }
-            else if (wantTargetD < curTargetD) { // 正常下落，但是超过了一个格子
-                this.dropping.forEach((rcd) => {
-                    rcd.dep -= 1;
-                });
-
-                this.dropping2.forEach((cube) => {
-                    cube.position.y = wantTargetY;
-                });
-            }
-            else { // 正常下落，但是还在原来的格子里运动
-                this.dropping2.forEach((cube) => {
+            else { // 还没落到底
+                this.dropCubes.forEach((cube) => {
                     cube.position.y = wantTargetY;
                 });
             }
@@ -96,20 +129,10 @@ class GameLogic {
         });
     }
 
-    canMoveTo(tetrisItem, grid) {
-        const placeholders = tetrisItem.tetrisShape.getPlaceholderGrid(grid, tetrisItem.rotH);
-        return placeholders.every((x) => this.isGridInBound(x) && !this.isGridOccupied(x));
-    }
-
-    canRotHTo(tetrisItem, rotH) {
-        const placeholders = tetrisItem.tetrisShape.getPlaceholderGrid(tetrisItem.getGrid(), rotH);
-        return placeholders.every((x) => this.isGridInBound(x) && !this.isGridOccupied(x));
-    }
-
-    isGridInBound(grid) {
-        if (grid.row >= 0 && grid.row < this.bound.rows) {
-            if (grid.col >= 0 && grid.col < this.bound.cols) {
-                if (grid.dep >= 0 && grid.dep < this.bound.deps) {
+    isRCDInBound(rcd) {
+        if (rcd.row >= 0 && rcd.row < this.bound.rows) {
+            if (rcd.col >= 0 && rcd.col < this.bound.cols) {
+                if (rcd.dep >= 0 && rcd.dep < this.bound.deps) {
                     return true;
                 }
             }
@@ -117,16 +140,39 @@ class GameLogic {
         return false;
     }
 
-    isGridOccupied(grid) {
-        const ret = this.bottoms.some((tetrisItem) => {
-            const placeholders = tetrisItem.tetrisShape.getPlaceholderGrid(tetrisItem.getGrid(), tetrisItem.rotH);
-            const occupied = placeholders.some((p) => {
-                return p.row == grid.row && p.col == grid.col && p.dep == grid.dep;
-            });
-            return occupied;
+    canPlace(rcds) {
+        for (let i = 0; i < rcds.length; i++) {
+            const rcd = rcds[i];
+            if (!this.isRCDInBound(rcd)) {
+                return false;
+            }
+            const index = Helper.getIndexByRCD(this.bound, rcd);
+            if (this.bottoms[index]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    get bottomCubeCount() {
+        return this.bottoms.filter((cube) => cube).length;
+    }
+
+    getBottomMaxDep(dropBound) {
+        let ret = -1;
+        dropBound.forEach((rcd) => {
+            for (let d = 0; d < this.bound.deps; ++d) {
+                const temprcd = { row: rcd.row, col: rcd.col, dep: d };
+                const index = Helper.getIndexByRCD(this.bound, temprcd);
+                if (this.bottoms[index] && d > ret) {
+                    ret = d;
+                }
+            }
         });
         return ret;
     }
+
 }
 
 export { GameLogic }

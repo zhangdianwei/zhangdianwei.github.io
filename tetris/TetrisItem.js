@@ -22,13 +22,6 @@ class TetrisItem {
     get rotH() { return this.tetrisShape.rotH; }
     set rotH(value) { this.tetrisShape.rotH = value; this.reshape(); }
 
-    update(dt) {
-        this.threeObject.position.y -= dt / 1000;
-        if (this.threeObject.position.y < 0) {
-            this.threeObject.position.y = 0;
-        }
-    }
-
     getThreeObject() {
         return this.threeObject;
     }

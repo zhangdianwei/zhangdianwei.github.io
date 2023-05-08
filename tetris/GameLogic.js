@@ -5,7 +5,7 @@ class GameLogic {
     constructor() {
         this.dropping = null; //正在下落的TetrisItem
         this.bottoms = []; //已经落到地的所有TetrisItem
-        this.bound = { rows: 10, cols: 10, deps: 10 };
+        this.bound = { rows: 10, cols: 10, deps: 5 };
 
         this.scheduleObjs = [];
 
@@ -88,14 +88,20 @@ class GameLogic {
 
     update(dt) {
         if (this.dropping) {
-            this.dropping.update(dt);
 
-            if (this.dropping.getThreeObject().position.y <= 0) {
-                this.dropping.getThreeObject().position.y = 0;
+            const bottomTopY = this.getBottomTopY();
+
+            let y = this.dropping.getThreeObject().position.y - dt / 1000;
+            if (y > bottomTopY) {
+                this.dropping.getThreeObject().position.y = y;
+            }
+            else {
+                this.dropping.getThreeObject().position.y = bottomTopY;
 
                 this.bottoms.push(this.dropping);
                 this.dropping = null;
             }
+
         }
 
         this.scheduleObjs.forEach((x, i) => {
@@ -129,15 +135,28 @@ class GameLogic {
     }
 
     isGridOccupied(grid) {
-        const ret = this.bottoms.some((tetrisItem)=>{
+        const ret = this.bottoms.some((tetrisItem) => {
             const placeholders = tetrisItem.tetrisShape.getPlaceholderGrid(tetrisItem.getGrid(), tetrisItem.rotH);
-            const occupied = placeholders.some((p)=>{
-                return p.row==grid.row && p.col==grid.col && p.dep==grid.dep;
+            const occupied = placeholders.some((p) => {
+                return p.row == grid.row && p.col == grid.col && p.dep == grid.dep;
             });
             return occupied;
         });
         return ret;
     }
+
+    getBottomTopY(){
+        let maxDep = 0;
+        for(let i=0; i<this.bottoms.length; ++i)
+        {
+            let bottom = this.bottoms[i];
+            let placeholders = bottom.tetrisShape.getPlaceholderGrid(bottom.getGrid(), bottom.rotH);
+            let deps = placeholders.map((x)=>x.dep);
+            maxDep = Math.max(Math.max(...deps)+1, maxDep);
+        }
+        return maxDep;
+    }
+
 }
 
 export { GameLogic }

@@ -77,7 +77,7 @@ class GameLogic {
 
     updateSecond(dt) {
         if (!this.dropCubes && this.bottomCubeCount < 1) {
-            const rcds = Helper.createShape("J", { row: 0, col: 0, dep: 5 });
+            const rcds = Helper.createShape("S", { row: 0, col: 0, dep: 5 });
             this.dropCubes = Helper.createObjects(rcds);
 
             this.dropCubes.forEach((cube) => {

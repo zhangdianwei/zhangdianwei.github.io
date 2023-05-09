@@ -51,10 +51,18 @@ class Helper {
 
     static getBound_RCD(rcds) {
         let ret = {
+            minRow: -1,
+            maxRow: -1,
+            minCol: -1,
+            maxRow: -1,
             minDep: -1,
             maxDep: -1,
         };
         if (rcds.length > 0) {
+            ret.minRow = Math.min(...rcds.map((rcd) => rcd.row));
+            ret.maxRow = Math.max(...rcds.map((rcd) => rcd.row));
+            ret.minCol = Math.min(...rcds.map((rcd) => rcd.col));
+            ret.maxCol = Math.max(...rcds.map((rcd) => rcd.col));
             ret.minDep = Math.min(...rcds.map((rcd) => rcd.dep));
             ret.maxDep = Math.max(...rcds.map((rcd) => rcd.dep));
         }
@@ -96,8 +104,60 @@ class Helper {
         return ret;
     }
 
-    static rotateRCDs(rcds, rotateCount) {
+    static getRCDSize(rcds) {
+        const bound = this.getBound_RCD(rcds);
+        return {
+            rows: bound.maxRow - bound.minRow + 1,
+            cols: bound.maxCol - bound.minCol + 1,
+            deps: bound.maxDep - bound.minDep + 1,
+        }
+    }
 
+    static copy(obj) {
+        return JSON.parse(JSON.stringify(obj));
+    }
+
+    static getMinRCDBySequence(rcds, seqs) {
+        let candidates = rcds;
+        seqs.forEach((seq) => {
+            if (seq == "row") {
+                const minRow = Math.min(...candidates.map((rcd) => rcd.row));
+                candidates = candidates.filter((rcd) => rcd.row == minRow);
+            }
+            else if (seq == "col") {
+                const minCol = Math.min(...candidates.map((rcd) => rcd.col));
+                candidates = candidates.filter((rcd) => rcd.col == minCol);
+            }
+            else if (seq == "dep") {
+                const minDep = Math.min(...candidates.map((rcd) => rcd.dep));
+                candidates = candidates.filter((rcd) => rcd.dep == minDep);
+            }
+        });
+        return candidates;
+    }
+
+    static getMoveStandRC(rcds) {
+        const bound = this.getBound_RCD(rcds);
+        const min_row_s = rcds.filter((rcd) => rcd.row == bound.minRow);
+        const min_col = min_row_s.map()
+    }
+
+    static rotateRCDsH(rcds, clockwise) {
+        /*
+        0. 向上右补全到nxn
+        1. 以nxn转，left=逆时针转，right=顺时针转
+        2. left=看左边还有没有空位，有就平移 right=看右边还有没有空位，有就平移
+        3. 
+        */
+        let rcdSize = this.getRCDSize(rcds);
+        let fillSize = Math.max(rcdSize.rows, rcdSize.cols);
+        let moveStandardRC = this.getMinRCDBySequence(rcds, ["row", "col"])[0];
+        if (clockwise) {
+
+        }
+        else {
+
+        }
     }
 
 }

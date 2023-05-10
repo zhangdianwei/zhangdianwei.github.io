@@ -68,6 +68,21 @@
         const gridHelper = new THREE.GridHelper(10, 10);
         gridHelper.position.set(5, 0, -5);
         scene.add(gridHelper);
+        // 二维平面
+        // {
+        //     const width = 10;
+        //     const height = 10;
+        //     const segments = 20;
+        //     const geometry = new THREE.PlaneGeometry(width, height, segments, segments);
+        //     const material = new THREE.MeshBasicMaterial({
+        //         map: new THREE.TextureLoader().load("https://threejs.org/examples/textures/uv_grid_opengl.jpg")
+        //     });
+        //     const mesh = new THREE.Mesh(geometry, material);
+        //     mesh.rotation.x = Math.PI * -0.5; // 使平面朝向视角
+        //     mesh.position.x = 5;
+        //     mesh.position.z = -5;
+        //     scene.add(mesh);
+        // }
 
         // 设置相机位置以便它朝向场景中的模型
         camera.position.set(9, 9, 5);
@@ -82,13 +97,15 @@
         //     scene.add(mesh);
         // }
 
+
+
         // 使用OrbitControls创建控制器
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.target = new THREE.Vector3(5, 0, -5);
         controls.update();
 
-        const axesHelper = new THREE.AxesHelper(5);
-        scene.add(axesHelper);
+        // const axesHelper = new THREE.AxesHelper(5);
+        // scene.add(axesHelper);
 
         // 灯光
         const color = 0xFFFFFF;

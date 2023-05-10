@@ -24,7 +24,7 @@ class Helper {
             color: Math.floor(Math.random() * 0xffffff),
             flatShading: true,
             transparent: true,
-            opacity: 0.8,
+            opacity: 0.9,
         });
 
         let ret = rcds.map((rcd) => {
@@ -117,6 +117,14 @@ class Helper {
         return JSON.parse(JSON.stringify(obj));
     }
 
+    static makeSequenceArray(num) {
+        let ret = [];
+        for (let i = 0; i < num; ++i) {
+            ret.push(i);
+        }
+        return ret;
+    }
+
     static getMinRCDBySequence(rcds, seqs) {
         let candidates = rcds;
         seqs.forEach((seq) => {
@@ -136,27 +144,123 @@ class Helper {
         return candidates;
     }
 
+    static findRCDsBySequence(rcds, seqs) {
+        let candidates = rcds;
+        seqs.forEach((seq) => {
+            if (seq.row == "min") {
+                const target = Math.min(...candidates.map((rcd) => rcd.row));
+                candidates = candidates.filter((rcd) => rcd.row == target);
+            }
+            else if (seq.row == "max") {
+                const target = Math.max(...candidates.map((rcd) => rcd.row));
+                candidates = candidates.filter((rcd) => rcd.row == target);
+            }
+            else if (seq.col == "min") {
+                const target = Math.min(...candidates.map((rcd) => rcd.col));
+                candidates = candidates.filter((rcd) => rcd.col == target);
+            }
+            else if (seq.col == "max") {
+                const target = Math.max(...candidates.map((rcd) => rcd.col));
+                candidates = candidates.filter((rcd) => rcd.col == target);
+            }
+            else if (seq.dep == "min") {
+                const target = Math.min(...candidates.map((rcd) => rcd.dep));
+                candidates = candidates.filter((rcd) => rcd.dep == target);
+            }
+            else if (seq.dep == "max") {
+                const target = Math.max(...candidates.map((rcd) => rcd.dep));
+                candidates = candidates.filter((rcd) => rcd.dep == target);
+            }
+        });
+        return candidates;
+    }
+
     static getMoveStandRC(rcds) {
         const bound = this.getBound_RCD(rcds);
         const min_row_s = rcds.filter((rcd) => rcd.row == bound.minRow);
         const min_col = min_row_s.map()
     }
 
-    static rotateRCDsH(rcds, clockwise) {
-        /*
-        0. 向上右补全到nxn
-        1. 以nxn转，left=逆时针转，right=顺时针转
-        2. left=看左边还有没有空位，有就平移 right=看右边还有没有空位，有就平移
-        3. 
-        */
-        let rcdSize = this.getRCDSize(rcds);
-        let fillSize = Math.max(rcdSize.rows, rcdSize.cols);
-        let moveStandardRC = this.getMinRCDBySequence(rcds, ["row", "col"])[0];
-        if (clockwise) {
+    static sort_rcds(rcds) {
+        rcds.sort((a, b) => {
+
+        });
+    }
+
+    static rotateRCDsHClockwise(shapeType, rcds, clockwise) {
+
+        if (shapeType == "I" || false) {
+            if (!clockwise) {
+                var stdRCD = this.findRCDsBySequence(rcds, [{ row: "min" }, { col: "min" }])[0];
+            }
+            else {
+                var stdRCD = this.findRCDsBySequence(rcds, [{ row: "min" }, { col: "max" }])[0];
+            }
+
+            stdRCD = this.copy(stdRCD);
+
+            // 归一
+            rcds.forEach((rcd) => {
+                rcd.row -= stdRCD.row;
+                rcd.col -= stdRCD.col;
+            });
+
+            // 旋转
+            if (!clockwise) {
+                rcds.forEach((rcd) => {
+                    let { row, col } = rcd;
+                    rcd.row = col;
+                    rcd.col = -row;
+                });
+            }
+            else {
+                rcds.forEach((rcd) => {
+                    let { row, col } = rcd;
+                    rcd.row = -col;
+                    rcd.col = row;
+                });
+            }
+
+            // 还原
+            rcds.forEach((rcd) => {
+                rcd.row += stdRCD.row;
+                rcd.col += stdRCD.col;
+            });
+        }
+        else if (shapeType == "O") {
 
         }
         else {
+            let bound = this.getBound_RCD(rcds);
+            let stdRCD = { row: bound.minRow, col: bound.minCol, dep: bound.minDep };
 
+            // 归一
+            rcds.forEach((rcd) => {
+                rcd.row -= stdRCD.row;
+                rcd.col -= stdRCD.col;
+            });
+
+            // 旋转
+            // 0,0->0,2
+            // 0,1->1,2
+            // 0,2->2,2
+            // 1,0->0,1
+            // 1,1->1,1
+            // 1,2->2,1
+            // 2,0->0,0
+            // 2,1->1,0
+            // 2,2->2,0
+            rcds.forEach((rcd) => {
+                let { row, col } = rcd;
+                rcd.row = col;
+                rcd.col = 2 - row;
+            });
+
+            // 还原
+            rcds.forEach((rcd) => {
+                rcd.row += stdRCD.row;
+                rcd.col += stdRCD.col;
+            });
         }
     }
 

@@ -2,18 +2,30 @@ import { ShapeDefine } from "./ShapeDefine.js"
 
 class Helper {
 
+    static createRandomShapeType() {
+        const candidates = ["I", "O", "T", "S", "Z", "J", "L"];
+        const index = this.randomInt(0, candidates.length);
+        return candidates[index];
+    }
+
+    static randomInt(start, end) {
+        return Math.floor(Math.random() * (end - start) + start);
+    }
+
     static createShape(type, baseRCD) {
         let ret = JSON.parse(JSON.stringify(ShapeDefine[type].shapes[0]));
         ret.forEach((rcd) => {
             rcd.row += baseRCD.row;
             rcd.col += baseRCD.col;
-            rcd.dep += baseRCD.dep;
         });
         return ret;
     }
 
     static createObjects(rcds) {
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        // const geometry = new THREE.BoxGeometry(1, 1, 1);
+        // geometry.translate(0.5, 0.5, -0.5);
+
+        var geometry = new RoundedBoxGeometry(1, 1, 1, 5, 0.1);
         geometry.translate(0.5, 0.5, -0.5);
 
         // const material = new THREE.MeshPhongMaterial({
@@ -25,10 +37,10 @@ class Helper {
 
         let ret = rcds.map((rcd, i) => {
             const material = new THREE.MeshPhongMaterial({
-                color: 16777215 * (i / 3),
-                flatShading: true,
-                // transparent: true,
-                // opacity: 0.9,
+                // color: 16777215 * (i / 3),
+                color: Math.floor(Math.random() * 0xffffff),
+                transparent: true,
+                opacity: 1.0,
             });
             const cube = new THREE.Mesh(geometry, material);
             // cube.renderOrder = i + 1;
@@ -39,20 +51,39 @@ class Helper {
     }
 
     static getObjectPosition(rcd) {
-        return new THREE.Vector3(rcd.col, rcd.row, rcd.dep);
+        return new THREE.Vector3(rcd.col, rcd.row, 0);
     }
 
-    static reshapeCubes(cubes, rcds) {
-        cubes.forEach((cube, i) => {
-            cube.position.set(rcds[i].col, rcds[i].row, rcds[i].dep);
-        });
+    static reshapeCubes(cubes, rcds, anim) {
+        if (anim) {
+            cubes.forEach((object, i) => {
+                let tween = new TWEEN.Tween(object.position);
+                tween.to(this.getObjectPosition(rcds[i]), 100);
+                tween.start();
+            });
+        }
+        else {
+            cubes.forEach((object, i) => {
+                const pos = this.getObjectPosition(rcds[i]);
+                object.position.set(pos.x, pos.y, pos.z);
+            });
+        }
     }
 
-    static reshapeCubes2(cubes, rcds) {
-        cubes.forEach((object, i) => {
-            let tween = new TWEEN.Tween(object.position);
-            tween.to(this.getObjectPosition(rcds[i]), 100);
-            tween.start();
+    static blinkCubes(cubes, callback) {
+        cubes.forEach((cube) => {
+            var tween = new TWEEN.Tween(cube.material)
+                .to({ opacity: 0 }, 100)
+                .repeat(2)
+                .yoyo(true)
+                .start();
+
+            tween.onComplete(function () {
+                // tweenBack.start();
+                if (callback) {
+                    callback();
+                }
+            });
         })
 
     }
@@ -63,62 +94,24 @@ class Helper {
             maxRow: -1,
             minCol: -1,
             maxRow: -1,
-            minDep: -1,
-            maxDep: -1,
         };
         if (rcds.length > 0) {
             ret.minRow = Math.min(...rcds.map((rcd) => rcd.row));
             ret.maxRow = Math.max(...rcds.map((rcd) => rcd.row));
             ret.minCol = Math.min(...rcds.map((rcd) => rcd.col));
             ret.maxCol = Math.max(...rcds.map((rcd) => rcd.col));
-            ret.minDep = Math.min(...rcds.map((rcd) => rcd.dep));
-            ret.maxDep = Math.max(...rcds.map((rcd) => rcd.dep));
         }
         return ret;
     }
 
-    static getRCDByIndex(bound, index) {
-        let ret = {};
-        ret.dep = index % bound.deps;
-        ret.col = Math.floor(index / bound.deps) % bound.cols;
-        ret.row = Math.floor(index / (bound.cols * bound.deps));
-        return ret;
-    }
-
     static getIndexByRCD(bound, rcd) {
-        return (rcd.row * bound.cols + rcd.col) * bound.deps + rcd.dep;
+        return rcd.row * bound.cols + rcd.col;
     }
-
-    // static getBound_Array(cubeArr, bound, dropBound) {
-    //     let rcds = cubeArr.map((cube, index) => cube ? this.getRCDByIndex(bound, index) : null);
-    //     rcds = rcds.filter((x) => x);
-    //     return this.getBound_RCD(rcds);
-    // }
 
     static getBound_Cubes(cubes) {
         const ret = {};
         ret.minY = Math.min(...cubes.map((cube) => cube.position.y));
         return ret;
-    }
-
-    static getCube_RCD(cubes) {
-        let ret = cubes.map((cube) => {
-            return {
-                row: Math.floor(cube.position.y),
-                col: Math.floor(cube.position.x),
-                dep: Math.floor(-cube.position.z),
-            }
-        });
-        return ret;
-    }
-
-    static getRCDSize(rcds) {
-        const bound = this.getBound_RCD(rcds);
-        return {
-            rows: bound.maxRow - bound.minRow + 1,
-            cols: bound.maxCol - bound.minCol + 1,
-            deps: bound.maxDep - bound.minDep + 1,
-        }
     }
 
     static copy(obj) {
@@ -144,10 +137,6 @@ class Helper {
                 const minCol = Math.min(...candidates.map((rcd) => rcd.col));
                 candidates = candidates.filter((rcd) => rcd.col == minCol);
             }
-            else if (seq == "dep") {
-                const minDep = Math.min(...candidates.map((rcd) => rcd.dep));
-                candidates = candidates.filter((rcd) => rcd.dep == minDep);
-            }
         });
         return candidates;
     }
@@ -171,14 +160,6 @@ class Helper {
                 const target = Math.max(...candidates.map((rcd) => rcd.col));
                 candidates = candidates.filter((rcd) => rcd.col == target);
             }
-            else if (seq.dep == "min") {
-                const target = Math.min(...candidates.map((rcd) => rcd.dep));
-                candidates = candidates.filter((rcd) => rcd.dep == target);
-            }
-            else if (seq.dep == "max") {
-                const target = Math.max(...candidates.map((rcd) => rcd.dep));
-                candidates = candidates.filter((rcd) => rcd.dep == target);
-            }
         });
         return candidates;
     }
@@ -198,11 +179,11 @@ class Helper {
     static rotateRCDsHClockwise(shapeType, rcds, left) {
         let bound = this.getBound_RCD(rcds);
         if (left) {
-            var stdRCD = { row: bound.minRow, col: bound.minCol, dep: bound.minDep };
+            var stdRCD = { row: bound.minRow, col: bound.minCol };
         }
         else {
-            var stdRCD = { row: bound.minRow, col: bound.maxCol, dep: bound.minDep };
-            // var stdRCD = { row: bound.minRow, col: bound.minCol, dep: bound.minDep };
+            var stdRCD = { row: bound.minRow, col: bound.maxCol };
+            // var stdRCD = { row: bound.minRow, col: bound.minCol };
         }
         let n = Math.max(bound.maxRow - bound.minRow + 1, bound.maxCol - bound.minCol + 1);
 

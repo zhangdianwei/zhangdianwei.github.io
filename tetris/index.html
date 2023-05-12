@@ -5,7 +5,8 @@
 	{
 	"imports": {
 		"three": "https://unpkg.com/three@0.152.0/build/three.module.js",
-        "OrbitControls": "https://unpkg.com/three@0.152.0/examples/jsm/controls/OrbitControls.js"
+        "OrbitControls": "https://unpkg.com/three@0.152.0/examples/jsm/controls/OrbitControls.js",
+        "TWEEN": "https://unpkg.com/three@0.152.0/examples/jsm/libs/tween.module.js"
 	}
 	}
 </script>
@@ -42,6 +43,7 @@
     <script type="module">
         import * as THREE from "three";
         import { OrbitControls } from "OrbitControls";
+        import * as TWEEN from "TWEEN";
         import { GameLogic } from "./GameLogic.js";
 
         const canvas = document.getElementById("canvas");
@@ -63,31 +65,24 @@
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setClearColor(new THREE.Color(0xc5c5c5));
+        renderer.setClearColor(new THREE.Color(0x99627A));
 
-        const gridHelper = new THREE.GridHelper(10, 10);
-        gridHelper.position.set(5, 0, -5);
-        scene.add(gridHelper);
-        // 二维平面
-        // {
-        //     const width = 10;
-        //     const height = 10;
-        //     const segments = 20;
-        //     const geometry = new THREE.PlaneGeometry(width, height, segments, segments);
-        //     const material = new THREE.MeshBasicMaterial({
-        //         map: new THREE.TextureLoader().load("https://threejs.org/examples/textures/uv_grid_opengl.jpg")
-        //     });
-        //     const mesh = new THREE.Mesh(geometry, material);
-        //     mesh.rotation.x = Math.PI * -0.5; // 使平面朝向视角
-        //     mesh.position.x = 5;
-        //     mesh.position.z = -5;
-        //     scene.add(mesh);
-        // }
+        // const gridHelper = new THREE.GridHelper(10, 10);
+        // gridHelper.position.set(5, 0, -5);
+        // scene.add(gridHelper);
+
+        var dx = 10, dy = 10, dz = 1;
+        const geometry = new THREE.BoxGeometry(dx, dy, dz);
+        const edges = new THREE.EdgesGeometry(geometry);
+        const material = new THREE.LineBasicMaterial({ color: 0x000000 });
+        const edgesLine = new THREE.LineSegments(edges, material);
+        edgesLine.position.x = dx / 2;
+        edgesLine.position.y = dy / 2;
+        edgesLine.position.z = -dz / 2;
+        scene.add(edgesLine);
 
         // 设置相机位置以便它朝向场景中的模型
-        camera.position.set(9, 9, 5);
-        // camera.position.set(0, 0, -10);
-        camera.lookAt(new THREE.Vector3(5, 0, -5));
+        camera.position.set(8, 4, 8);
 
         // {
         //     let geometry = new THREE.BoxGeometry(1,1,1);
@@ -101,11 +96,11 @@
 
         // 使用OrbitControls创建控制器
         const controls = new OrbitControls(camera, renderer.domElement);
-        controls.target = new THREE.Vector3(5, 0, -5);
+        controls.target = new THREE.Vector3(5 + 1, 5 - 1, -0.5);
         controls.update();
 
-        // const axesHelper = new THREE.AxesHelper(5);
-        // scene.add(axesHelper);
+        const axesHelper = new THREE.AxesHelper(5);
+        scene.add(axesHelper);
 
         // 灯光
         const color = 0xFFFFFF;
@@ -118,6 +113,7 @@
 
         // 使用 animate 函数来渲染场景并使模型旋转
         function animate() {
+            TWEEN.update();
             renderer.render(scene, camera);
             requestAnimationFrame(animate);
         }
@@ -136,9 +132,11 @@
             camera,
             renderer,
             canvas,
+            controls,
         };
 
         window.THREE = THREE;
+        window.TWEEN = TWEEN;
         window.game.logic = new GameLogic();
 
         // 主循环

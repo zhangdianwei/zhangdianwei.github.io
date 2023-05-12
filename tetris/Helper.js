@@ -2,10 +2,6 @@ import { ShapeDefine } from "./ShapeDefine.js"
 
 class Helper {
 
-    static createObjectsByShape(shapeType) {
-
-    }
-
     static createShape(type, baseRCD) {
         let ret = JSON.parse(JSON.stringify(ShapeDefine[type].shapes[0]));
         ret.forEach((rcd) => {
@@ -20,33 +16,45 @@ class Helper {
         const geometry = new THREE.BoxGeometry(1, 1, 1);
         geometry.translate(0.5, 0.5, -0.5);
 
-        const material = new THREE.MeshPhongMaterial({
-            color: Math.floor(Math.random() * 0xffffff),
-            flatShading: true,
-            transparent: true,
-            opacity: 0.9,
-        });
+        // const material = new THREE.MeshPhongMaterial({
+        //     color: Math.floor(Math.random() * 0xffffff),
+        //     flatShading: true,
+        //     transparent: true,
+        //     opacity: 0.9,
+        // });
 
-        let ret = rcds.map((rcd) => {
+        let ret = rcds.map((rcd, i) => {
+            const material = new THREE.MeshPhongMaterial({
+                color: 16777215 * (i / 3),
+                flatShading: true,
+                // transparent: true,
+                // opacity: 0.9,
+            });
             const cube = new THREE.Mesh(geometry, material);
+            // cube.renderOrder = i + 1;
             return cube;
         });
 
         return ret;
     }
 
+    static getObjectPosition(rcd) {
+        return new THREE.Vector3(rcd.col, rcd.row, rcd.dep);
+    }
+
     static reshapeCubes(cubes, rcds) {
         cubes.forEach((cube, i) => {
-            cube.position.set(rcds[i].col, rcds[i].dep, -rcds[i].row);
+            cube.position.set(rcds[i].col, rcds[i].row, rcds[i].dep);
         });
     }
 
     static reshapeCubes2(cubes, rcds) {
-        cubes.forEach((cube, i) => {
-            cube.position.x = rcds[i].col;
-            // cube.position.y = rcds[i].dep;
-            cube.position.z = -rcds[i].row;
-        });
+        cubes.forEach((object, i) => {
+            let tween = new TWEEN.Tween(object.position);
+            tween.to(this.getObjectPosition(rcds[i]), 100);
+            tween.start();
+        })
+
     }
 
     static getBound_RCD(rcds) {
@@ -96,9 +104,9 @@ class Helper {
     static getCube_RCD(cubes) {
         let ret = cubes.map((cube) => {
             return {
-                row: Math.floor(-cube.position.z),
+                row: Math.floor(cube.position.y),
                 col: Math.floor(cube.position.x),
-                dep: Math.floor(cube.position.y),
+                dep: Math.floor(-cube.position.z),
             }
         });
         return ret;
@@ -187,81 +195,44 @@ class Helper {
         });
     }
 
-    static rotateRCDsHClockwise(shapeType, rcds, clockwise) {
-
-        if (shapeType == "I" || false) {
-            if (!clockwise) {
-                var stdRCD = this.findRCDsBySequence(rcds, [{ row: "min" }, { col: "min" }])[0];
-            }
-            else {
-                var stdRCD = this.findRCDsBySequence(rcds, [{ row: "min" }, { col: "max" }])[0];
-            }
-
-            stdRCD = this.copy(stdRCD);
-
-            // 归一
-            rcds.forEach((rcd) => {
-                rcd.row -= stdRCD.row;
-                rcd.col -= stdRCD.col;
-            });
-
-            // 旋转
-            if (!clockwise) {
-                rcds.forEach((rcd) => {
-                    let { row, col } = rcd;
-                    rcd.row = col;
-                    rcd.col = -row;
-                });
-            }
-            else {
-                rcds.forEach((rcd) => {
-                    let { row, col } = rcd;
-                    rcd.row = -col;
-                    rcd.col = row;
-                });
-            }
-
-            // 还原
-            rcds.forEach((rcd) => {
-                rcd.row += stdRCD.row;
-                rcd.col += stdRCD.col;
-            });
-        }
-        else if (shapeType == "O") {
-
+    static rotateRCDsHClockwise(shapeType, rcds, left) {
+        let bound = this.getBound_RCD(rcds);
+        if (left) {
+            var stdRCD = { row: bound.minRow, col: bound.minCol, dep: bound.minDep };
         }
         else {
-            let bound = this.getBound_RCD(rcds);
-            let stdRCD = { row: bound.minRow, col: bound.minCol, dep: bound.minDep };
+            var stdRCD = { row: bound.minRow, col: bound.maxCol, dep: bound.minDep };
+            // var stdRCD = { row: bound.minRow, col: bound.minCol, dep: bound.minDep };
+        }
+        let n = Math.max(bound.maxRow - bound.minRow + 1, bound.maxCol - bound.minCol + 1);
 
-            // 归一
-            rcds.forEach((rcd) => {
-                rcd.row -= stdRCD.row;
-                rcd.col -= stdRCD.col;
-            });
+        // 归一
+        rcds.forEach((rcd) => {
+            rcd.row -= stdRCD.row;
+            rcd.col -= stdRCD.col;
+        });
 
-            // 旋转
-            // 0,0->0,2
-            // 0,1->1,2
-            // 0,2->2,2
-            // 1,0->0,1
-            // 1,1->1,1
-            // 1,2->2,1
-            // 2,0->0,0
-            // 2,1->1,0
-            // 2,2->2,0
+        // 旋转
+        if (left) {
             rcds.forEach((rcd) => {
                 let { row, col } = rcd;
                 rcd.row = col;
-                rcd.col = 2 - row;
-            });
-
-            // 还原
-            rcds.forEach((rcd) => {
-                rcd.row += stdRCD.row;
-                rcd.col += stdRCD.col;
+                rcd.col = -row;
             });
         }
+        else {
+            rcds.forEach((rcd) => {
+                let { row, col } = rcd;
+                rcd.row = -col;
+                rcd.col = row;
+            });
+        }
+
+        // 还原
+        rcds.forEach((rcd) => {
+            rcd.row += stdRCD.row;
+            rcd.col += stdRCD.col;
+        });
     }
 
 }

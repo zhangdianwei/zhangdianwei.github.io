@@ -16,27 +16,24 @@ class GameLogic {
 
         this.updateSecond(0);
         // this.schedule(this.updateSecond.bind(this), 1000);
+        setInterval(this.updateSecond.bind(this), 1000);
 
         document.addEventListener('keydown', this.onKeyDown.bind(this));
-        document.addEventListener('keyup', this.onKeyUp.bind(this));
+        // document.addEventListener('keyup', this.onKeyUp.bind(this));
     }
 
     onKeyDown(event) {
         // console.log(event.code);
         if (this.dropCubes) {
             if (event.code == "KeyW") {
-                let moveToRCDs = Helper.getCube_RCD(this.dropCubes);
-                moveToRCDs.forEach((rcd) => rcd.row += 1);
-                if (this.canPlace(moveToRCDs)) {
-                    Helper.reshapeCubes2(this.dropCubes, moveToRCDs);
-                }
+                // let moveToRCDs = Helper.getCube_RCD(this.dropCubes);
+                // moveToRCDs.forEach((rcd) => rcd.row += 1);
+                // if (this.canPlace(moveToRCDs)) {
+                //     Helper.reshapeCubes2(this.dropCubes, moveToRCDs);
+                // }
             }
             else if (event.code == "KeyS") {
-                let moveToRCDs = Helper.getCube_RCD(this.dropCubes);
-                moveToRCDs.forEach((rcd) => rcd.row -= 1);
-                if (this.canPlace(moveToRCDs)) {
-                    Helper.reshapeCubes2(this.dropCubes, moveToRCDs);
-                }
+                this.updateSecond();
             }
             else if (event.code == "KeyA") {
                 let moveToRCDs = Helper.getCube_RCD(this.dropCubes);
@@ -52,35 +49,61 @@ class GameLogic {
                     Helper.reshapeCubes2(this.dropCubes, moveToRCDs);
                 }
             }
-            else if (event.code == "Numpad0" || event.code == "Digit0") {
-                let moveToRCDs = Helper.getCube_RCD(this.dropCubes);
-                Helper.rotateRCDsHClockwise(this.dropType, moveToRCDs, false);
-                if (this.canPlace(moveToRCDs)) {
+            else if (event.code == "ArrowLeft") {
+                let srcRCDs = Helper.getCube_RCD(this.dropCubes);
+                let srcBound = Helper.getBound_RCD(srcRCDs);
+
+                let moveToRCDs = Helper.copy(srcRCDs);
+                Helper.rotateRCDsHClockwise(this.dropType, moveToRCDs, true);
+
+                // 智能偏移
+                let bound = Helper.getBound_RCD(moveToRCDs);
+                // for (let col = bound.minCol - 1; col >= srcBound.minCol; --col) {
+                //     if (this.canMove(moveToRCDs, { col: -1 })) {
+                //         moveToRCDs.forEach((rcd) => rcd.col -= 1);
+                //     }
+                //     else {
+                //         break;
+                //     }
+                // }
+
+                if (this.canPlace(moveToRCDs) || true) {
                     Helper.reshapeCubes2(this.dropCubes, moveToRCDs);
                 }
             }
-            else if (event.code == "Enter" || event.code == "NumpadEnter") {
-                this.updateSecond();
+            else if (event.code == "ArrowRight") {
+                let srcRCDs = Helper.getCube_RCD(this.dropCubes);
+                let srcBound = Helper.getBound_RCD(srcRCDs);
+
+                let moveToRCDs = Helper.copy(srcRCDs);
+                Helper.rotateRCDsHClockwise(this.dropType, moveToRCDs, false);
+
+                // 智能偏移
+                let bound = Helper.getBound_RCD(moveToRCDs);
+                // for (let col = bound.maxCol + 1; col <= srcBound.maxCol; ++col) {
+                //     if (this.canMove(moveToRCDs, { col: 1 })) {
+                //         moveToRCDs.forEach((rcd) => rcd.col += 1);
+                //     }
+                //     else {
+                //         break;
+                //     }
+                // }
+
+                if (this.canPlace(moveToRCDs) || true) {
+                    Helper.reshapeCubes2(this.dropCubes, moveToRCDs);
+                }
             }
-            // else if (event.code == "ArrowLeft") {
-            //     let moveToRCDs = Helper.getCube_RCD(this.dropCubes);
-            //     Helper.rotateRCDsHClockwise(this.dropType, moveToRCDs, false);
-            //     if (this.canPlace(moveToRCDs) || true) {
-            //         Helper.reshapeCubes2(this.dropCubes, moveToRCDs);
-            //     }
-            // }
-            // else if (event.code == "ArrowRight") {
-            //     let moveToRCDs = Helper.getCube_RCD(this.dropCubes);
-            //     Helper.rotateRCDsHClockwise(this.dropType, moveToRCDs, true);
-            //     if (this.canPlace(moveToRCDs) || true) {
-            //         Helper.reshapeCubes2(this.dropCubes, moveToRCDs);
-            //     }
-            // }
         }
     }
 
-    onKeyUp(event) {
+    canMove(rcds, offset_rcd) {
+        offset_rcd.row = offset_rcd.row || 0;
+        offset_rcd.col = offset_rcd.col || 0;
 
+        let ret = rcds.every((rcd) => {
+            return !this.getBottom(rcd.row + offset_rcd.row, rcd.col + offset_rcd.col);
+        });
+        return ret;
     }
 
     schedule(func, interval) {
@@ -106,7 +129,7 @@ class GameLogic {
         }
 
         if (this.state1 == "game" && !this.state2) {
-            this.checkGameOver();
+            this.checkOver();
         }
 
         if (this.state1 == "game" && !this.state2) {
@@ -114,9 +137,13 @@ class GameLogic {
         }
 
 
-        // document.getElementById("debug_label").textContent = `
-        //     camera = ${window.game.camera.position.x.toFixed(0)}, ${window.game.camera.position.y.toFixed(0)}, ${window.game.camera.position.z.toFixed(0)}
-        // `;
+        document.getElementById("debug_label").innerHTML = `
+            position = ${window.game.camera.position.x.toFixed(0)}, ${window.game.camera.position.y.toFixed(0)}, ${window.game.camera.position.z.toFixed(0)}
+            <br/>
+            state1=${this.state1}
+            <br/>
+            state2=${this.state2}
+        `;
     }
 
     update(dt) {
@@ -131,24 +158,16 @@ class GameLogic {
 
     getCanErases() {
         let ret = [];
-        let rows = Helper.makeSequenceArray(this.bound.rows);
-        let cols = Helper.makeSequenceArray(this.bound.cols);
-        let deps = Helper.makeSequenceArray(this.bound.deps);
-        deps.forEach((dep) => {
-            rows.forEach((row) => {
-                let can = cols.every((col) => this.getBottom(row, col, dep));
-                if (can) {
-                    ret.push({ row, dep });
-                }
-            });
 
-            cols.forEach((col) => {
-                let can = rows.every((row) => this.getBottom(row, col, dep));
-                if (can) {
-                    ret.push({ col, dep });
-                }
-            });
-        });
+        let cols = Helper.makeSequenceArray(this.bound.cols);
+
+        for (let row = 0; row < this.bound.rows; ++row) {
+            let can = cols.every((col) => this.getBottom(row, col, 0));
+            if (can) {
+                ret.push({ row, dep: 0 });
+            }
+        }
+
         return ret;
     }
 
@@ -200,7 +219,7 @@ class GameLogic {
 
         if (!this.dropCubes) {
             this.dropType = "I";
-            var rcds = Helper.createShape(this.dropType, { row: 0, col: 0, dep: this.bound.deps - 1 });
+            var rcds = Helper.createShape(this.dropType, { row: this.bound.rows - 5, col: 0, dep: 0 });
             this.dropCubes = Helper.createObjects(rcds);
 
             this.dropCubes.forEach((cube) => {
@@ -216,49 +235,44 @@ class GameLogic {
         let ret = {
             needCheckErase: false
         };
-        if (this.dropCubes) {
-            // const wantDropY = dt / 1000;
-            // const curCubesMinY = Math.min(...this.dropCubes.map((cube) => cube.position.y));
-            const curCubesRCD = Helper.getCube_RCD(this.dropCubes);
-            const bound = Helper.getBound_RCD(curCubesRCD);
-            const bottomMaxDep = this.getBottomMaxDep(curCubesRCD);
-            // const wantTargetY = curCubesMinY - wantDropY;
-            // const wantTargetD = Math.floor(wantTargetY);
-            const wantTargetD = bound.minDep - 1;
+        // if (this.dropCubes) {
+        //     const curCubesRCD = Helper.getCube_RCD(this.dropCubes);
+        //     const bound = Helper.getBound_RCD(curCubesRCD);
 
-            if (wantTargetD <= bottomMaxDep) { // 已经落到底了
-                this.dropCubes.forEach((cube) => {
-                    cube.position.y = bottomMaxDep + 1;
-                });
+        //     const bottomMaxRows = curCubesRCD.map((rcd) => this.getBottomMaxRow(rcd));
+        //     const bottomMaxRow = Math.max(...bottomMaxRows);
+        //     const willTargetRow = bound.minRow - 1;
 
-                const rcds = Helper.getCube_RCD(this.dropCubes);
+        //     if (willTargetRow <= bottomMaxRow) { // 已经落到底了
+        //         // this.dropCubes.forEach((cube) => {
+        //         //     cube.position.y = bottomMaxRow + 1;
+        //         // });
 
-                this.dropCubes.forEach((cube, i) => {
-                    const index = Helper.getIndexByRCD(this.bound, rcds[i]);
-                    this.bottoms[index] = this.dropCubes[i];
-                });
-                this.dropCubes = null;
+        //         const rcds = Helper.getCube_RCD(this.dropCubes);
 
-                ret.needCheckErase = true;
-            }
-            else { // 还没落到底
-                this.dropCubes.forEach((cube) => {
-                    cube.position.y = wantTargetD;
-                });
-            }
-        }
+        //         this.dropCubes.forEach((cube, i) => {
+        //             const index = Helper.getIndexByRCD(this.bound, rcds[i]);
+        //             this.bottoms[index] = this.dropCubes[i];
+        //         });
+        //         this.dropCubes = null;
+
+        //         ret.needCheckErase = true;
+        //     }
+        //     else { // 还没落到底
+        //         this.dropCubes.forEach((cube) => {
+        //             cube.position.y -= 1;
+        //         });
+        //     }
+        // }
         return ret;
     }
 
-    checkGameOver() {
+    checkOver() {
         let failed = false;
-        for (let row = 0; row < this.bound.rows; row++) {
-            for (let col = 0; col < this.bound.cols; col++) {
-                const index = Helper.getIndexByRCD(this.bound, { row, col, dep: this.bound.deps - 1 });
-                if (this.bottoms[index]) {
-                    failed = true;
-                    break;
-                }
+        for (let col = 0; col < this.bound.cols; col++) {
+            if (this.getBottom(this.bound.rows, col, 0)) {
+                failed = true;
+                break;
             }
         }
 
@@ -297,18 +311,13 @@ class GameLogic {
         return this.bottoms.filter((cube) => cube).length;
     }
 
-    getBottomMaxDep(dropBound) {
-        let ret = -1;
-        dropBound.forEach((rcd) => {
-            for (let dep = 0; dep < dropBound.dep; ++dep) {
-                const temprcd = { row: rcd.row, col: rcd.col, dep: dep };
-                const index = Helper.getIndexByRCD(this.bound, temprcd);
-                if (this.bottoms[index] && dep > ret) {
-                    ret = dep;
-                }
+    getBottomMaxRow(rcd) {
+        for (let row = rcd.row - 1; row >= 0; --row) {
+            if (this.getBottom(row, rcd.col, rcd.dep)) {
+                return row;
             }
-        });
-        return ret;
+        }
+        return -1;
     }
 
     getBottom(row, col, dep) {

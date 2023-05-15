@@ -317,7 +317,7 @@ class GameLogic {
     checkCreate() {
         if (!this.dropRCDs) {
             this.dropType = Helper.createRandomShapeType();
-            this.dropType = "I"
+            // this.dropType = "I";
             this.dropRCDs = Helper.createShape(this.dropType, { row: this.bound.rows, col: 0 });
             this.dropCubes = Helper.createObjects(this.dropRCDs);
 

@@ -15,7 +15,7 @@
 ## 田园风格的扫雷游戏
 
 <a href="subject/FarmMine/index.html" target="_blank">
-<img src="subject/FarmMine1.png" alt="FarmMine1" style="zoom:50%;" />
+<img src="subject/FarmMine1.png" style="zoom:50%;" />
 </a>
 
 开发环境：
@@ -27,12 +27,24 @@
 平台跳跃吃金币游戏
 
 <a href="subject/CoinKnight/index.html" target="_blank">
-<img src="subject/CoinKnight.png" alt="FarmMine1" style="zoom:50%;" />
+<img src="subject/CoinKnight.png" style="zoom:50%;" />
 </a>
 
 开发环境：
 
 * CocosCreator 2.3.3
+
+
+## 俄罗斯方块
+
+<a href="tetris/index.html" target="_blank">
+<img src="tetris/promote.png"  />
+</a>
+
+开发环境：
+
+* three.js
+
 
 # 工具
 

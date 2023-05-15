@@ -72,7 +72,7 @@ class GameLogic {
     }
 
     getTargetTotalNum() {
-        return this.levelId + 1;
+        return (this.levelId + 1) * 5;
     }
 
     initScore() {
@@ -269,10 +269,6 @@ class GameLogic {
     }
 
     checkErase(erases) {
-        erases.forEach((e, i) => {
-            e.row -= i;
-        });
-
         erases.forEach((e) => {
             if (e.row >= 0) {
                 for (let col = 0; col < this.bound.cols; ++col) {
@@ -280,7 +276,15 @@ class GameLogic {
                     this.setBottom(e.row, col, null);
                     Helper.blinkCubes([obj], () => { window.game.scene.remove(obj); });
                 }
+            }
+        });
 
+        erases.forEach((e, i) => {
+            e.row -= i;
+        });
+
+        setTimeout(() => {
+            erases.forEach((e) => {
                 const self = this;
                 function func() {
                     for (let row = e.row; row < self.bound.rows; ++row) {
@@ -293,10 +297,14 @@ class GameLogic {
                         }
                     }
                 }
-                // setTimeout(func, 100);
                 func();
-            }
-        });
+            });
+        }, 300);
+
+        this.state2 = "erase";
+        setTimeout(() => {
+            this.state2 = null;
+        }, 400);
 
         var diffScore = 0;
         for (let i = 0; i < erases.length; ++i) {
@@ -309,7 +317,7 @@ class GameLogic {
     checkCreate() {
         if (!this.dropRCDs) {
             this.dropType = Helper.createRandomShapeType();
-            this.dropType = "O"
+            this.dropType = "I"
             this.dropRCDs = Helper.createShape(this.dropType, { row: this.bound.rows, col: 0 });
             this.dropCubes = Helper.createObjects(this.dropRCDs);
 

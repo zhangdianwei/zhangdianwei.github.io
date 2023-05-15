@@ -52,10 +52,9 @@
             background-color: #fefefe;
             margin: 15% auto;
             padding: 20px;
-            border: 1px solid #888;
+            border: 2px solid #4de7d3;
             width: 400px;
             text-align: center;
-
         }
 
         .close {
@@ -229,7 +228,7 @@
 
         // 灯光
         const color = 0xFFFFFF;
-        const intensity = 1;
+        const intensity = 2;
         const light = new THREE.DirectionalLight(color, intensity);
         light.position.set(6, 10, 8);
         light.target.position.set(0, 0, 0);
@@ -273,7 +272,7 @@
         //     res_progress.value = window.game.res.getLoadedCount() / window.game.res.getTotalCount() * 100;
         // };
         window.game.res.onFinish = function () {
-            window.game.logic.startGame(0);
+            openDialog("dialog_startgame")
         };
 
     </script>

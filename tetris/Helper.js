@@ -233,24 +233,15 @@ class Helper {
         // console.log(color)
         var material = new THREE.MeshPhongMaterial({
             // color: Math.floor(Math.random() * 0xffffff),
-            color: 15767765,
-            flatShading: false,
+            color: 0xFFD3A3,
+            // shininess: 1500,
+            // emissive: 0x444444,
         });
 
         var mesh = new THREE.Mesh(geometry, material);
         return mesh;
     }
 
-    static createHealthObj() {
-        var geometry = new RoundedBoxGeometry(10, 1, 1, 5, 0.2);
-        geometry.translate(5, 0, 0);
-
-        const material = new THREE.MeshPhongMaterial({
-            color: Math.floor(Math.random() * 0xffffff),
-        });
-        const cube = new THREE.Mesh(geometry, material);
-        return cube;
-    }
 
     // alignObjectToPos(obj, anchor, toPos) {
 

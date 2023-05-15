@@ -1,4 +1,5 @@
 import { ShapeDefine } from "./ShapeDefine.js"
+import { TextGeometry } from "/three@0.152.0/examples/jsm/geometries/TextGeometry.js"
 
 class Helper {
 
@@ -216,6 +217,44 @@ class Helper {
         });
     }
 
+    static createText(text) {
+        const geometry = new TextGeometry(text, {
+            font: window.game.res.font,
+            size: 1,
+            height: 0.1,
+            curveSegments: 12,
+            bevelEnabled: true,
+            bevelThickness: 0.1,
+            bevelSize: 0.05,
+            bevelSegments: 5
+        });
+
+        // var color = Math.floor(Math.random() * 0xffffff);
+        // console.log(color)
+        var material = new THREE.MeshPhongMaterial({
+            // color: Math.floor(Math.random() * 0xffffff),
+            color: 15767765,
+            flatShading: false,
+        });
+
+        var mesh = new THREE.Mesh(geometry, material);
+        return mesh;
+    }
+
+    static createHealthObj() {
+        var geometry = new RoundedBoxGeometry(10, 1, 1, 5, 0.2);
+        geometry.translate(5, 0, 0);
+
+        const material = new THREE.MeshPhongMaterial({
+            color: Math.floor(Math.random() * 0xffffff),
+        });
+        const cube = new THREE.Mesh(geometry, material);
+        return cube;
+    }
+
+    // alignObjectToPos(obj, anchor, toPos) {
+
+    // }
 }
 
 export { Helper }

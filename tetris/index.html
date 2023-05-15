@@ -7,6 +7,7 @@
 		"three": "https://unpkg.com/three@0.152.0/build/three.module.js",
         "RoundedBoxGeometry": "https://unpkg.com/three@0.152.0/examples/jsm/geometries/RoundedBoxGeometry.js",
         "OrbitControls": "https://unpkg.com/three@0.152.0/examples/jsm/controls/OrbitControls.js",
+        "FontLoader": "https://unpkg.com/three@0.152.0/examples/jsm/loaders/FontLoader.js",
         "TWEEN": "https://unpkg.com/three@0.152.0/examples/jsm/libs/tween.module.js"
 	}
 	}
@@ -70,6 +71,19 @@
             text-decoration: none;
             cursor: pointer;
         }
+
+        .res_container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        progress {
+            display: block;
+            margin: 0 auto;
+            width: 50%;
+        }
     </style>
 </head>
 
@@ -80,8 +94,13 @@
     <!-- <p id="debug_label"></p>
     <script>
         function func() {
+            if (!window.game) {
+                return;
+            }
             document.getElementById("debug_label").innerHTML = `
             position = ${window.game.camera.position.x.toFixed(0)}, ${window.game.camera.position.y.toFixed(0)}, ${window.game.camera.position.z.toFixed(0)}
+            <br/>
+            quaternion = ${window.game.camera.quaternion.x.toFixed(1)},${window.game.camera.quaternion.y.toFixed(1)},${window.game.camera.quaternion.z.toFixed(1)},${window.game.camera.quaternion.w.toFixed(1)}
             <br/>
             state1=${window.game.logic.state1}
             <br/>
@@ -98,29 +117,46 @@
         <p></p>
     </details>
 
-    <div id="myModal" class="modal">
+    <!-- <div class="progress_container">
+        <progress id="res_progress" value="0" max="100"></progress>
+    </div> -->
+
+    <div id="dialog_startgame" class="modal">
         <div class="modal-content">
-            <!-- <span class="close" onclick="closeModal()">&times;</span> -->
-            <button onclick="startGame()">开始游戏</button>
+            <button onclick="onClickStartGame()">开始游戏</button>
         </div>
     </div>
+
+    <div id="dialog_win" class="modal">
+        <div class="modal-content">
+            <button onclick="onClickNextLevel()">下一关</button>
+        </div>
+    </div>
+
     <script>
-        function openModal() {
-            document.getElementById("myModal").style.display = "block";
+        function openDialog(name) {
+            document.getElementById(name).style.display = "block";
         }
 
-        function closeModal() {
-            document.getElementById("myModal").style.display = "none";
+        function closeDialog(name) {
+            document.getElementById(name).style.display = "none";
         }
-        function startGame() {
+
+        function onClickStartGame() {
             if (!window.game || !window.game.logic) {
                 return;
             }
-            closeModal();
-            game.logic.startGame();
+            closeDialog("dialog_startgame");
+            game.logic.startGame(0);
         }
 
-        openModal();
+        function onClickNextLevel() {
+            if (!window.game || !window.game.logic) {
+                return;
+            }
+            closeDialog("dialog_win");
+            game.logic.startGame(game.logic.levelId + 1);
+        }
     </script>
 
 
@@ -130,7 +166,7 @@
         import { OrbitControls } from "OrbitControls";
         import * as TWEEN from "TWEEN";
         import { GameLogic } from "./GameLogic.js";
-        // import * as BufferGeometryUtils from "BufferGeometryUtils";
+        import { ResLogic } from "./ResLogic.js";
 
         const canvas = document.getElementById("canvas");
         const scene = new THREE.Scene();
@@ -167,8 +203,17 @@
         edgesLine.position.z = -dz / 2;
         scene.add(edgesLine);
 
-        // 设置相机位置以便它朝向场景中的模型
-        camera.position.set(8, 6, 10);
+        // 使用OrbitControls创建控制器
+
+        camera.position.set(7, 5, 10);
+        var tween = new TWEEN.Tween(camera.rotation)
+            .to({ y: Math.PI / 36 }, 10000)
+            .yoyo(true)
+            .repeat(Infinity)
+            .easing(TWEEN.Easing.Quadratic.InOut);
+        tween.start();
+        // const controls = new OrbitControls(camera, renderer.domElement);
+        // controls.update();
 
         // {
         //     let geometry = new THREE.BoxGeometry(1,1,1);
@@ -179,14 +224,8 @@
         // }
 
 
-
-        // 使用OrbitControls创建控制器
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.target = new THREE.Vector3(5 + 1, 5, -0.5);
-        controls.update();
-
-        const axesHelper = new THREE.AxesHelper(5);
-        scene.add(axesHelper);
+        // const axesHelper = new THREE.AxesHelper(5);
+        // scene.add(axesHelper);
 
         // 灯光
         const color = 0xFFFFFF;
@@ -197,7 +236,6 @@
         scene.add(light);
         scene.add(light.target);
 
-        // 使用 animate 函数来渲染场景并使模型旋转
         function animate() {
             TWEEN.update();
             renderer.render(scene, camera);
@@ -218,25 +256,26 @@
             camera,
             renderer,
             canvas,
-            controls,
+            // controls,
         };
 
         window.THREE = THREE;
         window.TWEEN = TWEEN;
         window.RoundedBoxGeometry = RoundedBoxGeometry;
         window.game.logic = new GameLogic();
+        window.game.res = new ResLogic();
 
-        // 主循环
-        {
-            // let lastUpdateTime = Date.now();
-            // function mainLoop() {
-            //     let now = Date.now();
-            //     game.logic.update(now - lastUpdateTime);
-            //     lastUpdateTime = now;
-            // };
-            // mainLoop();
-            // setInterval(mainLoop, 0);
-        }
+        window.game.res.startLoad();
+
+        // var res_progress = document.getElementById("res_progress");
+        // res_progress.style.display = "block";
+        // window.game.res.onProgress = function () {
+        //     res_progress.value = window.game.res.getLoadedCount() / window.game.res.getTotalCount() * 100;
+        // };
+        window.game.res.onFinish = function () {
+            window.game.logic.startGame(0);
+        };
+
     </script>
 
 </body>

@@ -10,7 +10,7 @@ class GameLogic {
         this.bottoms = []; //整个10x10x10的网格
         this.bound = { rows: 10, cols: 10 };
 
-        this.state1 = "prepare" // "prepare" "game" "over"
+        this.state1 = "prepare" // "prepare" "game" "over" "win"
         this.state2 = null // "erase"
 
         this.updateSecond(0);
@@ -20,10 +20,17 @@ class GameLogic {
         // document.addEventListener('keyup', this.onKeyUp.bind(this));
     }
 
-    startGame() {
+    startGame(levelId) {
+        this.levelId = levelId;
+
         this.dropType = null;
         this.dropRCDs = null;
-        this.dropCubes = null; //正在下落的cube
+        if (this.dropCubes) {
+            this.dropCubes.forEach((cube) => {
+                window.game.scene.remove(cube);
+            })
+        }
+        this.dropCubes = null;
 
         this.bottoms.forEach((cube) => {
             window.game.scene.remove(cube);
@@ -33,7 +40,68 @@ class GameLogic {
         this.state1 = "game";
         this.state2 = null;
 
+        this.initLevel();
+
+        this.initTargetObject();
+        this.initScore();
+
         this.updateSecond(0);
+    }
+
+    initTargetObject() {
+        window.game.scene.remove(this.targetObj);
+
+        var geometry = new RoundedBoxGeometry(10, 1, 1, 5, 0.2);
+        geometry.translate(5, -0.5, -0.5);
+
+        const material = new THREE.MeshPhongMaterial({
+            color: Math.floor(Math.random() * 0xffffff),
+        });
+        const cube = new THREE.Mesh(geometry, material);
+        window.game.scene.add(cube);
+
+        this.targetObj = cube;
+        this.targetObj.scale.set(0.3, 1, 1);
+        this.setTargetNum(this.getTargetTotalNum());
+    }
+
+    setTargetNum(targetNum) {
+        this.targetNum = Math.floor(targetNum);
+        this.targetNum = Math.max(this.targetNum, 0);
+        this.targetObj.scale.set(this.targetNum / this.getTargetTotalNum(), 1, 1);
+    }
+
+    getTargetTotalNum() {
+        return this.levelId + 1;
+    }
+
+    initScore() {
+        window.game.scene.remove(this.score_tip);
+        this.score_tip = Helper.createText("score:");
+        window.game.scene.add(this.score_tip);
+        this.score_tip.position.set(11, 7, -0.5);
+
+        this.setScore(0);
+    }
+
+    setScore(scoreNum) {
+        this.scoreNum = scoreNum;
+
+        window.game.scene.remove(this.score_lab);
+        this.score_lab = Helper.createText(this.scoreNum + "");
+        window.game.scene.add(this.score_lab);
+        this.score_lab.position.set(15, 7, -0.5);
+    }
+
+    initLevel() {
+        if (this.levelObj) {
+            window.game.scene.remove(this.levelObj);
+            this.levelObj = null;
+        }
+        this.levelObj = Helper.createText(`Level ${this.levelId + 1}`);
+        window.game.scene.add(this.levelObj);
+        // this.levelObj.scale.set(1, 1, 1);
+        this.levelObj.position.set(11, 9, -0.5);
     }
 
     onKeyDown(event) {
@@ -170,7 +238,7 @@ class GameLogic {
         }
 
         if (this.state1 == "game" && !this.state2) {
-            this.checkOver();
+            this.checkFinish();
         }
 
         if (this.state1 == "game" && !this.state2) {
@@ -178,7 +246,10 @@ class GameLogic {
         }
 
         if (this.state1 == "over") {
-            openModal();
+            openDialog("dialog_startgame");
+        }
+        else if (this.state1 == "win") {
+            openDialog("dialog_win");
         }
     }
 
@@ -226,6 +297,13 @@ class GameLogic {
                 func();
             }
         });
+
+        var diffScore = 0;
+        for (let i = 0; i < erases.length; ++i) {
+            diffScore += (i + 1) * 10;
+        }
+        this.setScore(this.scoreNum + diffScore);
+        this.setTargetNum(this.targetNum - erases.length);
     }
 
     checkCreate() {
@@ -275,7 +353,12 @@ class GameLogic {
         return ret;
     }
 
-    checkOver() {
+    checkFinish() {
+        if (this.targetNum == 0) {
+            this.state1 = "win";
+            return;
+        }
+
         let failed = false;
         for (let col = 0; col < this.bound.cols; col++) {
             if (this.getBottom(this.bound.rows, col, 0)) {
@@ -286,6 +369,7 @@ class GameLogic {
 
         if (failed) {
             this.state1 = "over";
+            return;
         }
     }
 

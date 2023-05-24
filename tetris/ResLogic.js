@@ -1,8 +1,11 @@
 import { FontLoader } from "FontLoader"
+import { GLTFLoader } from '/three@0.152.0/examples/jsm/loaders/GLTFLoader.js';
 
 class ResLogic {
     constructor() {
         this.toLoad = [
+            // { name: "Color", res: "/tetris/ice/Color.png", type: "TextureLoader" },
+            // { name: "NormalGL", res: "/tetris/ice/NormalGL.png", type: "TextureLoader" },
             { name: "font", res: "https://unpkg.com/three@0.152.0/examples/fonts/helvetiker_regular.typeface.json", type: "font" },
             // { name: "dinosaur", res: "/tetris/level1.png", type: "font" },
         ]
@@ -34,6 +37,20 @@ class ResLogic {
                 const loader = new FontLoader();
                 loader.load(cfg.res, function (font) {
                     self[cfg.name] = font;
+                    self._onProgress();
+                });
+            }
+            else if (cfg.type == "GLTFLoader") {
+                const loader = new GLTFLoader();
+                loader.load(cfg.res, function (val) {
+                    self[cfg.name] = val;
+                    self._onProgress();
+                });
+            }
+            else if (cfg.type == "TextureLoader") {
+                const loader = new THREE.TextureLoader();
+                loader.load(cfg.res, function (val) {
+                    self[cfg.name] = val;
                     self._onProgress();
                 });
             }

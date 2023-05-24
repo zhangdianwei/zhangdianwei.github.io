@@ -23,28 +23,30 @@ class Helper {
     }
 
     static createObjects(rcds) {
-        // const geometry = new THREE.BoxGeometry(1, 1, 1);
-        // geometry.translate(0.5, 0.5, -0.5);
-
         var geometry = new RoundedBoxGeometry(1, 1, 1, 5, 0.1);
         geometry.translate(0.5, 0.5, -0.5);
 
-        // const material = new THREE.MeshPhongMaterial({
-        //     color: Math.floor(Math.random() * 0xffffff),
-        //     flatShading: true,
-        //     transparent: true,
-        //     opacity: 0.9,
-        // });
+        const edges = new THREE.EdgesGeometry(geometry);
+        const edges_material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+
+        var mat2 = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            wireframe: true,
+        });
 
         let ret = rcds.map((rcd, i) => {
-            const material = new THREE.MeshPhongMaterial({
-                // color: 16777215 * (i / 3),
+            const material = new THREE.MeshStandardMaterial({
                 color: Math.floor(Math.random() * 0xffffff),
                 transparent: true,
-                opacity: 1.0,
             });
             const cube = new THREE.Mesh(geometry, material);
-            // cube.renderOrder = i + 1;
+
+            // const edgesLine = new THREE.LineSegments(edges, edges_material);
+            // cube.add(edgesLine);
+            var cube2 = new THREE.Mesh(geometry, mat2);
+            cube2.scale.set(1.0, 1.0, 1.0);
+            cube.add(cube2);
+
             return cube;
         });
 
@@ -229,13 +231,8 @@ class Helper {
             bevelSegments: 5
         });
 
-        // var color = Math.floor(Math.random() * 0xffffff);
-        // console.log(color)
         var material = new THREE.MeshPhongMaterial({
-            // color: Math.floor(Math.random() * 0xffffff),
             color: 0xFFD3A3,
-            // shininess: 1500,
-            // emissive: 0x444444,
         });
 
         var mesh = new THREE.Mesh(geometry, material);

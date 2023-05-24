@@ -69,6 +69,16 @@ class GameLogic {
         this.targetNum = Math.floor(targetNum);
         this.targetNum = Math.max(this.targetNum, 0);
         this.targetObj.scale.set(this.targetNum / this.getTargetTotalNum(), 1, 1);
+
+        if (!this.targetText1) {
+            this.targetText1 = Helper.createText(`remove:`);
+            window.game.scene.add(this.targetText1);
+            this.targetText1.position.set(0, -2, 0);
+        }
+        window.game.scene.remove(this.targetText2);
+        this.targetText2 = Helper.createText(`${this.targetNum}/${this.getTargetTotalNum()}`);
+        window.game.scene.add(this.targetText2);
+        this.targetText2.position.set(6, -2, 0);
     }
 
     getTargetTotalNum() {

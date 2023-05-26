@@ -26,27 +26,12 @@ class Helper {
         var geometry = new RoundedBoxGeometry(1, 1, 1, 5, 0.1);
         geometry.translate(0.5, 0.5, -0.5);
 
-        const edges = new THREE.EdgesGeometry(geometry);
-        const edges_material = new THREE.MeshStandardMaterial({ color: 0xffffff });
-
-        var mat2 = new THREE.MeshStandardMaterial({
-            color: 0xffffff,
-            wireframe: true,
-        });
-
         let ret = rcds.map((rcd, i) => {
             const material = new THREE.MeshStandardMaterial({
                 color: Math.floor(Math.random() * 0xffffff),
                 transparent: true,
             });
             const cube = new THREE.Mesh(geometry, material);
-
-            // const edgesLine = new THREE.LineSegments(edges, edges_material);
-            // cube.add(edgesLine);
-            var cube2 = new THREE.Mesh(geometry, mat2);
-            cube2.scale.set(1.0, 1.0, 1.0);
-            cube.add(cube2);
-
             return cube;
         });
 

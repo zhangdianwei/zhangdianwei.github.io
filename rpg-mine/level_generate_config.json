@@ -1,0 +1,13 @@
+[
+    {
+        "id": 1,
+        "rows": 20,
+        "cols": 10,
+        "mine_count": 10,
+        "player": [
+            0,
+            3
+        ],
+        "target": []
+    }
+]

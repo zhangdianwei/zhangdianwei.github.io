@@ -1,6 +1,7 @@
 import { FontLoader } from "/three@0.152.0/examples/jsm/loaders/FontLoader.js"
 import { GLTFLoader } from '/three@0.152.0/examples/jsm/loaders/GLTFLoader.js';
 import { FBXLoader } from '/three@0.152.0/examples/jsm/loaders/FBXLoader.js';
+import { ColladaLoader } from '/three@0.152.0/examples/jsm/loaders/ColladaLoader.js';
 
 class ResLoader {
     constructor() {
@@ -41,6 +42,7 @@ class ResLoader {
         switch (ext) {
             case "fbx": return "FBXLoader";
             case "glb": return "GLTFLoader";
+            case "dae": return "ColladaLoader";
             case "png": return "TextureLoader";
             case "jpg": return "TextureLoader";
             case "jpeg": return "TextureLoader";
@@ -73,6 +75,9 @@ class ResLoader {
             }
             else if (cfg.loader == "FBXLoader") {
                 loader = new FBXLoader();
+            }
+            else if (cfg.loader == "ColladaLoader") {
+                loader = new ColladaLoader();
             }
             else if (cfg.loader == "TextureLoader") {
                 loader = new THREE.TextureLoader();

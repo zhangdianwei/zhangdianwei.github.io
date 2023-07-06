@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "OrbitControls";
+import { RoundedBoxGeometry } from "RoundedBoxGeometry";
 import * as TWEEN from "TWEEN";
 import { GameLogic } from "./GameLogic.js";
 import { ResLoader } from "./ResLoader.js";
@@ -33,8 +34,8 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.target = new THREE.Vector3(4, -0.6, -6);
 controls.update();
 
-const axesHelper = new THREE.AxesHelper(5);
-scene.add(axesHelper);
+// const axesHelper = new THREE.AxesHelper(5);
+// scene.add(axesHelper);
 
 function animate() {
     TWEEN.update();
@@ -59,6 +60,7 @@ window.camera = camera;
 window.controls = controls;
 window.THREE = THREE;
 window.TWEEN = TWEEN;
+window.RoundedBoxGeometry = RoundedBoxGeometry;
 window.ResLoader = ResLoader;
 window.Helper = ThreeHelper;
 window.logic = new GameLogic();

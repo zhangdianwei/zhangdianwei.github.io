@@ -11,6 +11,8 @@ class GameLogic {
 
         this.cubeMaterialNormal = new THREE.MeshPhongMaterial({ color: 0x9AE765 });
         this.cubeMaterialActive = new THREE.MeshPhongMaterial({ color: 0xE7562E });
+        this.cubeColorNormal = 0x9AE765;
+        this.cubeColorActive = 0xE7562E;
 
         window.controls.enabled = false;
     }
@@ -21,7 +23,7 @@ class GameLogic {
         this.loader = new ResLoader();
         this.loader.load(
             [
-                { url: "res/rpg-mine.fbx", name: "mapscene" }
+                { url: `res/map${levelId + 1}.fbx`, name: "mapscene" }
             ],
             null,
             this.onLoadFinish.bind(this)
@@ -34,40 +36,33 @@ class GameLogic {
         }
         root.add(this.loader.mapscene);
 
-        let Light = Helper.findChild(this.loader.mapscene, "Light");
-        Light.intensity /= 2;
-        Light.needsUpdate = true;
-
-        this.Player = ThreeHelper.findChild(this.loader.mapscene, "Player");
-        this.PlayerRC = this.getRCByObject(this.Player);
-        this.Player.position.copy(this.getPositionByRC(this.PlayerRC));
-        this.Plane = ThreeHelper.findChild(this.loader.mapscene, "Plane");
-
-        this.loader.mapscene.children.forEach((x) => {
-            console.log(x.name);
-        });
-
         this.map = [];
-        this.maxrc = { r: -1, c: -1 };
-        let Cubes = ThreeHelper.findChild(this.loader.mapscene, "Cubes");
-        Cubes.children.forEach((cube) => {
-            let rc = this.getRCByPosition(ThreeHelper.getWorldPosition(cube));
-            if (rc.r > this.maxrc.r) {
-                this.maxrc.r = rc.r;
+        this.maxrc = { r: 0, c: 0 };
+        this.touchingRC = null;
+        this.walkingPath = [];
+
+        this.loader.mapscene.children.forEach((child) => {
+            if (child.name.startsWith("m_")) {
+                this[child.name] = child;
             }
-            if (rc.c > this.maxrc.c) {
-                this.maxrc.c = rc.c;
+            else if (child.name.startsWith("Cube")) {
+                let rc = this.getRCByPosition(child.position);
+                this.maxrc.r = Math.max(this.maxrc.r, rc.r);
+                this.maxrc.c = Math.max(this.maxrc.c, rc.c);
+                child.material = this.cubeMaterialNormal;
+                this.setMapItem(rc.r, rc.c, "cube", child);
+                child.rc = rc;
             }
-            cube.material = this.cubeMaterialNormal;
-            this.setMapItem(rc.r, rc.c, "cube", cube);
-            cube.rc = rc;
         });
 
-        // let cube = ThreeHelper.findChild(Cubes, "Cube");
-        // console.log(cube.name, cube.position);
+        this.m_Light.intensity /= 2;
+        this.m_Light.needsUpdate = true;
 
-        this.touchingRC = null;
-        this.walkingPaths = [];
+        this.PlayerRC = this.getRCByObject(this.m_Player);
+        this.m_Player.position.copy(this.getPositionByRC(this.PlayerRC));
+
+        this.TargetFlagRC = this.getRCByObject(this.m_TargetFlag);
+        this.m_TargetFlag.position.copy(this.getPositionByRC(this.TargetFlagRC));
 
         this.updateCamera();
 
@@ -78,8 +73,8 @@ class GameLogic {
     }
 
     updateCamera() {
-        if (this.Player) {
-            let camera_pos = new THREE.Vector3(this.Player.position.x, 10, this.Player.position.z + 5);
+        if (this.m_Player) {
+            let camera_pos = new THREE.Vector3(this.m_Player.position.x, 10, this.m_Player.position.z + 5);
             let camera_target = new THREE.Vector3(camera_pos.x, 0, camera_pos.z - 10);
             window.camera.position.x = camera_pos.x;
             window.camera.position.y = camera_pos.y;
@@ -100,32 +95,39 @@ class GameLogic {
             let touchingRC = this.getRCByClientXY(event.clientX, event.clientY);
             if (touchingRC) {
                 this.touchingRC = touchingRC;
-                this.setMapItemActive(this.touchingRC.r, this.touchingRC.c, true);
+                this.touchingPath = this.calcPath(this.PlayerRC, this.touchingRC);
+                this.setPathActive(this.touchingPath, true);
             }
         }
-
     }
     onMouseMove(event) {
         if (event.buttons === 1) {
 
             console.log("onMouseMove", event.buttons);
 
-            if (this.touchingRC) {
-                this.setMapItemActive(this.touchingRC.r, this.touchingRC.c, false);
-            }
+            this.setPathActive(this.touchingPath, false);
+            this.touchingPath = [];
 
-            this.touchingRC = this.getRCByClientXY(event.clientX, event.clientY);
-            if (this.touchingRC) {
-                this.setMapItemActive(this.touchingRC.r, this.touchingRC.c, true);
+            let touchingRC = this.getRCByClientXY(event.clientX, event.clientY);
+            if (touchingRC) {
+                this.touchingRC = touchingRC;
+                this.touchingPath = this.calcPath(this.PlayerRC, this.touchingRC);
+                this.setPathActive(this.touchingPath, true);
             }
         }
     }
     onMouseUp(event) {
         console.log("onMouseUp");
+
         if (this.touchingRC) {
-            this.setMapItemActive(this.touchingRC.r, this.touchingRC.c, false);
-            this.walkToRC(this.touchingRC.r, this.touchingRC.c);
             this.touchingRC = null;
+            this.setPathActive(this.touchingPath, false);
+            this.walkingPath = this.touchingPath;
+            this.touchingPath = [];
+
+            if (!this.tween_playerMove) {
+                this.checkWalkOneStep();
+            }
         }
     }
     getRCByClientXY(clientX, clientY) {
@@ -147,7 +149,7 @@ class GameLogic {
             return inter.object.rc;
         }
 
-        inter = intersects.find((x) => x.object === this.Plane);
+        inter = intersects.find((x) => x.object === this.m_Plane);
         if (inter) {
             let ret = this.getRCByPosition(inter.point);
             if (this.isValidRC(ret.r, ret.c)) {
@@ -198,6 +200,11 @@ class GameLogic {
             }
         }
     }
+    setPathActive(path, active) {
+        path.forEach((rc) => {
+            this.setMapItemActive(rc.r, rc.c, active);
+        });
+    }
 
     calcPath(from, to) {
         let ret = [];
@@ -231,14 +238,20 @@ class GameLogic {
     }
 
     walkToRC(r, c) {
-        this.walkingPaths = this.calcPath(this.PlayerRC, { r, c });
-        this.checkWalkOneStep();
+        this.walkingPath = this.calcPath(this.PlayerRC, { r, c });
+        if (!this.tween_playerMove) {
+            this.checkWalkOneStep();
+        }
     }
 
     checkWalkOneStep() {
-        let startRC = this.getRCByObject(this.Player);
-        let { r, c } = this.walkingPaths.shift();
-        let startPos = this.Player.position;
+        if (this.walkingPath.length == 0) {
+            return;
+        }
+
+        let startRC = this.getRCByObject(this.m_Player);
+        let { r, c } = this.walkingPath.shift();
+        let startPos = this.m_Player.position;
         let endPos = this.getPositionByRC(r, c);
         let midPos = ThreeHelper.midPos(startPos, endPos);
         midPos.y = 1;
@@ -249,24 +262,49 @@ class GameLogic {
             endPos
         );
 
-        let tween = new TWEEN.Tween(this.Player.position);
-        tween.to(endPos, 500);
-        tween.onUpdate((obj, ratio) => {
+        let tween_playerMove = new TWEEN.Tween(this.m_Player.position);
+        tween_playerMove.to(endPos, 300);
+        tween_playerMove.onUpdate((obj, ratio) => {
             let xy = curve.getPoint(ratio);
-            this.Player.position.x = xy.x;
-            this.Player.position.y = xy.y;
+            this.m_Player.position.x = xy.x;
+            this.m_Player.position.y = xy.y;
         });
-        tween.onComplete(() => {
+        tween_playerMove.onComplete(() => {
+            this.tween_playerMove = null;
             this.onWalkOneStepFinish(r, c);
         });
-        tween.start();
+
+        let mapitem = this.getMapItem(r, c);
+        let cube = mapitem.cube;
+        let tween_cubeMove = null;
+        if (cube) {
+            let targetPos = new THREE.Vector3();
+            targetPos.x = cube.position.x;
+            targetPos.y = cube.position.y - 1;
+            targetPos.z = cube.position.z;
+
+            tween_cubeMove = new TWEEN.Tween(cube.position);
+            tween_cubeMove.to(targetPos, 500);
+            tween_cubeMove.onComplete(() => {
+                cube.parent.remove(cube);
+            });
+            tween_cubeMove.delay(250);
+            this.setMapItem(r, c, "cube", null);
+        }
+
+        this.PlayerRC.r = r;
+        this.PlayerRC.c = c;
+
+        tween_playerMove.start();
+        if (tween_cubeMove) {
+            tween_cubeMove.start();
+        }
+
+        this.tween_playerMove = tween_playerMove;
     }
 
     onWalkOneStepFinish(r, c) {
         console.log("onWalkStepFinish", r, c);
-
-        this.PlayerRC.r = r;
-        this.PlayerRC.c = c;
 
         let mapitem = this.getMapItem(r, c);
         if (mapitem.cube) {
@@ -283,7 +321,7 @@ class GameLogic {
             this.setMapItem(r, c, "cube", null);
         }
 
-        if (this.walkingPaths.length === 0) {
+        if (this.walkingPath.length === 0) {
             this.onWalkTotalFinish();
         }
         else {
@@ -293,6 +331,13 @@ class GameLogic {
 
     onWalkTotalFinish() {
 
+    }
+
+    createCube() {
+        let geometry = new RoundedBoxGeometry(1, 1, 1, 2, 0.1);
+        geometry.translate(0, 0.5, 0);
+        let mesh = new THREE.Mesh(geometry, this.cubeMaterialNormal);
+        return mesh;
     }
 }
 export { GameLogic }

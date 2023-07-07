@@ -5,7 +5,10 @@ import json
 import sys
 import os
 
+rows = 20
+cols = 10
 
+# xxx
 def get_std_filename():
     # 获取当前 Blender 文件的路径
     filepath = bpy.data.filepath
@@ -16,10 +19,10 @@ def get_std_filename():
     return filename  # map1
 
 
-def write_output():
-    outfile = get_std_filename()+".json"
-    with open(outfile, "w") as fout:
-        json.dump(outdata, fout, indent=4, ensure_ascii=False)
+# def write_output():
+#     outfile = get_std_filename()+".json"
+#     with open(outfile, "w") as fout:
+#         json.dump(outdata, fout, indent=4, ensure_ascii=False)
 
 
 def main():

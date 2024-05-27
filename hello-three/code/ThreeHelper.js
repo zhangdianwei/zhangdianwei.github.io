@@ -29,7 +29,7 @@ class ThreeHelper {
         return object.getWorldPosition(world);
     }
 
-    static copy(obj) {
+    static dump(obj) {
         return JSON.parse(JSON.stringify(obj));
     }
 

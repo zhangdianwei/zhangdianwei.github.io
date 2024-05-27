@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { OrbitControls } from "OrbitControls";
-import { RoundedBoxGeometry } from "RoundedBoxGeometry";
 import * as TWEEN from "TWEEN";
 import { GameLogic } from "./GameLogic.js";
 import { ResLoader } from "./ResLoader.js";
@@ -26,16 +25,16 @@ let camera = null;
 const light = new THREE.AmbientLight(0x808080);
 scene.add(light);
 
-// const gridHelper = new THREE.GridHelper(10, 10);
-// scene.add(gridHelper);
+const gridHelper = new THREE.GridHelper(10, 10);
+scene.add(gridHelper);
 
 // 使用OrbitControls创建控制器
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target = new THREE.Vector3(4, -0.6, -6);
+// controls.target = new THREE.Vector3(4, -0.6, -6);
 controls.update();
 
-// const axesHelper = new THREE.AxesHelper(5);
-// scene.add(axesHelper);
+const axesHelper = new THREE.AxesHelper(5);
+scene.add(axesHelper);
 
 function animate() {
     TWEEN.update();
@@ -60,8 +59,6 @@ window.camera = camera;
 window.controls = controls;
 window.THREE = THREE;
 window.TWEEN = TWEEN;
-window.RoundedBoxGeometry = RoundedBoxGeometry;
 window.ResLoader = ResLoader;
-window.Helper = ThreeHelper;
+window.ThreeHelper = ThreeHelper;
 window.logic = new GameLogic();
-window.logic.startLevel(0);

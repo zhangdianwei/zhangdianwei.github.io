@@ -1,18 +1,23 @@
 <script setup>
 
-import { OrbitControls } from '@tresjs/cientos'
+import { OrbitControls, RoundedBox } from '@tresjs/cientos'
 
 </script>
 
 <template>
-    <TresCanvas clear-color="#006400">
+    <TresCanvas clear-color="#FDF5E6" window-size>
         <TresPerspectiveCamera :position="[3, 3, 3]" :look-at="[0, 0, 0]" />
-        <TresMesh>
-            <TresTorusGeometry :args="[1, 0.5, 16, 32]" />
+
+        <RoundedBox>
+            <TresMeshStandardMaterial color="#dda15e" />
+        </RoundedBox>
+        <!-- <TresMesh>
+            <TresBoxGeometry :args="[1, 1, 1]" />
             <TresMeshStandardMaterial color="orange" />
-        </TresMesh>
+        </TresMesh> -->
+
         <TresAmbientLight :intensity="2" />
-        <TresPointLight></TresPointLight>
+        <TresPointLight :position="[0, 0, 2]"></TresPointLight>
         <OrbitControls />
 
     </TresCanvas>

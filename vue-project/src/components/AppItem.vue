@@ -1,43 +1,29 @@
 <script setup>
-defineProps({
+const props = defineProps({
   routeData: {
+    name: "",
     title: "",
     comp: null,
     desc: "",
   }
 })
+
+function onClick() {
+  location.href = props.routeData.name;
+}
+
 </script>
 
 <template>
-  <div>
-    {{ routeData.desc }}
+  <div class="panel">
+    <div class="panel-heading">
+      <p class="is-family-monospace">{{ routeData.title }}</p>
+    </div>
+    <div class="panel-block">
+      {{ routeData.desc }}
+    </div>
+
+    <button @click="onClick" class="button">体验</button>
   </div>
-  <div>
-    {{ routeData.title }}
-  </div>
+
 </template>
-
-<style scoped>
-h1 {
-  font-weight: 500;
-  font-size: 2.6rem;
-  position: relative;
-  top: -10px;
-}
-
-h3 {
-  font-size: 1.2rem;
-}
-
-.greetings h1,
-.greetings h3 {
-  text-align: center;
-}
-
-@media (min-width: 1024px) {
-  .greetings h1,
-  .greetings h3 {
-    text-align: left;
-  }
-}
-</style>

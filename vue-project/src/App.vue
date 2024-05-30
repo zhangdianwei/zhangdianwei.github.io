@@ -27,7 +27,9 @@ const curView = computed(() => {
 
 <template>
   <div v-if="curView">
-    <component :is="curView" />
+    <Suspense>
+      <component :is="curView" />
+    </Suspense>
   </div>
   <div v-else>
     <div class="container">

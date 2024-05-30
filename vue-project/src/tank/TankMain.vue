@@ -1,23 +1,20 @@
 <script setup>
 
-import { OrbitControls, RoundedBox, GLTFModel, FBXModel } from '@tresjs/cientos'
-import { useLoader } from '@tresjs/core'
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader'
-
-// const { scene } = await useLoader(GLTFLoader, './models/main.gltf')
+import { OrbitControls } from '@tresjs/cientos'
+import TankLogic from "./TankLogic.vue"
 
 </script>
 
 <template>
     <TresCanvas clear-color="#FDF5E6" window-size>
-        <TresPerspectiveCamera :position="[3, 3, 3]" :look-at="[0, 0, 0]" />
-
-        <Suspense>
-            <FBXModel path="tank/main.fbx" />
-        </Suspense>
-
+        <TresPerspectiveCamera :position="[0, 17, 7]" :rotation="[-1.17, 0, 0]"></TresPerspectiveCamera>
         <TresAmbientLight :intensity="1" />
-        <!-- <TresPointLight :position="[0, 0, 2]"></TresPointLight> -->
-        <OrbitControls />
+
+        <TresAxesHelper></TresAxesHelper>
+        <!-- <TresGridHelper></TresGridHelper> -->
+
+        <TankLogic></TankLogic>
+
+        <!-- <OrbitControls /> -->
     </TresCanvas>
 </template>

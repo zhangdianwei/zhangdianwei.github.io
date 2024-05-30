@@ -1,6 +1,10 @@
 <script setup>
 
-import { OrbitControls, RoundedBox } from '@tresjs/cientos'
+import { OrbitControls, RoundedBox, GLTFModel, FBXModel } from '@tresjs/cientos'
+import { useLoader } from '@tresjs/core'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader'
+
+// const { scene } = await useLoader(GLTFLoader, './models/main.gltf')
 
 </script>
 
@@ -8,17 +12,12 @@ import { OrbitControls, RoundedBox } from '@tresjs/cientos'
     <TresCanvas clear-color="#FDF5E6" window-size>
         <TresPerspectiveCamera :position="[3, 3, 3]" :look-at="[0, 0, 0]" />
 
-        <RoundedBox>
-            <TresMeshStandardMaterial color="#dda15e" />
-        </RoundedBox>
-        <!-- <TresMesh>
-            <TresBoxGeometry :args="[1, 1, 1]" />
-            <TresMeshStandardMaterial color="orange" />
-        </TresMesh> -->
+        <Suspense>
+            <FBXModel path="tank/main.fbx" />
+        </Suspense>
 
-        <TresAmbientLight :intensity="2" />
-        <TresPointLight :position="[0, 0, 2]"></TresPointLight>
+        <TresAmbientLight :intensity="1" />
+        <!-- <TresPointLight :position="[0, 0, 2]"></TresPointLight> -->
         <OrbitControls />
-
     </TresCanvas>
 </template>

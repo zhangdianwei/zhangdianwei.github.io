@@ -11,9 +11,17 @@ const routesArray = [
   { name: "TankMain", title: "TankMainTitle", comp: TankMain, desc: `TankMainDescription TankMainDescription` },
 ];
 
-const curPath = ref(window.location.pathname.slice(1))
-window.addEventListener('pathchange', () => {
-  curPath.value = window.location.pathname.slice(1)
+// const curPath = ref(window.location.pathname.slice(1))
+// window.addEventListener('pathchange', () => {
+//   curPath.value = window.location.pathname.slice(1)
+//   document.title = curPath.value
+//   console.log(document.title);
+// })
+
+const curPath = ref(window.location.hash.slice(1))
+window.addEventListener('hashchange', () => {
+  curPath.value = window.location.hash.slice(1)
+  document.title = "Project:" + curPath.value
 })
 
 const curRouteData = computed(() => {

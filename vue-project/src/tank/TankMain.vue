@@ -7,9 +7,13 @@ import { ref, shallowRef } from 'vue';
 
 const ResStoreNames = [
     "tank/main.fbx",
+    "tank/tile1.fbx",
+    "tank/tile2.fbx",
+    "tank/tile9.fbx",
 ]
 const ResStoreObj = shallowRef(null)
 useFBX(ResStoreNames).then((objs) => {
+
     const store = {}
     for (let i = 0; i < objs.length; ++i) {
         const obj = objs[i];
@@ -37,6 +41,6 @@ useFBX(ResStoreNames).then((objs) => {
 
         <TankLogic :ResStoreObj="ResStoreObj"></TankLogic>
 
-        <!-- <OrbitControls /> -->
+        <OrbitControls />
     </TresCanvas>
 </template>

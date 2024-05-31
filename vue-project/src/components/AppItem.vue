@@ -9,7 +9,8 @@ const props = defineProps({
 })
 
 function onClick() {
-  location.href = props.routeData.name;
+  // location.href = props.routeData.name;
+  location.hash = props.routeData.name;
 }
 
 </script>

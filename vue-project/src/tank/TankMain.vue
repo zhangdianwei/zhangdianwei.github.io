@@ -4,6 +4,19 @@ import { OrbitControls } from '@tresjs/cientos'
 import { useFBX } from '@tresjs/cientos'
 import TankLogic from "./TankLogic.vue"
 import { ref, shallowRef } from 'vue';
+import { useTexture } from '@tresjs/core';
+import { TextureLoader } from "three"
+
+const textureLoader = new TextureLoader();
+const brick_texture = {
+    map: textureLoader.load("tank/brick-085-color.jpg"),
+    normal: textureLoader.load("tank/brick-085-normal.jpg"),
+}
+const stone_texture = {
+    map: textureLoader.load("tank/stone-076-color.jpg"),
+    normal: textureLoader.load("tank/stone-076-normal.jpg"),
+}
+
 
 const ResStoreNames = [
     "tank/main.fbx",
@@ -26,8 +39,17 @@ useFBX(ResStoreNames).then((objs) => {
         shortName = shortName[0]
         store[shortName] = obj;
     }
+
+    // store.tile1.children[0].material.map = brick_texture.map;
+    // store.tile1.children[0].material.normalMap = brick_texture.normal;
+
+    // store.tile2.children[0].material.map = stone_texture.map;
+    // store.tile2.children[0].material.normalMap = stone_texture.normal;
+
     ResStoreObj.value = store;
 });
+
+
 
 </script>
 

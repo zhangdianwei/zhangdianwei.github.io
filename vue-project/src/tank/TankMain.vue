@@ -23,6 +23,7 @@ const ResStoreNames = [
     "tank/tile1.fbx",
     "tank/tile2.fbx",
     "tank/tile9.fbx",
+    "tank/tank_player_1.fbx",
 ]
 const ResStoreObj = shallowRef(null)
 useFBX(ResStoreNames).then((objs) => {
@@ -55,7 +56,8 @@ useFBX(ResStoreNames).then((objs) => {
 
 <template>
     <TresCanvas clear-color="#FDF5E6" window-size>
-        <TresPerspectiveCamera :position="[0, 17, 7.5]" :rotation="[-1.19, 0, 0]"></TresPerspectiveCamera>
+        <!-- <TresPerspectiveCamera :position="[0, 17, 7.5]" :rotation="[-1.19, 0, 0]"></TresPerspectiveCamera> -->
+        <TresPerspectiveCamera :position="[0, 20, 0]" :rotation="[0, 0, 0]"></TresPerspectiveCamera>
         <TresAmbientLight :intensity="1" />
 
         <TresAxesHelper></TresAxesHelper>

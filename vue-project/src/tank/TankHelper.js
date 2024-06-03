@@ -9,6 +9,14 @@ class TankHelper {
             Wall: 99,
         }
 
+        this.Direction = {
+            None: 0,
+            Up: 1,
+            Right: 2,
+            Down: 3,
+            Left: 4,
+        }
+
         this.maps = this.getMapDatas();
     }
 

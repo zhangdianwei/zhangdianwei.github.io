@@ -72,42 +72,48 @@ function initInput() {
     });
 }
 
-function getMoveDir() {
-    var moveDir = new Vector3();
+function getMoveDirection() {
     if (tankgame.inputs['w']) {
-        moveDir.z = -1;
+        return TankHelper.Direction.Up;
     }
     else if (tankgame.inputs['s']) {
-        moveDir.z = 1;
+        return TankHelper.Direction.Down;
     }
     else if (tankgame.inputs['a']) {
-        moveDir.x = -1;
+        return TankHelper.Direction.Left;
     }
     else if (tankgame.inputs['d']) {
-        moveDir.x = 1;
-    }
-
-    moveDir.normalize();
-
-    return moveDir;
-}
-
-function getMoveRotation(oldRotation, moveDir) {
-    if (moveDir.x > 0) {
-        return -Math.PI / 2;
-    }
-    else if (moveDir.x < 0) {
-        return Math.PI / 2;
-    }
-    else if (moveDir.z < 0) {
-        return 0;
-    }
-    else if (moveDir.z > 0) {
-        return Math.PI;
+        return TankHelper.Direction.Right;
     }
     else {
-        return oldRotation;
+        return TankHelper.Direction.None;
     }
+}
+
+const Direction2Vectors = [
+    null,
+    new Vector3(0, 0, -1),
+    new Vector3(1, 0, 0),
+    new Vector3(0, 0, 1),
+    new Vector3(-1, 0, 0),
+];
+function getDirectionVector(direction) {
+    var vec = Direction2Vectors[direction];
+    if (!vec) {
+        return null;
+    } else {
+        return vec.clone();
+    }
+}
+const Direction2Rotation = [
+    0,
+    0,
+    -Math.PI / 2,
+    Math.PI,
+    Math.PI / 2,
+]
+function getMoveRotation(direction) {
+    return Direction2Rotation[direction];
 }
 
 function formatNum(n, precise) {
@@ -140,148 +146,35 @@ function isEqual(a, b) {
     return Math.abs(a - b) <= 0.0001;
 }
 
-function getRaycastStart(isLeft, moveRotation) {
-    var start = player_1.position.clone();
-    start.y += 0.25;
 
-    var offset = 0.5;
-
-    if (isEqual(moveRotation, 0)) {
-        start.z -= offset;
-        if (isLeft == -1) {
-            start.x -= 0.25;
-        }
-        else if (isLeft == 1) {
-            start.x += 0.25;
-        }
-    }
-    else if (isEqual(moveRotation, Math.PI)) {
-        start.z += offset;
-        if (isLeft == -1) {
-            start.x += 0.25;
-        }
-        else if (isLeft == 1) {
-            start.x -= 0.25;
-        }
-    }
-    else if (isEqual(moveRotation, Math.PI / 2)) {
-        start.x -= offset;
-        if (isLeft == -1) {
-            start.z += 0.25;
-        }
-        else if (isLeft == 1) {
-            start.z -= 0.25;
-        }
-    }
-    else if (isEqual(moveRotation, -Math.PI / 2)) {
-        start.x += offset;
-        if (isLeft == -1) {
-            start.z -= 0.25;
-        }
-        else if (isLeft == 1) {
-            start.z += 0.25;
-        }
-    }
-
-    return start;
-}
-var oldSelectObjects = [];
 function getCanMoveLength(moveDir, moveRotation) {
-    var start = getRaycastStart(0, moveRotation);
-    var direction = new Vector3();
-    if (isEqual(moveRotation, 0)) {
-        direction.z -= 1;
-    }
-    else if (isEqual(moveRotation, Math.PI)) {
-        direction.z += 1
-    }
-    else if (isEqual(moveRotation, Math.PI / 2)) {
-        direction.x -= 1
-    }
-    else if (isEqual(moveRotation, -Math.PI / 2)) {
-        direction.x += 1
-    }
-    // formatNum(direction, 0);
-    tankgame.raycaster.set(start, direction);
 
-    var intersects = tankgame.raycaster.intersectObjects(tankgame.tiles);
-    for (let i = 0; i < oldSelectObjects.length; ++i) {
-        oldSelectObjects[i].material.color.set(0xffffff)
-    }
-    // oldSelectObjects = [];
-    for (let i = 0; i < intersects.length; ++i) {
-        var obj = intersects[i].object;
-        obj.material = obj.material.clone()
-        obj.material.color.set(0x00ff00)
-        if (oldSelectObjects.indexOf(obj) < 0) {
-            oldSelectObjects.push(obj);
-        }
-        break;
-    }
-    window.oldSelectObjects = oldSelectObjects
-
-    var index = 0;
-    var blockObj = intersects[index];
-    var group = null;
-    while (blockObj) {
-        group = getTileTypeObj(blockObj.object);
-        if (group) {
-            if (group.TileType == TankHelper.TileType.Brick || group.TileType == TankHelper.TileType.Iron) {
-                break;
-            }
-        }
-        index += 1;
-        blockObj = intersects[index];
-    }
-
-    var canMove = blockObj ? blockObj.distance : 1;
-    // if (group) {
-    //     if (group.TileType == TankHelper.TileType.Brick) {
-    //         canMove -= 0.25;
-    //     }
-    //     else {
-    //         canMove -= 0.5;
-    //     }
-    // }
-
-    // console.log(`start=(${start.toArray()});direction=(${direction.toArray()});canMove=(${canMove})`);
+    var canMove = 1;
     return canMove;
 }
 
-function getTileTypeObj(obj) {
-    while (obj && !obj.TileType) {
-        obj = obj.parent;
-    }
-    return obj;
-}
 
 onLoop(({ delta, elapsed }) => {
     if (player_1) {
-        var moveDir = getMoveDir();
-        var moveRotation = getMoveRotation(player_1.rotation.y, moveDir);
-        var canMoveDis = getCanMoveLength(moveDir, moveRotation);
-        // canMoveDis = formatNum(canMoveDis, 0.01)
-        var wantMoveDis = tankgame.speed * delta;
-        wantMoveDis = 0.01;
-        if (wantMoveDis > canMoveDis) {
-            wantMoveDis = canMoveDis;
-        }
-        if (wantMoveDis < 0) {
-            wantMoveDis = 0;
-        }
-        // console.log(`canMoveDis=${canMoveDis};wantMoveDis=${wantMoveDis};`);
-        var moveVector = moveDir.multiplyScalar(wantMoveDis);
+        var direction = getMoveDirection();
+        if (direction) {
+            var moveRotation = getMoveRotation(direction);
+            // console.log(`moveRotation=${moveRotation}`);
+            if (moveRotation != player_1.rotation.y) {
+                player_1.rotation.y = moveRotation;
+            }
 
-        if (moveVector.x != 0 || moveVector.z != 0) {
-            console.log(`moveVector=${moveVector.toArray()}`);
-            player_1.position.add(moveVector);
-            // formatNum(player_1.position, 0.25)
+            var canMoveLength = getCanMoveLength(direction);
+            if (canMoveLength > 0) {
+                var wantMoveLength = tankgame.speed * delta;
+                if (wantMoveLength > canMoveLength) {
+                    wantMoveLength = canMoveLength;
+                }
+                var moveVector = getDirectionVector(direction).multiplyScalar(wantMoveLength)
+                console.log(`moveVector=(${moveVector.toArray()})`);
+                player_1.position.add(moveVector)
+            }
         }
-        if (moveRotation != player_1.rotation.y) {
-            player_1.rotation.y = moveRotation;
-        }
-        // console.log(`target=${player_1.position.z - canMoveDis}`);
-        console.log(`player.position=(${player_1.position.toArray()})`, `canMoveDis=${canMoveDis};wantMoveDis=${wantMoveDis};`);
     }
 
     updateRayHelper()
@@ -299,33 +192,58 @@ function initMap(mapId) {
     for (let r = 0; r < mapData.length; r++) {
         const line = mapData[r];
         for (let c = 0; c < line.length; c++) {
-            const tile = line[c];
+            const tileType = line[c];
+            const index = getIndexByRC(r, c);
             var obj = null;
-            if (tile == TankHelper.TileType.Brick) {
+            if (tileType == TankHelper.TileType.Brick) {
                 var obj = props.ResStoreObj.tile1.clone();
                 tileRoot.value.add(obj);
                 obj.position.x = c * 0.5 - 6.25;
                 obj.position.z = r * 0.5 - 6.25;
             }
-            else if (tile == TankHelper.TileType.Iron) {
+            else if (tileType == TankHelper.TileType.Iron) {
                 var obj = props.ResStoreObj.tile2.clone();
                 tileRoot.value.add(obj);
                 obj.position.x = c * 0.5 - 6.0;
                 obj.position.z = r * 0.5 - 6.0;
             }
-            else if (tile == TankHelper.TileType.Home) {
+            else if (tileType == TankHelper.TileType.Home) {
                 var obj = props.ResStoreObj.tile9.clone();
                 tileRoot.value.add(obj);
                 obj.position.x = c * 0.5 - 6.0;
                 obj.position.z = r * 0.5 - 6.0;
             }
             if (obj) {
-                obj.TileType = tile;
-                tankgame.tiles.push(obj)
+                obj.TileType = tileType;
             }
+            tankgame.tiles[index] = obj;
 
         }
     }
+}
+
+function getRCByIndex(index) {
+    let rc = {};
+    rc.r = Math.floor(index / 26);
+    rc.c = index % 26;
+    return rc;
+}
+function getIndexByRC(r, c) {
+    if (typeof (r) == 'object') {
+        return r.r * 26 + r.c;
+    }
+    else {
+        return r * 26 + c;
+    }
+}
+function getIndexByPosition(pos) {
+    return getIndexByRC(getRCByPosition(pos));
+}
+function getRCByPosition(pos) {
+    let rc = {};
+    rc.r = Math.floor((pos.z + 6.5) / 0.5);
+    rc.c = Math.floor((pos.x + 6.5) / 0.5);
+    return rc;
 }
 
 const debugtext = ref("show")

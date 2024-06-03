@@ -147,21 +147,83 @@ function isEqual(a, b) {
 }
 
 
-function getCanMoveLength(moveDir, moveRotation) {
+function getCanMoveLength(direction) {
+    const segMin = -0.45;
+    const segMax = 0.45;
+    const segNum = 4;
+    const segPer = (segMax - segMin) / segNum;
 
-    var canMove = 1;
+    var canMoves = [];
+    for (let i = 0; i < segNum + 1; ++i) {
+        var canMove = getCanMoveLengthImpl(direction, segPer * i);
+        canMoves.push(canMove);
+    }
+
+    var canMove = Math.max(...canMoves)
     return canMove;
 }
+function getCanMoveLengthImpl(direction, offset) {
+    var pos = player_1.position.clone();
+    if (direction == TankHelper.Direction.Up) {
+        pos.x += offset;
+    }
+    else if (direction == TankHelper.Direction.Down) {
+        pos.x += offset;
+    }
+    else if (direction == TankHelper.Direction.Left) {
+        pos.z += offset;
+    }
+    else if (direction == TankHelper.Direction.Right) {
+        pos.z += offset;
+    }
 
+    var rc = getRCByPosition(pos);
+    var inTile = isRCInTile(rc);
+    if (!inTile) {
+        return 0;
+    }
+
+    if (direction == TankHelper.Direction.Up && rc.r == 0) {
+        return 0;
+    }
+    else if (direction == TankHelper.Direction.Down && rc.r == 12) {
+        return 0;
+    }
+    else if (direction == TankHelper.Direction.Left && rc.c == 0) {
+        return 0;
+    }
+    else if (direction == TankHelper.Direction.Right && rc.c == 12) {
+        return 0;
+    }
+
+    var tile = null;
+    if (direction == TankHelper.Direction.Up) {
+        for (let r = rc.r - 1; r >= 0; --r) {
+            tile = getTile(r, rc.c);
+            if (tile) {
+                break;
+            }
+        }
+    }
+    else if (direction == TankHelper.Direction.Down) {
+        for (let r = rc.r + 1; r <= 12; ++r) {
+            tile = getTile(r, rc.c);
+            if (tile) {
+                break;
+            }
+        }
+    }
+}
 
 onLoop(({ delta, elapsed }) => {
+
     if (player_1) {
         var direction = getMoveDirection();
         if (direction) {
             var moveRotation = getMoveRotation(direction);
-            // console.log(`moveRotation=${moveRotation}`);
             if (moveRotation != player_1.rotation.y) {
                 player_1.rotation.y = moveRotation;
+                formatNum(player_1.position, 0.25)
             }
 
             var canMoveLength = getCanMoveLength(direction);
@@ -171,7 +233,6 @@ onLoop(({ delta, elapsed }) => {
                     wantMoveLength = canMoveLength;
                 }
                 var moveVector = getDirectionVector(direction).multiplyScalar(wantMoveLength)
-                console.log(`moveVector=(${moveVector.toArray()})`);
                 player_1.position.add(moveVector)
             }
         }
@@ -185,39 +246,53 @@ function initPlayer() {
     player_1 = props.ResStoreObj.tank_player_1.clone();
     tileRoot.value.add(player_1);
     player_1.position.set(-3, 0, 4)
+    tankgame.player_1 = player_1
 }
 
 function initMap(mapId) {
-    var mapData = TankHelper.maps[0];
+    var mapData = TankHelper.maps[mapId];
     for (let r = 0; r < mapData.length; r++) {
         const line = mapData[r];
         for (let c = 0; c < line.length; c++) {
             const tileType = line[c];
             const index = getIndexByRC(r, c);
             var obj = null;
+            var tileSize = 0;
             if (tileType == TankHelper.TileType.Brick) {
                 var obj = props.ResStoreObj.tile1.clone();
                 tileRoot.value.add(obj);
                 obj.position.x = c * 0.5 - 6.25;
                 obj.position.z = r * 0.5 - 6.25;
+                tileSize = 1;
             }
             else if (tileType == TankHelper.TileType.Iron) {
                 var obj = props.ResStoreObj.tile2.clone();
                 tileRoot.value.add(obj);
                 obj.position.x = c * 0.5 - 6.0;
                 obj.position.z = r * 0.5 - 6.0;
+                tileSize = 2;
             }
             else if (tileType == TankHelper.TileType.Home) {
                 var obj = props.ResStoreObj.tile9.clone();
                 tileRoot.value.add(obj);
                 obj.position.x = c * 0.5 - 6.0;
                 obj.position.z = r * 0.5 - 6.0;
+                tileSize = 2;
             }
-            if (obj) {
-                obj.TileType = tileType;
-            }
-            tankgame.tiles[index] = obj;
 
+            if (tileSize == 1) {
+                tankgame.tiles[index] = { tileType, obj };
+            }
+            else if (tileSize == 2) {
+                tankgame.tiles[index] = { tileType, obj };
+                tankgame.tiles[getIndexByRC(r, c + 1)] = { tileType, obj };
+                tankgame.tiles[getIndexByRC(r + 1, c)] = { tileType, obj };
+                tankgame.tiles[getIndexByRC(r + 1, c + 1)] = { tileType, obj };
+            }
+
+            if (!tankgame.tiles[index]) {
+                tankgame.tiles[index] = { tileType: 0, obj: null }
+            }
         }
     }
 }
@@ -244,6 +319,20 @@ function getRCByPosition(pos) {
     rc.r = Math.floor((pos.z + 6.5) / 0.5);
     rc.c = Math.floor((pos.x + 6.5) / 0.5);
     return rc;
+}
+function isIndexInTile(index) {
+    return index >= 0 && index < 26 * 26;
+}
+function isRCInTile(r, c) {
+    if (typeof (r) == 'object') {
+        r = r.r
+        c = r.c
+    }
+    return r >= 0 && r <= 12 && c >= 0 && c <= 12;
+}
+function getTile(r, c) {
+    var index = getIndexByRC(r, c);
+    return tankgame.tiles[index];
 }
 
 const debugtext = ref("show")

@@ -1,7 +1,7 @@
 <script setup>
 import { useSeek, useTres, useTresContext, useRenderLoop } from '@tresjs/core'
 import { Text3D } from '@tresjs/cientos'
-import { shallowRef, ref, watch, defineProps } from 'vue'
+import { shallowRef, ref, watch } from 'vue'
 import { useFBX } from '@tresjs/cientos'
 import { PerspectiveCamera, TangentSpaceNormalMap, Vector3, Raycaster, Ray } from 'three'
 import { BufferGeometry, LineBasicMaterial, Line } from 'three'
@@ -9,7 +9,6 @@ import TankHelper from './TankHelper'
 
 const { camera, cameras, scene, setCameraActive, registerCamera, raycaster } = useTresContext()
 const { seek, seekByName, seekAll, seekAllByName } = useSeek()
-const { onLoop } = useRenderLoop()
 
 window.tankgame = {
     inputs: {},
@@ -17,18 +16,18 @@ window.tankgame = {
     raycaster: new Raycaster(),
     rayLine: null,
     tiles: [],
+    b_init: false,
+    visible: true,
 }
 
-var b_init = false;
 const props = defineProps(['ResStoreObj'])
 watch(props, () => {
-    if (!b_init) {
+    if (!tankgame.b_init) {
         init();
-        b_init = true;
+        tankgame.b_init = true;
+        scene.value.visible = tankgame.visible
     }
 })
-
-
 
 const tileRoot = shallowRef()
 
@@ -36,7 +35,7 @@ function init() {
     var main_fbx = props.ResStoreObj.main.clone();
     scene.value.add(main_fbx)
     main_fbx.position.set(-7.5, 0, 7.5)
-    main_fbx.TileType = TankHelper.TileType.Wall;
+    // main_fbx.TileType = TankHelper.TileType.Wall;
 
     initMap(0);
     initPlayer();
@@ -53,9 +52,7 @@ function updateRayHelper() {
     if (tankgame.rayLine) {
         scene.value.remove(tankgame.rayLine);
     }
-    // var s = tankgame.raycaster.ray.origin;
-    // var t = target;
-    // console.log(`start=(${s.x},${s.y},${s.z});target=(${t.x},${t.y},${t.z})`);
+
     var rayGeometry = new BufferGeometry().setFromPoints([tankgame.raycaster.ray.origin, target]);
     var rayMaterial = new LineBasicMaterial({ color: 0xff0000 });
     var rayLine = new Line(rayGeometry, rayMaterial);
@@ -146,75 +143,121 @@ function isEqual(a, b) {
     return Math.abs(a - b) <= 0.0001;
 }
 
+// centerPos: 世界坐标
+// cellSize: 占几个格子，一个格子占0.5大小
+function getStandGrid(centerPos, cellCount) {
+    let standGrid = {};
 
-function getCanMoveLength(direction) {
-    const segMin = -0.45;
-    const segMax = 0.45;
-    const segNum = 4;
-    const segPer = (segMax - segMin) / segNum;
+    let centerRC = getRCByPosition(centerPos);
+    let halfCellCount = Math.floor(cellCount / 2);
 
-    var canMoves = [];
-    for (let i = 0; i < segNum + 1; ++i) {
-        var canMove = getCanMoveLengthImpl(direction, segPer * i);
-        canMoves.push(canMove);
+    if (Number.isInteger(centerPos.z / 0.5)) {
+        standGrid.minR = centerRC.r - halfCellCount;
+        standGrid.maxR = centerRC.r;
+    }
+    else {
+        standGrid.minR = centerRC.r - halfCellCount;
+        standGrid.maxR = centerRC.r + halfCellCount;
     }
 
-    var canMove = Math.max(...canMoves)
-    return canMove;
+    if (Number.isInteger(centerPos.x / 0.5)) {
+        standGrid.minC = centerRC.c - halfCellCount;
+        standGrid.maxC = centerRC.c;
+    }
+    else {
+        standGrid.minC = centerRC.c - halfCellCount;
+        standGrid.maxC = centerRC.c + halfCellCount;
+    }
+    return standGrid;
 }
-function getCanMoveLengthImpl(direction, offset) {
-    var pos = player_1.position.clone();
+
+function getBlockTileRCs(standGrid, direction) {
+    let blockRCs = [];
     if (direction == TankHelper.Direction.Up) {
-        pos.x += offset;
+        for (let r = standGrid.minR; r >= 0; --r) {
+            for (let c = standGrid.minC; c <= standGrid.maxC; ++c) {
+                var tile = getTile(r, c);
+                if (tile.tileType) {
+                    blockRCs.push({ r, c });
+                }
+            }
+        }
     }
     else if (direction == TankHelper.Direction.Down) {
-        pos.x += offset;
+        for (let r = standGrid.maxR; r <= Rows - 1; ++r) {
+            for (let c = standGrid.minC; c <= standGrid.maxC; ++c) {
+                var tile = getTile(r, c);
+                if (tile.tileType) {
+                    blockRCs.push({ r, c });
+                }
+            }
+        }
     }
     else if (direction == TankHelper.Direction.Left) {
-        pos.z += offset;
+        for (let c = standGrid.minC; c >= 0; --c) {
+            for (let r = standGrid.minR; r <= standGrid.maxR; ++r) {
+                var tile = getTile(r, c);
+                if (tile.tileType) {
+                    blockRCs.push({ r, c });
+                }
+            }
+        }
     }
     else if (direction == TankHelper.Direction.Right) {
-        pos.z += offset;
-    }
-
-    var rc = getRCByPosition(pos);
-    var inTile = isRCInTile(rc);
-    if (!inTile) {
-        return 0;
-    }
-
-    if (direction == TankHelper.Direction.Up && rc.r == 0) {
-        return 0;
-    }
-    else if (direction == TankHelper.Direction.Down && rc.r == 12) {
-        return 0;
-    }
-    else if (direction == TankHelper.Direction.Left && rc.c == 0) {
-        return 0;
-    }
-    else if (direction == TankHelper.Direction.Right && rc.c == 12) {
-        return 0;
-    }
-
-    var tile = null;
-    if (direction == TankHelper.Direction.Up) {
-        for (let r = rc.r - 1; r >= 0; --r) {
-            tile = getTile(r, rc.c);
-            if (tile) {
-                break;
+        for (let c = standGrid.maxC; c <= Cols - 1; ++c) {
+            for (let r = standGrid.minR; r <= standGrid.maxR; ++r) {
+                var tile = getTile(r, c);
+                if (tile.tileType) {
+                    blockRCs.push({ r, c });
+                }
             }
         }
     }
-    else if (direction == TankHelper.Direction.Down) {
-        for (let r = rc.r + 1; r <= 12; ++r) {
-            tile = getTile(r, rc.c);
-            if (tile) {
-                break;
-            }
-        }
-    }
+    return blockRCs;
 }
 
+function getCanMoveLength(direction) {
+    var pos = player_1.position.clone();
+    var standGrid = getStandGrid(player_1.position, 2);
+    var blockRCs = getBlockTileRCs(standGrid, direction);
+
+    var blockRC = blockRCs[0];
+    var canMove = 0;
+    if (!blockRC) {
+        if (direction == TankHelper.Direction.Up) {
+            canMove = pos.z - (-6);
+        }
+        else if (direction == TankHelper.Direction.Down) {
+            canMove = 6 - pos.z;
+        }
+        else if (direction == TankHelper.Direction.Left) {
+            canMove = pos.x - (-6);
+        }
+        else if (direction == TankHelper.Direction.Right) {
+            canMove = 6 - pos.x;
+        }
+    }
+    else {
+        var blockPos = getPositionByRC(blockRC);
+        if (direction == TankHelper.Direction.Up) {
+            canMove = (pos.z - 0.5) - (blockPos.z + 0.25);
+        }
+        else if (direction == TankHelper.Direction.Down) {
+            canMove = (blockPos.z - 0.25) - (pos.z + 0.5);
+        }
+        else if (direction == TankHelper.Direction.Left) {
+            canMove = (pos.x - 0.5) - (blockPos.x + 0.25);
+        }
+        else if (direction == TankHelper.Direction.Right) {
+            canMove = (blockPos.x - 0.25) - (pos.x + 0.5);
+        }
+    }
+
+    // console.log(`canMove=${canMove}`);
+    return canMove;
+}
+
+const { onLoop } = useRenderLoop()
 onLoop(({ delta, elapsed }) => {
 
     if (player_1) {
@@ -234,6 +277,9 @@ onLoop(({ delta, elapsed }) => {
                 }
                 var moveVector = getDirectionVector(direction).multiplyScalar(wantMoveLength)
                 player_1.position.add(moveVector)
+
+                let grid = getStandGrid(player_1.position, 2);
+                console.log(`player=(${player_1.position.toArray()});grid=${JSON.stringify(grid)}`);
             }
         }
     }
@@ -245,7 +291,8 @@ var player_1 = null;
 function initPlayer() {
     player_1 = props.ResStoreObj.tank_player_1.clone();
     tileRoot.value.add(player_1);
-    player_1.position.set(-3, 0, 4)
+    player_1.position.set(-5.25, 0, -4.75)
+    player_1.position.copy(getPositionByRC(24, 9).add(new Vector3(-0.25, 0, +0.25)))
     tankgame.player_1 = player_1
 }
 
@@ -261,22 +308,21 @@ function initMap(mapId) {
             if (tileType == TankHelper.TileType.Brick) {
                 var obj = props.ResStoreObj.tile1.clone();
                 tileRoot.value.add(obj);
-                obj.position.x = c * 0.5 - 6.25;
-                obj.position.z = r * 0.5 - 6.25;
+                obj.position.copy(getPositionByRC(r, c))
                 tileSize = 1;
             }
             else if (tileType == TankHelper.TileType.Iron) {
                 var obj = props.ResStoreObj.tile2.clone();
                 tileRoot.value.add(obj);
-                obj.position.x = c * 0.5 - 6.0;
-                obj.position.z = r * 0.5 - 6.0;
+                obj.position.x = c * 0.5 - 6
+                obj.position.z = r * 0.5 - 6
                 tileSize = 2;
             }
             else if (tileType == TankHelper.TileType.Home) {
                 var obj = props.ResStoreObj.tile9.clone();
                 tileRoot.value.add(obj);
-                obj.position.x = c * 0.5 - 6.0;
-                obj.position.z = r * 0.5 - 6.0;
+                obj.position.x = c * 0.5 - 6
+                obj.position.z = r * 0.5 - 6
                 tileSize = 2;
             }
 
@@ -297,19 +343,20 @@ function initMap(mapId) {
     }
 }
 
+const Rows = 26;
+const Cols = 26;
 function getRCByIndex(index) {
     let rc = {};
-    rc.r = Math.floor(index / 26);
-    rc.c = index % 26;
+    rc.r = Math.floor(index / Cols);
+    rc.c = index % Cols;
     return rc;
 }
 function getIndexByRC(r, c) {
     if (typeof (r) == 'object') {
-        return r.r * 26 + r.c;
+        var { r, c } = r;
+
     }
-    else {
-        return r * 26 + c;
-    }
+    return r * Cols + c;
 }
 function getIndexByPosition(pos) {
     return getIndexByRC(getRCByPosition(pos));
@@ -320,20 +367,29 @@ function getRCByPosition(pos) {
     rc.c = Math.floor((pos.x + 6.5) / 0.5);
     return rc;
 }
+window.getRCByPosition = getRCByPosition;
 function isIndexInTile(index) {
     return index >= 0 && index < 26 * 26;
 }
 function isRCInTile(r, c) {
     if (typeof (r) == 'object') {
-        r = r.r
-        c = r.c
+        var { r, c } = r;
     }
-    return r >= 0 && r <= 12 && c >= 0 && c <= 12;
+    return r >= 0 && r < Rows && c >= 0 && c < Cols;
 }
 function getTile(r, c) {
     var index = getIndexByRC(r, c);
     return tankgame.tiles[index];
 }
+window.getTile = getTile;
+// 获取的是rc中心的位置
+function getPositionByRC(r, c) {
+    if (typeof (r) == 'object') {
+        var { r, c } = r;
+    }
+    return new Vector3(c * 0.5 - 6.25, 0, r * 0.5 - 6.25)
+}
+window.getPositionByRC = getPositionByRC;
 
 const debugtext = ref("show")
 

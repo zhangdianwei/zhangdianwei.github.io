@@ -16,9 +16,10 @@ const { onLoop } = useRenderLoop()
 class TankGame {
     constructor(canvasRef) {
         this.scene = canvasRef.value.context.scene.value;
+        // this.visible = false;
+    }
 
-        this.ResStore = null;
-
+    initGame() {
         this.rc = new RCHelper(26, 26);
 
         this.inputs = {};
@@ -26,7 +27,24 @@ class TankGame {
         this.tiles = [];
         this.player_1 = null;
 
-        // this.visible = false;
+        this.controllers = [];
+
+        this.timer = new Timer();
+        onLoop(this.update.bind(this));
+
+        this.platform = this.ResStore.platform.clone();
+        this.scene.add(this.platform);
+        this.platform.position.set(-7.5, 0, 7.5);
+
+        this.tileRoot = new Group();
+        this.scene.add(this.tileRoot);
+
+        this.initMap(0);
+        this.initPlayer();
+        this.initInput();
+
+        this.platform.visible = this.visible;
+        this.tileRoot.visible = this.visible;
     }
 
     run() {
@@ -65,29 +83,9 @@ class TankGame {
         });
     }
 
-    initGame() {
-        this.timer = new Timer();
-        onLoop(this.update.bind(this));
-
-        this.platform = this.ResStore.platform.clone();
-        this.scene.add(this.platform);
-        this.platform.position.set(-7.5, 0, 7.5);
-
-        this.tileRoot = new Group();
-        this.scene.add(this.tileRoot);
-
-        this.initMap(0);
-        this.initPlayer();
-        this.initInput();
-
-
-
-        this.platform.visible = this.visible;
-        this.tileRoot.visible = this.visible;
-    }
-
     initPlayer() {
         this.player_1 = new TankPlayer();
+        this.addController(this.player_1);
     }
 
     initInput() {
@@ -287,9 +285,14 @@ class TankGame {
         this.timer.update({ delta, elapsed });
     }
 
-    addBullet() {
-        var bullet = new TankBullet();
-        this.tileRoot.add(bullet.obj);
+    addController(controller) {
+        this.controllers.push(controller);
+        var obj = controller.createObject();
+        if (obj) {
+            controller.obj = obj;
+            obj.controller = controller;
+            this.tileRoot.add(controller.obj);
+        }
     }
 }
 

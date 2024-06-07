@@ -2,7 +2,6 @@ import TankHelper from "./TankHelper";
 
 class TankBullet {
     constructor() {
-        this.obj = this.createObject();
         this.speed = 4;
 
         game.timer.tick(this.update.bind(this))

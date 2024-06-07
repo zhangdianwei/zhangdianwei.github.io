@@ -18,6 +18,17 @@ class TankHelper {
             Left: 4,
         }
 
+        this.CollisionType = {
+            Brick: "Brick",
+            Iron: "Iron",
+            Border: "Border",
+            Player: "Player",
+        };
+
+        this.ControllerType = {
+
+        };
+
         this.maps = this.getMapDatas();
     }
 

@@ -4,7 +4,6 @@ import TankBullet from './TankBullet'
 
 class TankPlayer {
     constructor() {
-        this.obj = this.createObject();
         this.speed = 2;
 
         this.lastShootTime = 0;
@@ -16,8 +15,6 @@ class TankPlayer {
 
     createObject() {
         var obj = game.ResStore.tank_player_1.clone();
-        game.tileRoot.add(obj);
-        obj.position.set(-5.25, 0, -4.75)
         obj.position.copy(game.rc.getPositionByRC(24, 9).add(new Vector3(-0.25, 0, +0.25)))
         return obj;
     }
@@ -86,6 +83,7 @@ class TankPlayer {
 
     doShoot() {
         var bullet = new TankBullet();
+        game.addController(bullet);
         var direction = this.getDirection();
         bullet.init(this.position, direction);
     }

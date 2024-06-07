@@ -1,3 +1,5 @@
+import { Vector3 } from 'three'
+
 class TankHelper {
     constructor() {
         this.TileType = {
@@ -6,7 +8,6 @@ class TankHelper {
             Grass: 3,
             Water: 4,
             Home: 9,
-            Wall: 99,
         }
 
         this.Direction = {
@@ -18,6 +19,36 @@ class TankHelper {
         }
 
         this.maps = this.getMapDatas();
+    }
+
+    formatNum(n, precise) {
+        if (typeof (n) == 'number') {
+            return this.formatNumImpl(n, precise)
+        }
+        else if (n instanceof Vector3) {
+            n.x = this.formatNumImpl(n.x, precise);
+            n.y = this.formatNumImpl(n.y, precise);
+            n.z = this.formatNumImpl(n.z, precise);
+            return n;
+        }
+    }
+    formatNumImpl(n, precise) {
+        if (precise == 0) {
+            if (Math.abs(n) < 0.0001) {
+                return 0;
+            }
+            else {
+                return n;
+            }
+        }
+        else {
+            var times = Math.floor(n / precise);
+            return precise * times;
+        }
+    }
+
+    isEqual(a, b) {
+        return Math.abs(a - b) <= 0.0001;
     }
 
     getMapDatas() {

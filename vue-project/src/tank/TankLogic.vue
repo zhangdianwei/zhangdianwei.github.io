@@ -6,6 +6,7 @@ import { useFBX } from '@tresjs/cientos'
 import { PerspectiveCamera, TangentSpaceNormalMap, Vector3, Raycaster, Ray } from 'three'
 import { BufferGeometry, LineBasicMaterial, Line } from 'three'
 import TankHelper from './TankHelper'
+import TankPlayer from './TankPlayer'
 
 const { camera, cameras, scene, setCameraActive, registerCamera, raycaster } = useTresContext()
 const { seek, seekByName, seekAll, seekAllByName } = useSeek()
@@ -17,6 +18,7 @@ window.tankgame = {
     rayLine: null,
     tiles: [],
     b_init: false,
+    player_1: null,
     visible: true,
 }
 
@@ -35,7 +37,6 @@ function init() {
     var main_fbx = props.ResStoreObj.main.clone();
     scene.value.add(main_fbx)
     main_fbx.position.set(-7.5, 0, 7.5)
-    // main_fbx.TileType = TankHelper.TileType.Wall;
 
     initMap(0);
     initPlayer();
@@ -111,36 +112,6 @@ const Direction2Rotation = [
 ]
 function getMoveRotation(direction) {
     return Direction2Rotation[direction];
-}
-
-function formatNum(n, precise) {
-    if (typeof (n) == 'number') {
-        return formatNumImpl(n, precise)
-    }
-    else if (n instanceof Vector3) {
-        n.x = formatNumImpl(n.x, precise);
-        n.y = formatNumImpl(n.y, precise);
-        n.z = formatNumImpl(n.z, precise);
-        return n;
-    }
-}
-function formatNumImpl(n, precise) {
-    if (precise == 0) {
-        if (Math.abs(n) < 0.0001) {
-            return 0;
-        }
-        else {
-            return n;
-        }
-    }
-    else {
-        var times = Math.floor(n / precise);
-        return precise * times;
-    }
-}
-
-function isEqual(a, b) {
-    return Math.abs(a - b) <= 0.0001;
 }
 
 // centerPos: 世界坐标
@@ -257,43 +228,29 @@ function getCanMoveLength(direction) {
     return canMove;
 }
 
+const player = shallowRef()
+
 const { onLoop } = useRenderLoop()
 onLoop(({ delta, elapsed }) => {
 
     if (player_1) {
-        var direction = getMoveDirection();
-        if (direction) {
-            var moveRotation = getMoveRotation(direction);
-            if (moveRotation != player_1.rotation.y) {
-                player_1.rotation.y = moveRotation;
-                formatNum(player_1.position, 0.25)
-            }
 
-            var canMoveLength = getCanMoveLength(direction);
-            if (canMoveLength > 0) {
-                var wantMoveLength = tankgame.speed * delta;
-                if (wantMoveLength > canMoveLength) {
-                    wantMoveLength = canMoveLength;
-                }
-                var moveVector = getDirectionVector(direction).multiplyScalar(wantMoveLength)
-                player_1.position.add(moveVector)
+    }
 
-                let grid = getStandGrid(player_1.position, 2);
-                console.log(`player=(${player_1.position.toArray()});grid=${JSON.stringify(grid)}`);
-            }
-        }
+    if (player.value) {
+        player.value.move();
     }
 
     updateRayHelper()
 })
 
-var player_1 = null;
 function initPlayer() {
-    player_1 = props.ResStoreObj.tank_player_1.clone();
-    tileRoot.value.add(player_1);
-    player_1.position.set(-5.25, 0, -4.75)
-    player_1.position.copy(getPositionByRC(24, 9).add(new Vector3(-0.25, 0, +0.25)))
-    tankgame.player_1 = player_1
+    var obj = props.ResStoreObj.tank_player_1.clone();
+    tileRoot.value.add(obj);
+    obj.position.set(-5.25, 0, -4.75)
+    obj.position.copy(getPositionByRC(24, 9).add(new Vector3(-0.25, 0, +0.25)))
+    tankgame.obj = player_1
+
 }
 
 function initMap(mapId) {
@@ -343,8 +300,6 @@ function initMap(mapId) {
     }
 }
 
-const Rows = 26;
-const Cols = 26;
 function getRCByIndex(index) {
     let rc = {};
     rc.r = Math.floor(index / Cols);
@@ -393,8 +348,10 @@ window.getPositionByRC = getPositionByRC;
 
 const debugtext = ref("show")
 
+
 </script>
 
 <template>
     <TresGroup ref="tileRoot" :position="[0, 0, 0]"></TresGroup>
+    <TankPlayer ref="player"></TankPlayer>
 </template>

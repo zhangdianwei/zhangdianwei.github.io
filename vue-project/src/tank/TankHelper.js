@@ -23,11 +23,12 @@ class TankHelper {
             Iron: "Iron",
             Border: "Border",
             Player: "Player",
+            PlayerBullet: "PlayerBullet",
         };
 
-        this.ControllerType = {
-
-        };
+        // this.ControllerType = {
+        //     Player: "Player",
+        // };
 
         this.maps = this.getMapDatas();
     }

@@ -50,6 +50,38 @@ class RCHelper {
         }
         return new Vector3(c * 0.5 - 6.25, 0, r * 0.5 - 6.25)
     }
+
+    // centerPos: 中心点的世界坐标
+    // size: 宽高是多少
+    getStandGrid(centerPos, size) {
+        let standGrid = {};
+
+        const corner0 = new Vector3(centerPos.x - size / 2, 0, centerPos.z - size / 2);
+        // const corner1 = centerPos.clone().add(size / 2, -size / 2);
+        const corner2 = new Vector3(centerPos.x + size / 2, 0, centerPos.z + size / 2);
+        // const corner3 = centerPos.clone().add(-size / 2, size / 2);
+
+        const rc0 = this.getRCByPosition(corner0);
+        // const rc1 = this.getRCByPosition(corner1);
+        const rc2 = this.getRCByPosition(corner2);
+        // const rc3 = this.getRCByPosition(corner3);
+
+        standGrid.minR = Math.min(rc0.r, rc2.r);
+        standGrid.minC = Math.min(rc0.c, rc2.c);
+        standGrid.maxR = Math.max(rc0.r, rc2.r);
+        standGrid.maxC = Math.max(rc0.c, rc2.c);
+
+        if (Number.isInteger(corner2.x / 0.5)) {
+            standGrid.maxC -= 1;
+        }
+
+        if (Number.isInteger(corner2.z / 0.5)) {
+            standGrid.maxR -= 1;
+        }
+
+        return standGrid;
+
+    }
 }
 
 export default RCHelper;

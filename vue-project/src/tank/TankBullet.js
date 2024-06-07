@@ -9,8 +9,11 @@ class TankBullet {
 
     createObject() {
         var obj = game.ResStore.bullet_player.clone();
-        game.tileRoot.add(obj);
         return obj;
+    }
+
+    get CollisionType() {
+        return TankHelper.CollisionType.PlayerBullet;
     }
 
     init(pos, direction) {

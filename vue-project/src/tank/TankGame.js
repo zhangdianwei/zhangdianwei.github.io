@@ -28,6 +28,7 @@ class TankGame {
         this.player_1 = null;
 
         this.controllers = [];
+        this.bullets = [];
 
         this.timer = new Timer();
         onLoop(this.update.bind(this));
@@ -168,34 +169,6 @@ class TankGame {
         }
     }
 
-    // centerPos: 世界坐标
-    // cellSize: 占几个格子，一个格子占0.5大小
-    getStandGrid(centerPos, cellCount) {
-        let standGrid = {};
-
-        let centerRC = this.rc.getRCByPosition(centerPos);
-        let halfCellCount = Math.floor(cellCount / 2);
-
-        if (Number.isInteger(centerPos.z / 0.5)) {
-            standGrid.minR = centerRC.r - halfCellCount;
-            standGrid.maxR = centerRC.r;
-        }
-        else {
-            standGrid.minR = centerRC.r - halfCellCount;
-            standGrid.maxR = centerRC.r + halfCellCount;
-        }
-
-        if (Number.isInteger(centerPos.x / 0.5)) {
-            standGrid.minC = centerRC.c - halfCellCount;
-            standGrid.maxC = centerRC.c;
-        }
-        else {
-            standGrid.minC = centerRC.c - halfCellCount;
-            standGrid.maxC = centerRC.c + halfCellCount;
-        }
-        return standGrid;
-    }
-
     getBlockTileRCs(standGrid, direction) {
         let blockRCs = [];
         if (direction == TankHelper.Direction.Up) {
@@ -243,7 +216,7 @@ class TankGame {
 
     getCanMoveLength(direction) {
         var pos = this.player_1.position.clone();
-        var standGrid = this.getStandGrid(this.player_1.position, 2);
+        var standGrid = this.rc.getStandGrid(this.player_1.position, 1);
         var blockRCs = this.getBlockTileRCs(standGrid, direction);
 
         var blockRC = blockRCs[0];
@@ -283,6 +256,7 @@ class TankGame {
 
     update({ delta, elapsed }) {
         this.timer.update({ delta, elapsed });
+        this.checkCollision({ delta, elapsed });
     }
 
     addController(controller) {
@@ -292,6 +266,20 @@ class TankGame {
             controller.obj = obj;
             obj.controller = controller;
             this.tileRoot.add(controller.obj);
+        }
+
+        if (controller.CollisionType == TankHelper.CollisionType.Bullet) {
+            this.bullets.push(controller);
+        }
+
+    }
+
+    checkCollision({ delta, elapsed }) {
+        // bullet vs tile
+        for (let i = 0; i < this.bullets.length; i++) {
+            const bullet = this.bullets[i];
+            // let grid = this.getStandGrid(bullet.obj.position, 0.1);
+
         }
     }
 }

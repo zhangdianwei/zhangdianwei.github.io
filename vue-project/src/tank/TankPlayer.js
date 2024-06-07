@@ -19,6 +19,10 @@ class TankPlayer {
         return obj;
     }
 
+    get CollisionType() {
+        return TankHelper.CollisionType.Player;
+    }
+
     getMoveRotation(direction) {
         const Direction2Rotation = [
             0,

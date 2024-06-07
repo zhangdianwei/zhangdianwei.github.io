@@ -1,10 +1,17 @@
 import { Group, Vector3 } from 'three'
 import TankHelper from './TankHelper'
+import TankBullet from './TankBullet'
 
 class TankPlayer {
     constructor() {
         this.obj = this.createObject();
         this.speed = 2;
+
+        this.lastShootTime = 0;
+        this.shootDiff = 0.5;
+        this.shootAcc = 0;
+
+        game.timer.tick(this.update.bind(this));
     }
 
     createObject() {
@@ -13,22 +20,6 @@ class TankPlayer {
         obj.position.set(-5.25, 0, -4.75)
         obj.position.copy(game.rc.getPositionByRC(24, 9).add(new Vector3(-0.25, 0, +0.25)))
         return obj;
-    }
-
-    getDirectionVector(direction) {
-        const Direction2Vectors = [
-            null,
-            new Vector3(0, 0, -1),
-            new Vector3(1, 0, 0),
-            new Vector3(0, 0, 1),
-            new Vector3(-1, 0, 0),
-        ];
-        var vec = Direction2Vectors[direction];
-        if (!vec) {
-            return null;
-        } else {
-            return vec.clone();
-        }
     }
 
     getMoveRotation(direction) {
@@ -43,6 +34,10 @@ class TankPlayer {
     }
 
     update({ delta, elapsed }) {
+        this.checkMove({ delta, elapsed });
+        this.checkShoot({ delta, elapsed });
+    }
+    checkMove({ delta, elapsed }) {
         var direction = game.getMoveDirection();
         if (direction) {
             var moveRotation = this.getMoveRotation(direction);
@@ -57,10 +52,42 @@ class TankPlayer {
                 if (wantMoveLength > canMoveLength) {
                     wantMoveLength = canMoveLength;
                 }
-                var moveVector = this.getDirectionVector(direction).multiplyScalar(wantMoveLength)
+                var moveVector = TankHelper.getDirectionVector(direction).multiplyScalar(wantMoveLength)
                 this.position.add(moveVector)
             }
         }
+    }
+
+    getDirection() {
+        if (this.rotation.y == 0) {
+            return TankHelper.Direction.Up;
+        }
+        else if (this.rotation.y == Math.PI) {
+            return TankHelper.Direction.Down;
+        }
+        else if (this.rotation.y == -Math.PI / 2) {
+            return TankHelper.Direction.Right;
+        }
+        else if (this.rotation.y == Math.PI / 2) {
+            return TankHelper.Direction.Left;
+        }
+        else {
+            return TankHelper.Direction.Up;
+        }
+    }
+
+    checkShoot({ delta, elapsed }) {
+        this.shootAcc += delta;
+        if (this.shootAcc >= this.shootDiff && game.inputs['j']) {
+            this.shootAcc = 0;
+            this.doShoot();
+        }
+    }
+
+    doShoot() {
+        var bullet = new TankBullet();
+        var direction = this.getDirection();
+        bullet.init(this.position, direction);
     }
 
     get position() {

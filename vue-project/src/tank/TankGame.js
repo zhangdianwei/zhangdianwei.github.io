@@ -9,6 +9,7 @@ import TankHelper from './TankHelper'
 import RCHelper from './RCHelper'
 import TankPlayer from './TankPlayer'
 import Timer from './Timer'
+import TankBullet from './TankBullet'
 
 const { onLoop } = useRenderLoop()
 
@@ -65,6 +66,9 @@ class TankGame {
     }
 
     initGame() {
+        this.timer = new Timer();
+        onLoop(this.update.bind(this));
+
         this.platform = this.ResStore.platform.clone();
         this.scene.add(this.platform);
         this.platform.position.set(-7.5, 0, 7.5);
@@ -76,8 +80,7 @@ class TankGame {
         this.initPlayer();
         this.initInput();
 
-        this.timer = new Timer();
-        onLoop(this.update.bind(this));
+
 
         this.platform.visible = this.visible;
         this.tileRoot.visible = this.visible;
@@ -282,10 +285,12 @@ class TankGame {
 
     update({ delta, elapsed }) {
         this.timer.update({ delta, elapsed });
-
-        this.player_1.update({ delta, elapsed });
     }
 
+    addBullet() {
+        var bullet = new TankBullet();
+        this.tileRoot.add(bullet.obj);
+    }
 }
 
 export default TankGame

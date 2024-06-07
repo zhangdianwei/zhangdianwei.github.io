@@ -75,6 +75,22 @@ class TankHelper {
         return mapData;
     }
 
+    getDirectionVector(direction) {
+        const Direction2Vectors = [
+            null,
+            new Vector3(0, 0, -1),
+            new Vector3(1, 0, 0),
+            new Vector3(0, 0, 1),
+            new Vector3(-1, 0, 0),
+        ];
+        var vec = Direction2Vectors[direction];
+        if (!vec) {
+            return null;
+        } else {
+            return vec.clone();
+        }
+    }
+
 
     getSrcMaps() {
         return [

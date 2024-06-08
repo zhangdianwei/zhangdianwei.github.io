@@ -13,7 +13,7 @@ class TankBullet {
     }
 
     get CollisionType() {
-        return TankHelper.CollisionType.PlayerBullet;
+        return TankHelper.CollisionType.Bullet;
     }
 
     init(pos, direction) {

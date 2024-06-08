@@ -19,8 +19,8 @@ class TankGame {
         // this.visible = false;
     }
 
-    initGame() {
-        this.rc = new RCHelper(26, 26);
+    startGame() {
+        this.rc = new RCHelper();
 
         this.inputs = {};
 
@@ -29,13 +29,14 @@ class TankGame {
 
         this.controllers = [];
         this.bullets = [];
+        this.controllerShouldAdd = [];
+        this.controllerShouldRemove = [];
 
         this.timer = new Timer();
         onLoop(this.update.bind(this));
 
-        this.platform = this.ResStore.platform.clone();
-        this.scene.add(this.platform);
-        this.platform.position.set(-7.5, 0, 7.5);
+        var platform = this.ResStore.platform.clone();
+        this.scene.add(platform);
 
         this.tileRoot = new Group();
         this.scene.add(this.tileRoot);
@@ -44,11 +45,12 @@ class TankGame {
         this.initPlayer();
         this.initInput();
 
-        this.platform.visible = this.visible;
+        platform.visible = this.visible;
         this.tileRoot.visible = this.visible;
     }
 
     run() {
+        this.ResStore = {};
         this.loadResource();
     }
 
@@ -65,28 +67,27 @@ class TankGame {
 
         useFBX(ResStoreNames).then((objs) => {
 
-            const store = {}
             for (let i = 0; i < objs.length; ++i) {
                 const obj = objs[i];
                 const name = ResStoreNames[i];
-                store[name] = obj;
+                this.ResStore[name] = obj;
 
                 var shortName = name.split('/')
                 shortName = shortName[shortName.length - 1]
                 shortName = shortName.split('.')
                 shortName = shortName[0]
-                store[shortName] = obj;
+                this.ResStore[shortName] = obj;
             }
 
-            this.ResStore = store;
-
-            this.initGame();
+            this.startGame();
         });
     }
 
     initPlayer() {
         this.player_1 = new TankPlayer();
         this.addController(this.player_1);
+        this.player_1.position.copy(this.rc.getPositionByRC(22, 9).add(new Vector3(-0.25, 0, 0.25)))
+        this.player_1.init();
     }
 
     initInput() {
@@ -116,15 +117,14 @@ class TankGame {
                 else if (tileType == TankHelper.TileType.Iron) {
                     var obj = this.ResStore.tile2.clone();
                     this.tileRoot.add(obj);
-                    obj.position.x = c * 0.5 - 6
-                    obj.position.z = r * 0.5 - 6
-                    tileSize = 2;
+                    obj.position.copy(this.rc.getPositionByRC(r, c))
+                    tileSize = 1;
                 }
                 else if (tileType == TankHelper.TileType.Home) {
                     var obj = this.ResStore.tile9.clone();
                     this.tileRoot.add(obj);
                     obj.position.x = c * 0.5 - 6
-                    obj.position.z = r * 0.5 - 6
+                    obj.position.z = r * 0.5 - 5.5
                     tileSize = 2;
                 }
 
@@ -148,6 +148,18 @@ class TankGame {
     getTile(r, c) {
         var index = this.rc.getIndexByRC(r, c);
         return this.tiles[index];
+    }
+    getTilesByGrid(grid) {
+        var tiles = [];
+        for (let r = grid.minR; r <= grid.maxR; ++r) {
+            for (let c = grid.minC; c <= grid.maxC; ++c) {
+                var tile = this.getTile(r, c);
+                if (tile.tileType) {
+                    tiles.push(tile);
+                }
+            }
+        }
+        return tiles;
     }
 
 
@@ -223,10 +235,10 @@ class TankGame {
         var canMove = 0;
         if (!blockRC) {
             if (direction == TankHelper.Direction.Up) {
-                canMove = pos.z - (-6);
+                canMove = pos.z - (-5.5);
             }
             else if (direction == TankHelper.Direction.Down) {
-                canMove = 6 - pos.z;
+                canMove = 5.5 - pos.z;
             }
             else if (direction == TankHelper.Direction.Left) {
                 canMove = pos.x - (-6);
@@ -254,13 +266,27 @@ class TankGame {
         return canMove;
     }
 
+    tick = 0;
+
     update({ delta, elapsed }) {
+        this.checkRemoveController();
+        this.checkAddController();
+
+        // this.tick += delta;
+        // if (this.tick < 0.05) {
+        //     return;
+        // }
+
+        this.tick = 0;
+
         this.timer.update({ delta, elapsed });
         this.checkCollision({ delta, elapsed });
+
+        this.checkRemoveController();
+        this.checkAddController();
     }
 
     addController(controller) {
-        this.controllers.push(controller);
         var obj = controller.createObject();
         if (obj) {
             controller.obj = obj;
@@ -268,18 +294,80 @@ class TankGame {
             this.tileRoot.add(controller.obj);
         }
 
-        if (controller.CollisionType == TankHelper.CollisionType.Bullet) {
-            this.bullets.push(controller);
+        this.controllerShouldAdd.push(controller);
+        // this.checkAddController();
+    }
+
+    checkAddController() {
+        for (let i = 0; i < this.controllerShouldAdd.length; i++) {
+            const controller = this.controllerShouldAdd[i];
+
+            this.controllers.push(controller);
+
+            if (controller.CollisionType == TankHelper.CollisionType.Bullet) {
+                this.bullets.push(controller);
+            }
         }
 
+        this.controllerShouldAdd.length = 0;
+    }
+
+    removeController(controller) {
+        this.controllerShouldRemove.push(controller);
+    }
+
+    checkRemoveController() {
+        for (let i = 0; i < this.controllerShouldRemove.length; i++) {
+            const controller = this.controllerShouldRemove[i];
+
+            var index = this.controllers.indexOf(controller);
+            if (index >= 0) {
+                this.controllers.splice(index, 1);
+            }
+
+            var index = this.bullets.indexOf(controller);
+            if (index >= 0) {
+                this.bullets.splice(index, 1);
+            }
+
+            this.tileRoot.remove(controller.obj)
+        }
+
+        this.controllerShouldRemove.length = 0;
     }
 
     checkCollision({ delta, elapsed }) {
         // bullet vs tile
         for (let i = 0; i < this.bullets.length; i++) {
             const bullet = this.bullets[i];
-            // let grid = this.getStandGrid(bullet.obj.position, 0.1);
+            let grid = this.rc.getStandGrid(bullet.obj.position, 0.5);
 
+            if (this.rc.isGridInBound(grid)) {
+                let tiles = this.getTilesByGrid(grid);
+                if (tiles.length > 0) {
+                    this.onCollisionTiles(tiles, bullet);
+                }
+            }
+            else {
+                this.removeController(bullet);
+            }
+        }
+    }
+
+    removeTile(r, c) {
+
+    }
+
+    onCollisionTiles(tiles, bullet) {
+        this.removeController(bullet);
+
+        for (let i = 0; i < tiles.length; ++i) {
+            var tile = tiles[i];
+            if (tile.tileType == TankHelper.TileType.Brick) {
+                tile.tileType = 0;
+                this.tileRoot.remove(tile.obj);
+                tile.obj = null;
+            }
         }
     }
 }

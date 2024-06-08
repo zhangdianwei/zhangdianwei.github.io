@@ -1,4 +1,8 @@
-import { Group, Vector3 } from 'three'
+import {
+    Group, Vector3, SpotLight, Object3D, BoxGeometry
+    , MeshBasicMaterial
+    , Mesh
+} from 'three'
 import TankHelper from './TankHelper'
 import TankBullet from './TankBullet'
 
@@ -15,8 +19,34 @@ class TankPlayer {
 
     createObject() {
         var obj = game.ResStore.tank_player_1.clone();
-        obj.position.copy(game.rc.getPositionByRC(24, 9).add(new Vector3(-0.25, 0, +0.25)))
+
+        this.lightTarget = new Object3D();
+        obj.add(this.lightTarget);
+        this.lightTarget.position.set(0, 0.5, -10);
+
+        var spotLight = new SpotLight(0xffffff);
+        spotLight.position.set(0, 0.5, -0.3);
+        spotLight.castShadow = true;
+        spotLight.target = this.lightTarget;
+        spotLight.angle = Math.PI / 4;
+        spotLight.intensity = 10;
+        spotLight.penumbra = 0.2;
+        // spotLight.distance = 10;
+        obj.add(spotLight);
+        this.spotLight = spotLight;
+
+        // var geometry = new BoxGeometry(1, 1, 1); // 立方体的宽、高、深都是 1
+        // var material = new MeshBasicMaterial({ color: 0x00ff00 });
+        // var cube = new Mesh(geometry, material);
+        // obj.add(cube);
+        // cube.position.set(0, 0, 5)
+
         return obj;
+    }
+
+    init() {
+        this.light = this.obj.children[0];
+        window.light = this.light;
     }
 
     get CollisionType() {
@@ -53,6 +83,8 @@ class TankPlayer {
                 if (wantMoveLength > canMoveLength) {
                     wantMoveLength = canMoveLength;
                 }
+
+                console.log(`wantMoveLength=${wantMoveLength}`);
                 var moveVector = TankHelper.getDirectionVector(direction).multiplyScalar(wantMoveLength)
                 this.position.add(moveVector)
             }
@@ -77,9 +109,13 @@ class TankPlayer {
         }
     }
 
+    shootPressed() {
+        return game.inputs['c'] || game.inputs['j'] || game.inputs['f']
+    }
+
     checkShoot({ delta, elapsed }) {
         this.shootAcc += delta;
-        if (this.shootAcc >= this.shootDiff && game.inputs['j']) {
+        if (this.shootAcc >= this.shootDiff && this.shootPressed()) {
             this.shootAcc = 0;
             this.doShoot();
         }
@@ -88,8 +124,10 @@ class TankPlayer {
     doShoot() {
         var bullet = new TankBullet();
         game.addController(bullet);
+
+        var startPos = this.position.clone().add(new Vector3(0, 0.5, 0));
         var direction = this.getDirection();
-        bullet.init(this.position, direction);
+        bullet.init(startPos, direction);
     }
 
     get position() {

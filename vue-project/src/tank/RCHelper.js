@@ -2,8 +2,14 @@ import { Group, Vector3 } from 'three'
 
 class RCHelper {
     constructor() {
-        this.Rows = 26;
+        this.Rows = 24;
         this.Cols = 26;
+
+        this.Width = this.Cols * 0.5;
+        this.Height = this.Rows * 0.5;
+
+        this.HalfWidth = this.Width / 2;
+        this.HalfHeight = this.Height / 2;
     }
 
     getRCByIndex(index) {
@@ -25,30 +31,45 @@ class RCHelper {
         return this.getIndexByRC(getRCByPosition(pos));
     }
 
+    // 获取的是rc中心的位置
+    getPositionByRC(r, c) {
+        if (typeof (r) == 'object') {
+            var { r, c } = r;
+        }
+        return new Vector3(c * 0.5 - 6.25, 0, r * 0.5 - 5.75)
+    }
     getRCByPosition(pos) {
         let rc = {};
-        rc.r = Math.floor((pos.z + 6.5) / 0.5);
+        rc.r = Math.floor((pos.z + 6) / 0.5);
         rc.c = Math.floor((pos.x + 6.5) / 0.5);
         return rc;
     }
 
-    isIndexInTile(index) {
+    isIndexInBound(index) {
         return index >= 0 && index < this.Rows * this.Cols;
     }
 
-    isRCInTile(r, c) {
+    isRCInBound(r, c) {
         if (typeof (r) == 'object') {
             var { r, c } = r;
         }
         return r >= 0 && r < this.Rows && c >= 0 && c < this.Cols;
     }
 
-    // 获取的是rc中心的位置
-    getPositionByRC(r, c) {
-        if (typeof (r) == 'object') {
-            var { r, c } = r;
+    isGridInBound(grid) {
+        if (grid.minR < 0) {
+            return false;
         }
-        return new Vector3(c * 0.5 - 6.25, 0, r * 0.5 - 6.25)
+        if (grid.minC < 0) {
+            return false;
+        }
+        if (grid.maxR >= this.Rows) {
+            return false;
+        }
+        if (grid.maxC >= this.Cols) {
+            return false;
+        }
+        return true;
     }
 
     // centerPos: 中心点的世界坐标
@@ -80,8 +101,9 @@ class RCHelper {
         }
 
         return standGrid;
-
     }
+
+
 }
 
 export default RCHelper;

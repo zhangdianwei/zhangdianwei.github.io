@@ -32,6 +32,9 @@ class TankGame {
         this.controllerShouldAdd = [];
         this.controllerShouldRemove = [];
 
+        this.onAddController = [];
+        this.onRemoveController = [];
+
         this.timer = new Timer();
         onLoop(this.update.bind(this));
 
@@ -78,6 +81,9 @@ class TankGame {
                 shortName = shortName[0]
                 this.ResStore[shortName] = obj;
             }
+
+            this.brickHitMaterial = this.ResStore.tile1.children[0].material.clone();
+            this.brickHitMaterial.color.setHex(0x880000);
 
             this.startGame();
         });
@@ -129,17 +135,20 @@ class TankGame {
                 }
 
                 if (tileSize == 1) {
-                    this.tiles[index] = { tileType, obj };
+                    var tile = { tileType, obj, blood: 2 };
+                    this.tiles[index] = tile;
                 }
                 else if (tileSize == 2) {
-                    this.tiles[index] = { tileType, obj };
-                    this.tiles[this.rc.getIndexByRC(r, c + 1)] = { tileType, obj };
-                    this.tiles[this.rc.getIndexByRC(r + 1, c)] = { tileType, obj };
-                    this.tiles[this.rc.getIndexByRC(r + 1, c + 1)] = { tileType, obj };
+                    var tile = { tileType, obj, blood: 1 };
+                    this.tiles[index] = tile;
+                    this.tiles[this.rc.getIndexByRC(r, c + 1)] = tile;
+                    this.tiles[this.rc.getIndexByRC(r + 1, c)] = tile;
+                    this.tiles[this.rc.getIndexByRC(r + 1, c + 1)] = tile;
                 }
 
                 if (!this.tiles[index]) {
-                    this.tiles[index] = { tileType: 0, obj: null }
+                    var tile = { tileType, obj };
+                    this.tiles[index] = tile;
                 }
             }
         }
@@ -295,7 +304,11 @@ class TankGame {
         }
 
         this.controllerShouldAdd.push(controller);
-        // this.checkAddController();
+
+        for (let i = 0; i < this.onAddController.length; ++i) {
+            var callback = this.onAddController[i];
+            callback(controller);
+        }
     }
 
     checkAddController() {
@@ -314,6 +327,14 @@ class TankGame {
 
     removeController(controller) {
         this.controllerShouldRemove.push(controller);
+        if (controller.onRemove) {
+            controller.onRemove();
+        }
+
+        for (let i = 0; i < this.onRemoveController.length; ++i) {
+            var callback = this.onRemoveController[i];
+            callback(controller);
+        }
     }
 
     checkRemoveController() {
@@ -364,9 +385,15 @@ class TankGame {
         for (let i = 0; i < tiles.length; ++i) {
             var tile = tiles[i];
             if (tile.tileType == TankHelper.TileType.Brick) {
-                tile.tileType = 0;
-                this.tileRoot.remove(tile.obj);
-                tile.obj = null;
+                tile.blood -= bullet.power;
+                if (tile.blood == 1) {
+                    tile.obj.children[0].material = this.brickHitMaterial;
+                }
+                if (tile.blood == 0) {
+                    tile.tileType = 0;
+                    this.tileRoot.remove(tile.obj);
+                    tile.obj = null;
+                }
             }
         }
     }

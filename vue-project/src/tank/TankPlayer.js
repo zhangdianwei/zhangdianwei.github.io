@@ -8,13 +8,43 @@ import TankBullet from './TankBullet'
 
 class TankPlayer {
     constructor() {
-        this.speed = 2;
+        this.moveSpeed = 2;
 
-        this.lastShootTime = 0;
-        this.shootDiff = 0.5;
+        this.shootDiff = 0.1;
         this.shootAcc = 0;
 
+        this.starCount = 0;
+
+        this.bullets = [];
+
         game.timer.tick(this.update.bind(this));
+    }
+
+    maxBulletCount() {
+        if (this.starCount <= 1) {
+            return 1;
+        }
+        else {
+            return 2;
+        }
+    }
+
+    getBulletSpeed() {
+        if (this.starCount <= 0) {
+            return 4;
+        }
+        else {
+            return 8;
+        }
+    }
+
+    getBulletPower() {
+        if (this.starCount == 0) {
+            return 1;
+        }
+        else {
+            return 2;
+        }
     }
 
     createObject() {
@@ -47,6 +77,26 @@ class TankPlayer {
     init() {
         this.light = this.obj.children[0];
         window.light = this.light;
+
+        game.onAddController.push(this.onAddController.bind(this));
+        game.onRemoveController.push(this.onRemoveController.bind(this));
+    }
+
+    onRemove() {
+        TankHelper.removeArrayValue(game.onAddController, this.onAddController.bind(this));
+        TankHelper.removeArrayValue(game.onRemoveController, this.onRemoveController.bind(this));
+    }
+
+    onAddController(controller) {
+        if (controller instanceof TankBullet) {
+            this.bullets.push(controller);
+        }
+    }
+
+    onRemoveController(controller) {
+        if (controller instanceof TankBullet) {
+            TankHelper.removeArrayValue(this.bullets, controller);
+        }
     }
 
     get CollisionType() {
@@ -79,12 +129,11 @@ class TankPlayer {
 
             var canMoveLength = game.getCanMoveLength(direction);
             if (canMoveLength > 0) {
-                var wantMoveLength = this.speed * delta;
+                var wantMoveLength = this.moveSpeed * delta;
                 if (wantMoveLength > canMoveLength) {
                     wantMoveLength = canMoveLength;
                 }
 
-                console.log(`wantMoveLength=${wantMoveLength}`);
                 var moveVector = TankHelper.getDirectionVector(direction).multiplyScalar(wantMoveLength)
                 this.position.add(moveVector)
             }
@@ -114,8 +163,16 @@ class TankPlayer {
     }
 
     checkShoot({ delta, elapsed }) {
+        if (this.bullets.length >= this.maxBulletCount()) {
+            return;
+        }
+
         this.shootAcc += delta;
-        if (this.shootAcc >= this.shootDiff && this.shootPressed()) {
+        if (!this.shootPressed()) {
+            return;
+        }
+
+        if (this.shootAcc >= this.shootDiff) {
             this.shootAcc = 0;
             this.doShoot();
         }
@@ -127,6 +184,8 @@ class TankPlayer {
 
         var startPos = this.position.clone().add(new Vector3(0, 0.5, 0));
         var direction = this.getDirection();
+        bullet.speed = this.getBulletSpeed();
+        bullet.power = this.getBulletPower();
         bullet.init(startPos, direction);
     }
 

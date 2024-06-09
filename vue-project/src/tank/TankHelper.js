@@ -54,13 +54,21 @@ class TankHelper {
             }
         }
         else {
-            var times = Math.floor(n / precise);
+            var times = Math.round(n / precise);
             return precise * times;
         }
     }
 
     isEqual(a, b) {
         return Math.abs(a - b) <= 0.0001;
+    }
+
+    removeArrayValue(arr, value) {
+        var index = arr.indexOf(value);
+        while (index >= 0) {
+            arr.splice(index, 1);
+            index = arr.indexOf(value);
+        }
     }
 
     getMapDatas() {

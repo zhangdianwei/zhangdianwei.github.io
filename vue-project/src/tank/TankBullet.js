@@ -3,6 +3,7 @@ import TankHelper from "./TankHelper";
 class TankBullet {
     constructor() {
         this.speed = 4;
+        this.power = 1;
 
         game.timer.tick(this.update.bind(this))
     }
@@ -19,6 +20,10 @@ class TankBullet {
     init(pos, direction) {
         this.obj.position.copy(pos);
         this.direction = direction;
+    }
+
+    onRemove() {
+
     }
 
     update({ delta, elapsed }) {

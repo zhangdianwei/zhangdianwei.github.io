@@ -1,4 +1,5 @@
 import TankHelper from "./TankHelper";
+import { Vector3 } from "three";
 
 class TankBullet {
     constructor() {
@@ -17,9 +18,43 @@ class TankBullet {
         return TankHelper.CollisionType.Bullet;
     }
 
-    init(pos, direction) {
-        this.obj.position.copy(pos);
-        this.direction = direction;
+    init(tank) {
+        this.tank = tank;
+
+        var startPos = tank.position.clone().add(new Vector3(0, 0.5, 0));
+        this.obj.position.copy(startPos);
+        this.direction = tank.getDirection();
+        this.speed = this.initBulletSpeed();
+        this.canHitTileTypes = this.initCanHitTileTypes();
+        this.power = this.initPower();
+    }
+
+    initBulletSpeed() {
+        if (this.tank.starCount <= 0) {
+            return 4;
+        }
+        else {
+            return 8;
+        }
+    }
+
+    initPower() {
+        if (this.tank.starCount <= 2) {
+            return 1;
+        }
+        else {
+            return 2;
+        }
+    }
+
+    initCanHitTileTypes() {
+        var ret = [];
+        ret.push(TankHelper.TileType.Home);
+        ret.push(TankHelper.TileType.Brick);
+        if (this.tank.getStarCount() >= 3) {
+            ret.push(TankHelper.TileType.Iron);
+        }
+        return ret;
     }
 
     onRemove() {

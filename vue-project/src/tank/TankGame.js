@@ -16,6 +16,7 @@ const { onLoop } = useRenderLoop()
 class TankGame {
     constructor(canvasRef) {
         this.scene = canvasRef.value.context.scene.value;
+        this.camera = canvasRef.value.context.camera.value;
         // this.visible = false;
     }
 
@@ -94,6 +95,12 @@ class TankGame {
         this.addController(this.player_1);
         this.player_1.position.copy(this.rc.getPositionByRC(22, 9).add(new Vector3(-0.25, 0, 0.25)))
         this.player_1.init();
+
+        // var cameraPos = this.player_1.position.clone();
+        // cameraPos.y += 10;
+        // cameraPos.z += 5;
+        // this.camera.position.copy(cameraPos);
+        // this.camera.lookAt(this.player_1.position);
     }
 
     initInput() {
@@ -293,6 +300,51 @@ class TankGame {
 
         this.checkRemoveController();
         this.checkAddController();
+
+        this.makeCameraFollow({ delta, elapsed });
+    }
+
+    makeCameraFollow({ delta, elapsed }) {
+        return;
+        var cameraPos = this.player_1.position.clone();
+        cameraPos.y += 10;
+        cameraPos.z += 5;
+
+        const speed = 2;
+        const step = speed * delta;
+
+        if (this.camera.position.x > cameraPos.x) {
+            this.camera.position.x -= step;
+        }
+        else if (this.camera.position.x < cameraPos.x) {
+            this.camera.position.x += step;
+        }
+        if (this.camera.position.y > cameraPos.y) {
+            this.camera.position.y -= step;
+        }
+        else if (this.camera.position.y < cameraPos.y) {
+            this.camera.position.y += step;
+        }
+        if (this.camera.position.z > cameraPos.z) {
+            this.camera.position.z -= step;
+        }
+        else if (this.camera.position.z < cameraPos.z) {
+            this.camera.position.z += step;
+        }
+
+        if (TankHelper.isEqual(this.camera.position.x, cameraPos.x)) {
+            this.camera.position.x = cameraPos.x;
+        }
+        if (TankHelper.isEqual(this.camera.position.y, cameraPos.y)) {
+            this.camera.position.y = cameraPos.y;
+        }
+        if (TankHelper.isEqual(this.camera.position.z, cameraPos.z)) {
+            this.camera.position.z = cameraPos.z;
+        }
+        // this.camera.position.copy(cameraPos)
+
+        this.camera.lookAt(this.player_1.position);
+
     }
 
     addController(controller) {
@@ -384,16 +436,22 @@ class TankGame {
 
         for (let i = 0; i < tiles.length; ++i) {
             var tile = tiles[i];
+
+            if (bullet.canHitTileTypes.indexOf(tile.tileType) < 0)
+                continue;
+
+            tile.blood -= bullet.power;
+
             if (tile.tileType == TankHelper.TileType.Brick) {
-                tile.blood -= bullet.power;
                 if (tile.blood == 1) {
                     tile.obj.children[0].material = this.brickHitMaterial;
                 }
-                if (tile.blood == 0) {
-                    tile.tileType = 0;
-                    this.tileRoot.remove(tile.obj);
-                    tile.obj = null;
-                }
+            }
+
+            if (tile.blood <= 0) {
+                tile.tileType = 0;
+                this.tileRoot.remove(tile.obj);
+                tile.obj = null;
             }
         }
     }

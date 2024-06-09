@@ -13,14 +13,15 @@ class TankPlayer {
         this.shootDiff = 0.1;
         this.shootAcc = 0;
 
-        this.starCount = 0;
+        // 1=子弹加速；2=多发射一个子弹；3=打铁
+        this.starCount = 1;
 
         this.bullets = [];
 
         game.timer.tick(this.update.bind(this));
     }
 
-    maxBulletCount() {
+    getMaxBulletCount() {
         if (this.starCount <= 1) {
             return 1;
         }
@@ -29,22 +30,8 @@ class TankPlayer {
         }
     }
 
-    getBulletSpeed() {
-        if (this.starCount <= 0) {
-            return 4;
-        }
-        else {
-            return 8;
-        }
-    }
-
-    getBulletPower() {
-        if (this.starCount == 0) {
-            return 1;
-        }
-        else {
-            return 2;
-        }
+    getStarCount() {
+        return this.starCount;
     }
 
     createObject() {
@@ -75,9 +62,6 @@ class TankPlayer {
     }
 
     init() {
-        this.light = this.obj.children[0];
-        window.light = this.light;
-
         game.onAddController.push(this.onAddController.bind(this));
         game.onRemoveController.push(this.onRemoveController.bind(this));
     }
@@ -163,7 +147,7 @@ class TankPlayer {
     }
 
     checkShoot({ delta, elapsed }) {
-        if (this.bullets.length >= this.maxBulletCount()) {
+        if (this.bullets.length >= this.getMaxBulletCount()) {
             return;
         }
 
@@ -181,12 +165,7 @@ class TankPlayer {
     doShoot() {
         var bullet = new TankBullet();
         game.addController(bullet);
-
-        var startPos = this.position.clone().add(new Vector3(0, 0.5, 0));
-        var direction = this.getDirection();
-        bullet.speed = this.getBulletSpeed();
-        bullet.power = this.getBulletPower();
-        bullet.init(startPos, direction);
+        bullet.init(this);
     }
 
     get position() {

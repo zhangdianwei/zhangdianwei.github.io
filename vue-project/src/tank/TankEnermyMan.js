@@ -1,5 +1,6 @@
 import { Vector3 } from "three";
 import TankEnermy from "./TankEnermy"
+import TankHelper from "./TankHelper"
 
 class EnermyMan {
     init() {
@@ -9,6 +10,8 @@ class EnermyMan {
 
         this.tanks = [];
         this.bornIndex = 0;
+
+        this.update({});
     }
 
     onAddController(controller) {

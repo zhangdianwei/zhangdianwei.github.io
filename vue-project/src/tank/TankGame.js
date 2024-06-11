@@ -30,7 +30,7 @@ class TankGame {
         this.player_1 = null;
 
         this.controllers = [];
-        this.bullets = [];
+        this.playerBullets = [];
         this.controllerShouldAdd = [];
         this.controllerShouldRemove = [];
 
@@ -370,13 +370,13 @@ class TankGame {
 
     checkAddController() {
         for (let i = 0; i < this.controllerShouldAdd.length; i++) {
-            const controller = this.controllerShouldAdd[i];
+            const con = this.controllerShouldAdd[i];
+            this.controllers.push(con);
 
-            this.controllers.push(controller);
-
-            if (controller.CollisionType == TankHelper.CollisionType.Bullet) {
-                this.bullets.push(controller);
+            if (con.CampType == TankHelper.CampType.Player && con.ObjectType == TankHelper.ObjectType.Bullet) {
+                this.playerBullets.push(con);
             }
+
         }
 
         this.controllerShouldAdd.length = 0;
@@ -396,19 +396,10 @@ class TankGame {
 
     checkRemoveController() {
         for (let i = 0; i < this.controllerShouldRemove.length; i++) {
-            const controller = this.controllerShouldRemove[i];
-
-            var index = this.controllers.indexOf(controller);
-            if (index >= 0) {
-                this.controllers.splice(index, 1);
-            }
-
-            var index = this.bullets.indexOf(controller);
-            if (index >= 0) {
-                this.bullets.splice(index, 1);
-            }
-
-            this.tileRoot.remove(controller.obj)
+            const con = this.controllerShouldRemove[i];
+            TankHelper.removeArrayValue(this.controllers, con);
+            TankHelper.removeArrayValue(this.playerBullets, con);
+            this.tileRoot.remove(con.obj)
         }
 
         this.controllerShouldRemove.length = 0;
@@ -416,8 +407,8 @@ class TankGame {
 
     checkCollision({ delta, elapsed }) {
         // bullet vs tile
-        for (let i = 0; i < this.bullets.length; i++) {
-            const bullet = this.bullets[i];
+        for (let i = 0; i < this.playerBullets.length; i++) {
+            const bullet = this.playerBullets[i];
             let grid = this.rc.getStandGrid(bullet.obj.position, 0.5);
 
             if (this.rc.isGridInBound(grid)) {
@@ -428,6 +419,18 @@ class TankGame {
             }
             else {
                 this.removeController(bullet);
+            }
+        }
+
+        // bullet vs enermy
+        for (let i = 0; i < this.playerBullets.length; i++) {
+            const bullet = this.playerBullets[i];
+            for (let j = 0; j < this.enermyMan.tanks.length; j++) {
+                const tank = this.enermyMan.tanks[j];
+                if (tank.Shape.intersect(bullet.Shape)) {
+                    this.onCollisionBulletVsTank(bullet, tank);
+                    break;
+                }
             }
         }
     }
@@ -459,6 +462,11 @@ class TankGame {
                 tile.obj = null;
             }
         }
+    }
+
+    onCollisionBulletVsTank(bullet, tank) {
+        this.removeController(bullet);
+        this.removeController(tank);
     }
 }
 

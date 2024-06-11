@@ -1,5 +1,6 @@
 import TankHelper from "./TankHelper";
 import { Vector3 } from "three";
+import TankShape from './TankShape';
 
 class TankBullet {
     constructor() {
@@ -7,6 +8,8 @@ class TankBullet {
         this.power = 1;
 
         game.timer.tick(this.update.bind(this))
+
+        this.shape = new TankShape(TankShape.Circle, 0.15);
     }
 
     createObject() {
@@ -14,8 +17,17 @@ class TankBullet {
         return obj;
     }
 
-    get CollisionType() {
-        return TankHelper.CollisionType.Bullet;
+    get CampType() {
+        return TankHelper.CampType.Player;
+    }
+
+    get ObjectType() {
+        return TankHelper.ObjectType.Bullet;
+    }
+
+    get Shape() {
+        this.shape.center = this.obj.position;
+        return this.shape;
     }
 
     init(tank) {

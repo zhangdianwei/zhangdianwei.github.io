@@ -1,8 +1,6 @@
-import {
-    Group, Vector3, SpotLight, Object3D, BoxGeometry
-    , MeshBasicMaterial
-    , Mesh
-} from 'three'
+import { SpotLight, Object3D } from 'three'
+import TankShape from './TankShape';
+
 import TankHelper from './TankHelper'
 import TankBullet from './TankBullet'
 
@@ -19,6 +17,8 @@ class TankPlayer {
         this.bullets = [];
 
         game.timer.tick(this.update.bind(this));
+
+        this.shape = new TankShape(TankShape.Box, 1);
     }
 
     getMaxBulletCount() {
@@ -82,8 +82,17 @@ class TankPlayer {
         }
     }
 
-    get CollisionType() {
-        return TankHelper.CollisionType.Player;
+    get CampType() {
+        return TankHelper.CampType.Player;
+    }
+
+    get ObjectType() {
+        return TankHelper.ObjectType.Tank;
+    }
+
+    get Shape() {
+        this.shape.center = this.obj.position;
+        return this.shape;
     }
 
     getMoveRotation(direction) {

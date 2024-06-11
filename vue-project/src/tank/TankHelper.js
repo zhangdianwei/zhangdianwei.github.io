@@ -16,19 +16,6 @@ class TankHelper {
             Right: 2,
             Down: 3,
             Left: 4,
-        }
-
-        this.CollisionType = {
-            Brick: "Brick",
-            Iron: "Iron",
-            Border: "Border",
-            Player: "Player",
-            Bullet: "Bullet",
-        };
-
-        this.ControllerType = {
-            Player: "Player",
-            Bullet: "Bullet",
         };
 
         this.CampType = {

@@ -58,11 +58,12 @@ class TankGame {
     }
 
     run() {
-        this.ResStore = {};
         this.loadResource();
     }
 
     loadResource() {
+
+        this.ResStore = {};
 
         const ResStoreNames = [
             "tank/platform.fbx",
@@ -297,8 +298,7 @@ class TankGame {
         // if (this.tick < 0.05) {
         //     return;
         // }
-
-        this.tick = 0;
+        // this.tick = 0;
 
         this.timer.update({ delta, elapsed });
         this.checkCollision({ delta, elapsed });

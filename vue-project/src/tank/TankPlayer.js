@@ -70,15 +70,15 @@ class TankPlayer {
         TankHelper.removeArrayValue(game.onRemoveController, this.onRemoveController.bind(this));
     }
 
-    onAddController(controller) {
-        if (controller instanceof TankBullet) {
-            this.bullets.push(controller);
+    onAddController(con) {
+        if (con.CampType == TankHelper.CampType.Player && con.ObjectType == TankHelper.ObjectType.Bullet) {
+            this.bullets.push(con);
         }
     }
 
-    onRemoveController(controller) {
-        if (controller instanceof TankBullet) {
-            TankHelper.removeArrayValue(this.bullets, controller);
+    onRemoveController(con) {
+        if (con.CampType == TankHelper.CampType.Player && con.ObjectType == TankHelper.ObjectType.Bullet) {
+            TankHelper.removeArrayValue(this.bullets, con);
         }
     }
 

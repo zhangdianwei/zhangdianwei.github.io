@@ -1,8 +1,6 @@
 <script setup>
 
 import { OrbitControls } from '@tresjs/cientos'
-import { useFBX } from '@tresjs/cientos'
-import TankLogic from "./TankLogic.vue"
 import { ref, shallowRef, watch } from 'vue';
 import TankGame from "./TankGame"
 import TankMenu from "./TankMenu.vue"

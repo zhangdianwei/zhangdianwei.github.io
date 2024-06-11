@@ -66,10 +66,8 @@ class TankGame {
 
         if (this.enermyMan) {
             this.enermyMan.dispose();
-            this.enermyMan = null;
         }
         this.enermyMan = new EnermyMan();
-        this.enermyMan.init();
 
         this.timer.tickOnce(() => {
             this.showPlayerAppear();
@@ -77,8 +75,9 @@ class TankGame {
     }
 
     showPlayerAppear() {
-        console.log(`xxx`);
         this.gameState = TankHelper.GameState.Gaming;
+        this.enermyMan.start();
+
         this.player_1.obj.visible = true;
     }
 

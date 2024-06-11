@@ -107,6 +107,9 @@ class TankPlayer {
     }
 
     update({ delta, elapsed }) {
+        if (window.game.gameState != TankHelper.GameState.Gaming) {
+            return;
+        }
         this.checkMove({ delta, elapsed });
         this.checkShoot({ delta, elapsed });
     }

@@ -3,13 +3,15 @@ import TankEnermy from "./TankEnermy"
 import TankHelper from "./TankHelper"
 
 class EnermyMan {
-    init() {
+    constructor() {
+        this.tanks = [];
+        this.bornIndex = 0;
+    }
+
+    start() {
         window.game.timer.tick(this.update.bind(this), 1.0);
         window.game.onAddController.push(this.onAddController.bind(this));
         window.game.onRemoveController.push(this.onRemoveController.bind(this));
-
-        this.tanks = [];
-        this.bornIndex = 0;
     }
 
     dispose() {

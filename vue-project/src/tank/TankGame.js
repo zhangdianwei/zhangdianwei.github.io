@@ -10,6 +10,7 @@ import RCHelper from './RCHelper'
 import TankPlayer from './TankPlayer'
 import Timer from './Timer'
 import TankBullet from './TankBullet'
+import EnermyMan from './TankEnermyMan'
 
 const { onLoop } = useRenderLoop()
 
@@ -49,6 +50,9 @@ class TankGame {
         this.initPlayer();
         this.initInput();
 
+        this.enermyMan = new EnermyMan();
+        this.enermyMan.init();
+
         platform.visible = this.visible;
         this.tileRoot.visible = this.visible;
     }
@@ -65,6 +69,7 @@ class TankGame {
             "tank/tile1.fbx",
             "tank/tile2.fbx",
             "tank/tile9.fbx",
+            "tank/enermy1.fbx",
             "tank/bullet_player.fbx",
             "tank/tank_player_1.fbx",
         ]

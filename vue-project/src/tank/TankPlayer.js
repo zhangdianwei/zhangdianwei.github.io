@@ -65,7 +65,6 @@ class TankPlayer {
         game.onAddController.push(this.onAddController.bind(this));
         game.onRemoveController.push(this.onRemoveController.bind(this));
     }
-
     onRemove() {
         TankHelper.removeArrayValue(game.onAddController, this.onAddController.bind(this));
         TankHelper.removeArrayValue(game.onRemoveController, this.onRemoveController.bind(this));

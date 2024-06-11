@@ -18,9 +18,10 @@ class Timer {
             var record = this.records[i];
             record.acc += delta;
             if (record.acc >= record.second) {
-                record.acc -= record.second;
 
-                record.callback({ delta, elapsed });
+                record.callback({ delta: record.acc, elapsed });
+
+                record.acc = 0;
 
                 if (record.times) {
                     record.times -= 1;

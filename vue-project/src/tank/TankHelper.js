@@ -26,9 +26,20 @@ class TankHelper {
             Bullet: "Bullet",
         };
 
-        // this.ControllerType = {
-        //     Player: "Player",
-        // };
+        this.ControllerType = {
+            Player: "Player",
+            Bullet: "Bullet",
+        };
+
+        this.CampType = {
+            Player: "Player",
+            Enermy: "Enermy",
+        };
+
+        this.ObjectType = {
+            Tank: "Tank",
+            Bullet: "Bullet",
+        };
 
         this.maps = this.getMapDatas();
     }

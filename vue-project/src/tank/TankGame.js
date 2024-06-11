@@ -46,15 +46,40 @@ class TankGame {
         this.tileRoot = new Group();
         this.scene.add(this.tileRoot);
 
-        this.initMap(0);
-        this.initPlayer();
+        this.startLevel(0);
         this.initInput();
-
-        this.enermyMan = new EnermyMan();
-        this.enermyMan.init();
 
         platform.visible = this.visible;
         this.tileRoot.visible = this.visible;
+    }
+
+    startLevel(mapId) {
+        this.gameState = TankHelper.GameState.Prepare;
+
+        while (this.tileRoot.children.length > 0) {
+            this.tileRoot.remove(this.tileRoot.children[0]);
+        }
+        this.initMap(mapId);
+
+        this.initPlayer();
+        this.player_1.obj.visible = false;
+
+        if (this.enermyMan) {
+            this.enermyMan.dispose();
+            this.enermyMan = null;
+        }
+        this.enermyMan = new EnermyMan();
+        this.enermyMan.init();
+
+        this.timer.tickOnce(() => {
+            this.showPlayerAppear();
+        }, 1);
+    }
+
+    showPlayerAppear() {
+        console.log(`xxx`);
+        this.gameState = TankHelper.GameState.Gaming;
+        this.player_1.obj.visible = true;
     }
 
     run() {
@@ -97,6 +122,10 @@ class TankGame {
     }
 
     initPlayer() {
+        if (this.player_1) {
+            this.removeController(this.player_1);
+        }
+
         this.player_1 = new TankPlayer();
         this.addController(this.player_1);
         this.player_1.position.copy(this.rc.getPositionByRC(22, 9).add(new Vector3(-0.25, 0, 0.25)))

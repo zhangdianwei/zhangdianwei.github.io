@@ -1,10 +1,12 @@
+import TankHelper from "./TankHelper";
+
 class Timer {
     constructor() {
         this.delta = 0;
         this.elapsed = 0;
 
         this.records = [];
-        this.inUpdate = false;
+
         this.shouldRemoves = [];
         this.shouldAdds = [];
     }
@@ -13,7 +15,6 @@ class Timer {
         this.delta = delta;
         this.elapsed = elapsed;
 
-        this.inUpdate = true;
         for (let i = 0; i < this.records.length; ++i) {
             var record = this.records[i];
             record.acc += delta;
@@ -26,12 +27,11 @@ class Timer {
                 if (record.times) {
                     record.times -= 1;
                     if (record.times <= 0) {
-                        this.shouldRemoves.push(record);
+                        this.shouldRemoves.push(record.callback);
                     }
                 }
             }
         }
-        this.inUpdate = false;
 
         this.checkRemove();
         this.checkAdd();
@@ -46,33 +46,29 @@ class Timer {
 
     checkRemove() {
         for (let i = 0; i < this.shouldRemoves.length; ++i) {
-            var index = this.records.indexOf(this.shouldRemoves[i]);
-            if (index >= 0) {
-                this.records.splice(index, 1);
-            }
+            var predict = (record) => {
+                return record.callback == this.shouldRemoves[i];
+            };
+            TankHelper.removeArrayValueIf(this.records, predict);
+            TankHelper.removeArrayValueIf(this.shouldAdds, predict);
         }
+        this.shouldRemoves.length = 0;
     }
 
     tick(callback, second) {
         second = second || 0;
         var record = { second, callback, acc: 0 };
-        if (this.inUpdate) {
-            this.shouldAdds.push(record);
-        }
-        else {
-            this.records.push(record);
-        }
+        this.shouldAdds.push(record);
     }
 
     tickOnce(callback, second) {
         second = second || 0;
-        var record = { second, callback, ac: 0, times: 1 };
-        if (this.inUpdate) {
-            this.shouldAdds.push(record);
-        }
-        else {
-            this.records.push(record);
-        }
+        var record = { second, callback, acc: 0, times: 1 };
+        this.shouldAdds.push(record);
+    }
+
+    untick(callback) {
+        this.shouldRemoves.push(callback);
     }
 }
 

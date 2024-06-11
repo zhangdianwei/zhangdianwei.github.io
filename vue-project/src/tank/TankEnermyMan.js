@@ -10,8 +10,12 @@ class EnermyMan {
 
         this.tanks = [];
         this.bornIndex = 0;
+    }
 
-        this.update({});
+    dispose() {
+        window.game.timer.untick(this.update.bind(this));
+        TankHelper.removeArrayValue(window.game.onAddController, this.onAddController.bind(this));
+        TankHelper.removeArrayValue(window.game.onRemoveController, this.onRemoveController.bind(this));
     }
 
     onAddController(controller) {

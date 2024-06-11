@@ -28,6 +28,12 @@ class TankHelper {
             Bullet: "Bullet",
         };
 
+        this.GameState = {
+            Prepare: "Prepare",
+            Gaming: "Gaming",
+            Finish: "Finish",
+        }
+
         this.maps = this.getMapDatas();
     }
 
@@ -63,6 +69,14 @@ class TankHelper {
 
     removeArrayValue(arr, value) {
         var index = arr.indexOf(value);
+        while (index >= 0) {
+            arr.splice(index, 1);
+            index = arr.indexOf(value);
+        }
+    }
+
+    removeArrayValueIf(arr, value) {
+        var index = arr.findIndex(value);
         while (index >= 0) {
             arr.splice(index, 1);
             index = arr.indexOf(value);

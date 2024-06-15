@@ -13,7 +13,8 @@ class TankEnermy {
     }
 
     createObject() {
-        var obj = window.game.ResStore.enermy1.clone();
+        var res = window.game.ResStore[`enermy4`];
+        var obj = res.clone();
         return obj;
     }
 

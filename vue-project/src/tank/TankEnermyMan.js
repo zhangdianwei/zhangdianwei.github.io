@@ -5,7 +5,14 @@ import TankHelper from "./TankHelper"
 class EnermyMan {
     constructor() {
         this.tanks = [];
+
         this.bornIndex = 0;
+        this.bornTime = {};
+
+        this.totalCount = 20;
+        this.destroyCount = 0;
+
+        console.log(`EnermyMan`);
     }
 
     start() {
@@ -29,16 +36,40 @@ class EnermyMan {
     onRemoveController(controller) {
         if (controller instanceof TankEnermy) {
             TankHelper.removeArrayValue(this.tanks, controller);
+
+            this.destroyCount += 1;
         }
+    }
+
+    getBornPos(index) {
+        index = index % 3;
+        if (index == 0) {
+            return window.game.rc.getPositionByRC(0, 0).add(new Vector3(0.25, 0, 0.25));
+        }
+        else if (index == 1) {
+            return window.game.rc.getPositionByRC(0, 12).add(new Vector3(0.25, 0, 0.25));
+        }
+        else if (index == 2) {
+            return window.game.rc.getPositionByRC(0, 24).add(new Vector3(0.25, 0, 0.25));
+        }
+    }
+
+    isEmptyBorn() {
+        var bornTime = this.bornTime[this.bornIndex] || 0;
+        return Date.now() - bornTime > 2000;
     }
 
     update({ delta, elapsed }) {
 
-        if (this.tanks.length >= 1) {
-            return;
+        while (this.tanks.length < 3) {
+            if (this.isEmptyBorn()) {
+                this.makeEnermy();
+            }
+            else {
+                break;
+            }
         }
 
-        this.makeEnermy();
     }
 
     makeEnermy() {
@@ -46,8 +77,11 @@ class EnermyMan {
         window.game.addController(con);
         con.init(this, this.bornIndex);
 
+        TankHelper.makeTweenTankAppear(con.obj);
+
+        this.bornTime[this.bornIndex] = Date.now();
         this.bornIndex += 1;
-        this.tanks.push(con);
+        this.bornIndex = this.bornIndex % 3;
     }
 }
 

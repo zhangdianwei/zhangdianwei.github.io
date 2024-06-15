@@ -5,6 +5,7 @@ import { shallowRef, ref, watch } from 'vue'
 import { useFBX } from '@tresjs/cientos'
 import { Group, Vector3 } from 'three'
 import { BufferGeometry, LineBasicMaterial, Line } from 'three'
+import * as TWEEN from '@tweenjs/tween.js'
 import TankHelper from './TankHelper'
 import RCHelper from './RCHelper'
 import TankPlayer from './TankPlayer'
@@ -62,7 +63,7 @@ class TankGame {
         this.initMap(mapId);
 
         this.initPlayer();
-        this.player_1.obj.visible = false;
+        // this.player_1.obj.visible = false;
 
         if (this.enermyMan) {
             this.enermyMan.dispose();
@@ -74,11 +75,26 @@ class TankGame {
         }, 1);
     }
 
-    showPlayerAppear() {
-        this.gameState = TankHelper.GameState.Gaming;
-        this.enermyMan.start();
+    initPlayer() {
+        if (this.player_1) {
+            this.removeController(this.player_1);
+        }
 
-        this.player_1.obj.visible = true;
+        this.player_1 = new TankPlayer();
+        this.addController(this.player_1);
+        this.player_1.position.copy(this.rc.getPositionByRC(22, 9).add(new Vector3(-0.25, -1, 0.25)))
+        this.player_1.init();
+    }
+
+    showPlayerAppear() {
+        TankHelper.makeTween(this.player_1.obj.position)
+            .to({ y: 0 }, 1000)
+            .easing(TWEEN.Easing.Back.Out)
+            .onComplete(() => {
+                this.gameState = TankHelper.GameState.Gaming;
+                this.enermyMan.start();
+            })
+            .start();
     }
 
     run() {
@@ -95,6 +111,9 @@ class TankGame {
             "tank/tile2.fbx",
             "tank/tile9.fbx",
             "tank/enermy1.fbx",
+            "tank/enermy2.fbx",
+            "tank/enermy3.fbx",
+            "tank/enermy4.fbx",
             "tank/bullet_player.fbx",
             "tank/tank_player_1.fbx",
         ]
@@ -120,22 +139,7 @@ class TankGame {
         });
     }
 
-    initPlayer() {
-        if (this.player_1) {
-            this.removeController(this.player_1);
-        }
 
-        this.player_1 = new TankPlayer();
-        this.addController(this.player_1);
-        this.player_1.position.copy(this.rc.getPositionByRC(22, 9).add(new Vector3(-0.25, 0, 0.25)))
-        this.player_1.init();
-
-        // var cameraPos = this.player_1.position.clone();
-        // cameraPos.y += 10;
-        // cameraPos.z += 5;
-        // this.camera.position.copy(cameraPos);
-        // this.camera.lookAt(this.player_1.position);
-    }
 
     initInput() {
         document.addEventListener('keydown', (event) => {
@@ -319,6 +323,8 @@ class TankGame {
     tick = 0;
 
     update({ delta, elapsed }) {
+        TWEEN.update();
+
         this.checkRemoveController();
         this.checkAddController();
 

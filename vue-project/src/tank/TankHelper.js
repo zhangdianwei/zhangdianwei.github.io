@@ -1,4 +1,5 @@
 import { Vector3 } from 'three'
+import * as TWEEN from '@tweenjs/tween.js'
 
 class TankHelper {
     constructor() {
@@ -35,6 +36,20 @@ class TankHelper {
         }
 
         this.maps = this.getMapDatas();
+    }
+
+    makeTween(obj) {
+        var tween = new TWEEN.Tween(obj);
+        return tween;
+    }
+
+    makeTweenTankAppear(tankObj, onComplete) {
+        tankObj.position.y = -1;
+        this.makeTween(tankObj.position)
+            .to({ y: 0 }, 1000)
+            .easing(TWEEN.Easing.Back.Out)
+            .onComplete(onComplete)
+            .start();
     }
 
     formatNum(n, precise) {

@@ -61,7 +61,7 @@ class EnermyMan {
 
     update({ delta, elapsed }) {
 
-        while (this.tanks.length < 3) {
+        while (this.tanks.length < 5) {
             if (this.isEmptyBorn()) {
                 this.makeEnermy();
             }
@@ -73,10 +73,10 @@ class EnermyMan {
     }
 
     makeEnermy() {
-        var tankType = TankHelper.randInt(1, 4);
+        var tankType = TankHelper.randInt(0, 3);
         var con = new TankEnermy(this, this.bornIndex, tankType);
         window.game.addController(con);
-        TankHelper.makeTweenTankAppear(con.obj);
+        TankHelper.makeTweenTankAppear(con.obj, con.onAppearFinish.bind(con));
 
         this.bornTime[this.bornIndex] = Date.now();
         this.bornIndex += 1;

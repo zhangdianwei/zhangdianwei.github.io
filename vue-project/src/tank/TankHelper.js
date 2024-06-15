@@ -53,8 +53,16 @@ class TankHelper {
     }
 
     randInt(min, max) {
+        if (max < min) {
+            return min;
+        }
         var diff = (max + 1) - min;
         return Math.floor(Math.random() * diff) + min;
+    }
+
+    randSplice(arr) {
+        var index = this.randInt(0, arr.length - 1)
+        return arr.splice(index, 1)[0]
     }
 
     formatNum(n, precise) {
@@ -81,6 +89,17 @@ class TankHelper {
             var times = Math.round(n / precise);
             return precise * times;
         }
+    }
+
+    getDirectionRotation(direction) {
+        const Direction2Rotation = [
+            0,
+            0,
+            -Math.PI / 2,
+            Math.PI,
+            Math.PI / 2,
+        ]
+        return Direction2Rotation[direction];
     }
 
     isEqual(a, b) {

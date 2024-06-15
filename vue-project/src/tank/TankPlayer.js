@@ -18,8 +18,6 @@ class TankPlayer {
 
         this.bullets = [];
 
-        game.timer.tick(this.update.bind(this));
-
         this.shape = new TankShape(TankShape.Box, 1);
     }
 
@@ -97,18 +95,7 @@ class TankPlayer {
         return this.shape;
     }
 
-    getMoveRotation(direction) {
-        const Direction2Rotation = [
-            0,
-            0,
-            -Math.PI / 2,
-            Math.PI,
-            Math.PI / 2,
-        ]
-        return Direction2Rotation[direction];
-    }
-
-    update({ delta, elapsed }) {
+    ITank_update({ delta, elapsed }) {
         if (window.game.gameState != TankHelper.GameState.Gaming) {
             return;
         }
@@ -118,13 +105,13 @@ class TankPlayer {
     checkMove({ delta, elapsed }) {
         var direction = game.getMoveDirection();
         if (direction) {
-            var moveRotation = this.getMoveRotation(direction);
+            var moveRotation = TankHelper.getDirectionRotation(direction);
             if (moveRotation != this.rotation.y) {
                 this.rotation.y = moveRotation;
                 TankHelper.formatNum(this.position, 0.25)
             }
 
-            var canMoveLength = game.getCanMoveLength(direction);
+            var canMoveLength = game.getCanMoveLength(this, direction);
             if (canMoveLength > 0) {
                 var wantMoveLength = this.moveSpeed * delta;
                 if (wantMoveLength > canMoveLength) {

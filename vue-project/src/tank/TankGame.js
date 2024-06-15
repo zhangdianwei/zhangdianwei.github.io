@@ -34,6 +34,7 @@ class TankGame {
         this.playerBullets = [];
         this.controllerShouldAdd = [];
         this.controllerShouldRemove = [];
+        this.ITank_updates = [];
 
         this.onAddController = [];
         this.onRemoveController = [];
@@ -280,9 +281,9 @@ class TankGame {
         return blockRCs;
     }
 
-    getCanMoveLength(direction) {
-        var pos = this.player_1.position.clone();
-        var standGrid = this.rc.getStandGrid(this.player_1.position, 1);
+    getCanMoveLength(tank, direction) {
+        var pos = tank.position.clone();
+        var standGrid = this.rc.getStandGrid(tank.position, 1);
         var blockRCs = this.getBlockTileRCs(standGrid, direction);
 
         var blockRC = blockRCs[0];
@@ -333,6 +334,11 @@ class TankGame {
         //     return;
         // }
         // this.tick = 0;
+
+        for (let i = 0; i < this.ITank_updates.length; i++) {
+            const con = this.ITank_updates[i];
+            con.ITank_update({ delta, elapsed });
+        }
 
         this.timer.update({ delta, elapsed });
         this.checkCollision({ delta, elapsed });
@@ -393,6 +399,10 @@ class TankGame {
 
         this.controllerShouldAdd.push(con);
 
+        if (con.ITank_update) {
+            this.ITank_updates.push(con);
+        }
+
         for (let i = 0; i < this.onAddController.length; ++i) {
             var callback = this.onAddController[i];
             callback(con);
@@ -413,15 +423,18 @@ class TankGame {
         this.controllerShouldAdd.length = 0;
     }
 
-    removeController(controller) {
-        this.controllerShouldRemove.push(controller);
-        if (controller.onRemove) {
-            controller.onRemove();
+    removeController(con) {
+        this.controllerShouldRemove.push(con);
+        if (con.ITank_update) {
+            TankHelper.removeArrayValue(this.ITank_updates, con);
+        }
+        if (con.onRemove) {
+            con.onRemove();
         }
 
         for (let i = 0; i < this.onRemoveController.length; ++i) {
             var callback = this.onRemoveController[i];
-            callback(controller);
+            callback(con);
         }
     }
 

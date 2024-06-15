@@ -3,9 +3,12 @@ import TankHelper from './TankHelper'
 import TankShape from './TankShape';
 
 class TankEnermy {
-    init(enermyMan, bornIndex) {
+    constructor(enermyMan, bornIndex, tankType) {
         this.enermyMan = enermyMan;
         this.bornIndex = bornIndex;
+        this.tankType = tankType;
+
+        this.obj = this.createObject();
 
         this.obj.position.copy(this.getBornPos(this.bornIndex));
 
@@ -13,7 +16,7 @@ class TankEnermy {
     }
 
     createObject() {
-        var res = window.game.ResStore[`enermy4`];
+        var res = window.game.ResStore[`enermy${this.tankType}`];
         var obj = res.clone();
         return obj;
     }

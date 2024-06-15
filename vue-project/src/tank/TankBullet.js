@@ -4,6 +4,8 @@ import TankShape from './TankShape';
 
 class TankBullet {
     constructor() {
+        this.obj = this.createObject();
+
         this.speed = 4;
         this.power = 1;
 

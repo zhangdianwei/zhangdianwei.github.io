@@ -6,6 +6,8 @@ import TankBullet from './TankBullet'
 
 class TankPlayer {
     constructor() {
+        this.obj = this.createObject();
+
         this.moveSpeed = 2;
 
         this.shootDiff = 0.1;

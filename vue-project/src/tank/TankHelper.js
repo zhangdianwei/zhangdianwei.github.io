@@ -52,6 +52,11 @@ class TankHelper {
             .start();
     }
 
+    randInt(min, max) {
+        var diff = (max + 1) - min;
+        return Math.floor(Math.random() * diff) + min;
+    }
+
     formatNum(n, precise) {
         if (typeof (n) == 'number') {
             return this.formatNumImpl(n, precise)

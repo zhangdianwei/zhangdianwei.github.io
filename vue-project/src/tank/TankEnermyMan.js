@@ -73,10 +73,9 @@ class EnermyMan {
     }
 
     makeEnermy() {
-        var con = new TankEnermy();
+        var tankType = TankHelper.randInt(1, 4);
+        var con = new TankEnermy(this, this.bornIndex, tankType);
         window.game.addController(con);
-        con.init(this, this.bornIndex);
-
         TankHelper.makeTweenTankAppear(con.obj);
 
         this.bornTime[this.bornIndex] = Date.now();

@@ -386,19 +386,16 @@ class TankGame {
 
     }
 
-    addController(controller) {
-        var obj = controller.createObject();
-        if (obj) {
-            controller.obj = obj;
-            obj.controller = controller;
-            this.tileRoot.add(controller.obj);
+    addController(con) {
+        if (con.obj) {
+            this.tileRoot.add(con.obj);
         }
 
-        this.controllerShouldAdd.push(controller);
+        this.controllerShouldAdd.push(con);
 
         for (let i = 0; i < this.onAddController.length; ++i) {
             var callback = this.onAddController[i];
-            callback(controller);
+            callback(con);
         }
     }
 

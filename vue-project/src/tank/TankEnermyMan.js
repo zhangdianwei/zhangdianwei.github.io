@@ -61,7 +61,7 @@ class EnermyMan {
 
     update({ delta, elapsed }) {
 
-        while (this.tanks.length < 5) {
+        while (this.tanks.length < 1) {
             if (this.isEmptyBorn()) {
                 this.makeEnermy();
             }

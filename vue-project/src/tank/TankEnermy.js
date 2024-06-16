@@ -21,7 +21,8 @@ class TankEnermy {
         this.blood = this.getBloodTemplate();
         this.direction = this.getRandDirection();
 
-        this.moveAcc = 0;
+        this.moveDirectAcc = 0;
+        this.moveDirectMax = 3;
     }
 
     get position() {
@@ -49,18 +50,28 @@ class TankEnermy {
     }
 
     getRandDirection() {
-        var directions = [1, 2, 3, 4];
+        // if (this.needLog) {
+        //     console.log(`xxx`);
+        // }
+        var directions = [
+            TankHelper.Direction.Up,
+            TankHelper.Direction.Right,
+            TankHelper.Direction.Down,
+            TankHelper.Direction.Left,
+        ];
         var moveLengths = [
             window.game.getCanMoveLength(this, TankHelper.Direction.Up),
+            window.game.getCanMoveLength(this, TankHelper.Direction.Right),
             window.game.getCanMoveLength(this, TankHelper.Direction.Down),
             window.game.getCanMoveLength(this, TankHelper.Direction.Left),
-            window.game.getCanMoveLength(this, TankHelper.Direction.Right),
         ]
-        for (let i = 0; i < 4; i++) {
-            if (moveLengths[i] <= 0) {
-                directions.splice(i, 1);
-                moveLengths.splice(i, 1);
-            }
+
+        var index = moveLengths.findIndex((x) => x <= 0);
+        while (index >= 0) {
+            directions.splice(index, 1);
+            moveLengths.splice(index, 1);
+
+            index = moveLengths.findIndex((x) => x <= 0);
         }
 
         if (directions.length > 0) {
@@ -107,12 +118,13 @@ class TankEnermy {
         if (this.wantChangeDirection) {
             this.direction = this.getRandDirection();
             this.wantChangeDirection = false;
-            this.moveAcc = 0;
+            this.moveDirectAcc = 0;
+            this.moveDirectMax = 1000; TankHelper.randInt(1, 5);
         }
 
         this.checkMove({ delta });
 
-        if (this.moveAcc > 2) {
+        if (this.moveDirectAcc >= this.moveDirectMax) {
             this.wantChangeDirection = true;
         }
     }
@@ -125,6 +137,10 @@ class TankEnermy {
         }
 
         var canMoveLength = game.getCanMoveLength(this, this.direction);
+        // if (this.direction == TankHelper.Direction.Down && canMoveLength <= 0) {
+        //     this.state = 0;
+        //     this.needLog = true;
+        // }
         if (canMoveLength > 0) {
             var wantMoveLength = this.moveSpeed * delta;
             if (wantMoveLength > canMoveLength) {
@@ -134,7 +150,9 @@ class TankEnermy {
             var moveVector = TankHelper.getDirectionVector(this.direction).multiplyScalar(wantMoveLength)
             this.position.add(moveVector)
 
-            this.moveAcc += delta;
+            this.moveDirectAcc += delta;
+
+
         }
         else {
             this.wantChangeDirection = true;

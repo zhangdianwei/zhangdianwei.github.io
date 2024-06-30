@@ -2,13 +2,14 @@
 import { ref, computed } from "vue"
 import AppItem from './components/AppItem.vue'
 import TankMain from './tank/TankMain.vue'
+import KonvaMain from './konva/KonvaMain.vue'
 
 // const routes = {
 //   'TankMain': TankMain,
 // }
 const routesArray = [
   { name: "TankMain", title: "TankMainTitle", comp: TankMain, desc: `TankMainDescription TankMainDescription` },
-  { name: "TankMain", title: "TankMainTitle", comp: TankMain, desc: `TankMainDescription TankMainDescription` },
+  { name: "KonvaMain", title: "Konva示例", comp: KonvaMain, desc: `为konva入门写的一些小例子` },
 ];
 
 // const curPath = ref(window.location.pathname.slice(1))

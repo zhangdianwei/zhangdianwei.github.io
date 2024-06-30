@@ -3,10 +3,16 @@ import 'bulma'
 
 import { createApp } from 'vue'
 import App from './App.vue'
-
 var app = createApp(App);
+
+import ViewUIPlus from 'view-ui-plus'
+import 'view-ui-plus/dist/styles/viewuiplus.css'
+app.use(ViewUIPlus)
 
 import Tres from '@tresjs/core'
 app.use(Tres);
+
+import VueKonva from 'vue-konva'
+app.use(VueKonva)
 
 app.mount('#app');

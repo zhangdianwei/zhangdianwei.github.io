@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.js"></script>
+
+    <!-- element-ui -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    
+    <script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
+
+    <!-- codemirror -->
+    <!-- <script src="https://unpkg.com/codemirror@6.0.1/dist/index.cjs"></script> -->
+    <!-- <link rel="stylesheet" href="../scripts/codemirror/lib/codemirror.css">
+    <script src="../scripts/codemirror/mode/clike/clike.js"></script>
+    <link rel="stylesheet" href="../scripts/codemirror/theme/neo.css">
+    <script src="../scripts/codemirror/addon/selection/active-line.js"></script>
+    <script src="../scripts/codemirror/addon/edit/matchbrackets.js"></script> -->
+</head>
+
+<body>
+    <div id="app">
+        <el-row>
+            <el-col :span="4">
+                <!-- <el-button-group> -->
+                <div v-for="label in allCodeNames">
+                    <el-button v-if="!label.startsWith('-')" :disabled="label==selectedGL" @click="onSelectGL(label)" :key="label" :value="label">{{label}}</el-button>
+                    <el-divider v-if="label.startsWith('-')" content-position="left">{{label.substr(1)}}</el-divider>
+                </div>
+                <!-- </el-button-group> -->
+            </el-col>
+            <el-col :span="6">
+                <canvas class="glslCanvas" data-fragment-url="普通渐变1.frag" width="400" height="400"></canvas>
+            </el-col>
+            <el-col :span="14">
+                <div id="codeMirrorNode"></div>
+            </el-col>
+        </el-row>
+    </div>
+</body>
+
+<script type="module">
+    // Vue.use(hljsVuePlugin);
+
+    let vue = new Vue({
+        el: '#app',
+
+        data: {
+            allCodeNames: [],
+            allCodes: {},
+            selectedGL: '',
+        },
+
+        mounted: function() {
+
+            this.allCodeNames.push("普通渐变1.frag");
+            this.allCodeNames.push("普通渐变2.frag");
+            this.allCodeNames.push("普通渐变3.frag");
+            this.allCodeNames.push("普通渐变4.frag");
+            this.allCodeNames.push("普通渐变5.frag");
+            this.allCodeNames.push("切变1.frag");
+            this.allCodeNames.push("切变2.frag");
+            this.allCodeNames.push("切变3.frag");
+            this.allCodeNames.push("-渐变和切变，可以用于边缘平滑");
+            this.allCodeNames.push("渐变和切变1.frag");
+            this.allCodeNames.push("渐变和切变2.frag");
+            this.allCodeNames.push("颜色混合(颜色渐变)1.frag");
+            this.allCodeNames.push("-");
+            this.allCodeNames.push("重复图形1.frag");
+            this.allCodeNames.push("重复图形2.frag");
+            this.allCodeNames.push("重复图形3.frag");
+            this.allCodeNames.push("-");
+            this.allCodeNames.push("平移动画.frag");
+            this.allCodeNames.push("缩放动画.frag");
+            this.allCodeNames.push("旋转动画.frag");
+
+            // let codeMirrorNode = document.getElementById('codeMirrorNode');
+
+            // let startState = EditorState.create({
+            //     doc: "Hello World",
+            //     extensions: [keymap.of(defaultKeymap)]
+            // });
+
+            // this.myCodeMirror = new CodeMirror.EditorView({
+            //     readOnly: true,
+            //     lineNumbers: true,
+            //     styleActiveLine: true,
+            //     matchBrackets: true,
+            //     autofocus: true,
+            //     theme: "neo",
+            //     parent:codeMirrorNode,
+            // });
+
+            this.onSelectGL(this.allCodeNames[0]);
+
+        },
+
+        computed: {
+        },
+
+        methods: {
+            getCode: function(name){
+                return this.allCodes[name] || '';
+            },
+            onSelectGL: function(gl){
+                this.selectedGL = gl;
+
+                var shaderCode = this.allCodes[this.selectedGL];
+                if (shaderCode) {
+                    this.refreshShaderCode(shaderCode);
+                }
+                else{
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('get', this.selectedGL, true);
+                    xhr.onload = function () {
+                        vue.allCodeNames[this.selectedGL] = this.response;
+                        vue.refreshShaderCode(this.response);
+                    };
+                    xhr.send();
+                }
+            },
+            refreshShaderCode: function(string_frag_code){
+                // this.myCodeMirror.getDoc().setValue(string_frag_code);
+
+                if (window.glslCanvases && window.glslCanvases[0]) {
+                    window.glslCanvases[0].load(string_frag_code);
+                }
+            },
+        },
+    });
+
+</script>
+
+<style>
+    html,body,#app,.el-container {
+        height: 100%;
+        /*background-color: #d3dce6;*/
+    }
+
+    .el-tree-node__label {
+        font-size: 18px;
+        /*border: 20px;*/
+    }
+
+    .CodeMirror {
+      border: 1px solid #eee;
+      height: auto;
+      font-size:  16px;
+    }
+
+    .glslCanvas {
+        border-style: solid;
+        /*border-radius: 5px;*/
+    }
+
+</style>
+
+</html>

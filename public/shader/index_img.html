@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <script src="../scripts/vue@2.js"></script>
+
+    <!-- element-ui -->
+    <link rel="stylesheet" href="../scripts/element-ui-index.css">
+    <link rel="stylesheet" href="../scripts/element-ui-index.css">
+    <script src="../scripts/element-ui-index.js"></script>
+    
+    <script type="text/javascript" src="../scripts/GlslCanvas.js"></script>
+    
+    <!-- highlight.js -->
+    <!-- <link rel="stylesheet" href="../scripts/highlight/styles/default.min.css">
+    <script src="../scripts/highlight/highlight.min.js"></script>
+    <script src="../scripts/highlight/highlightjs-vue.min.js"></script> -->
+
+    <!-- codemirror -->
+    <script src="../scripts/codemirror/lib/codemirror.js"></script>
+    <link rel="stylesheet" href="../scripts/codemirror/lib/codemirror.css">
+    <script src="../scripts/codemirror/mode/clike/clike.js"></script>
+    <link rel="stylesheet" href="../scripts/codemirror/theme/neo.css">
+    <script src="../scripts/codemirror/addon/selection/active-line.js"></script>
+    <script src="../scripts/codemirror/addon/edit/matchbrackets.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <el-row>
+            <el-col :span="4">
+                <!-- <el-button-group> -->
+                <div v-for="label in allCodeNames">
+                    <el-button v-if="!label.startsWith('-')" :disabled="label==selectedGL" @click="onSelectGL(label)" :key="label" :value="label">{{label}}</el-button>
+                    <el-divider v-if="label.startsWith('-')" content-position="left">{{label.substr(1)}}</el-divider>
+                </div>
+                <!-- </el-button-group> -->
+            </el-col>
+            <el-col :span="6">
+                <canvas class="glslCanvas" data-fragment-url="图像描边.frag" data-textures="myimg.png" width="400" height="400"></canvas>
+            </el-col>
+            <el-col :span="14">
+                <div id="codeMirrorNode"></div>
+            </el-col>
+        </el-row>
+    </div>
+</body>
+
+<script>
+    // Vue.use(hljsVuePlugin);
+
+    let vue = new Vue({
+        el: '#app',
+
+        data: {
+            allCodeNames: [],
+            allCodes: {},
+            selectedGL: '',
+        },
+
+        mounted: function() {
+
+            this.allCodeNames.push("显示图像.frag");
+            this.allCodeNames.push("图像置灰.frag");
+            this.allCodeNames.push("图像高亮.frag");
+            this.allCodeNames.push("图像变色.frag");
+            this.allCodeNames.push("进度条1.frag");
+            this.allCodeNames.push("进度条2.frag");
+            this.allCodeNames.push("进度条3.frag");
+            this.allCodeNames.push("图像描边.frag");
+
+            let codeMirrorNode = document.getElementById('codeMirrorNode');
+            this.myCodeMirror = CodeMirror(codeMirrorNode, {
+                readOnly: true,
+                lineNumbers: true,
+                styleActiveLine: true,
+                matchBrackets: true,
+                autofocus: true,
+                theme: "neo",
+            });
+
+            // document.getElementById("mycanvas").onload = function(){
+            //     this.onSelectGL(this.allCodeNames[1]);
+            //     console.log("xxx");
+            // };
+
+        },
+
+        computed: {
+        },
+
+        methods: {
+            getCode: function(name){
+                return this.allCodes[name] || '';
+            },
+            onSelectGL: function(gl){
+                this.selectedGL = gl;
+
+                shaderCode = this.allCodes[this.selectedGL];
+                if (shaderCode) {
+                    this.refreshShaderCode(shaderCode);
+                }
+                else{
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('get', this.selectedGL, true);
+                    xhr.onload = function () {
+                        vue.allCodeNames[this.selectedGL] = this.response;
+                        vue.refreshShaderCode(this.response);
+                    };
+                    xhr.send();
+                }
+            },
+            refreshShaderCode: function(string_frag_code){
+                this.myCodeMirror.getDoc().setValue(string_frag_code);
+
+                if (window.glslCanvases && window.glslCanvases[0]) {
+                    window.glslCanvases[0].load(string_frag_code);
+                }
+            },
+        },
+    });
+
+</script>
+
+<style>
+    html,body,#app,.el-container {
+        height: 100%;
+        background-color: #d3dce6;
+    }
+
+    .el-tree-node__label {
+        font-size: 18px;
+        /*border: 20px;*/
+    }
+
+    .CodeMirror {
+      border: 1px solid #eee;
+      height: auto;
+      font-size:  16px;
+    }
+
+    .glslCanvas {
+        border-style: solid;
+        /*border-radius: 10px;*/
+        /*background-color: #d3dce6;*/
+    }
+
+</style>
+
+</html>

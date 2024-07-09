@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<script type="importmap">
+	{
+	"imports": {
+		"three": "/three@0.152.0/build/three.module.js",
+        "RoundedBoxGeometry": "/three@0.152.0/examples/jsm/geometries/RoundedBoxGeometry.js",
+        "OrbitControls": "/three@0.152.0/examples/jsm/controls/OrbitControls.js",
+        "FontLoader": "/three@0.152.0/examples/jsm/loaders/FontLoader.js",
+        "TWEEN": "/three@0.152.0/examples/jsm/libs/tween.module.js"
+	}
+	}
+</script>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tetris</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.*/css/pico.min.css">
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            z-index: -1;
+        }
+
+        #debug_label {
+            margin: 0px;
+            font-size: 2em;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 20;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 2px solid #4de7d3;
+            width: 400px;
+            text-align: center;
+        }
+
+        .close {
+            color: #aaaaaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .res_container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        progress {
+            display: block;
+            margin: 0 auto;
+            width: 50%;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas">
+    </canvas>
+
+    <!-- <p id="debug_label"></p>
+    <script>
+        function func() {
+            if (!window.game) {
+                return;
+            }
+            document.getElementById("debug_label").innerHTML = `
+            position = ${window.game.camera.position.x.toFixed(0)}, ${window.game.camera.position.y.toFixed(0)}, ${window.game.camera.position.z.toFixed(0)}
+            <br/>
+            quaternion = ${window.game.camera.quaternion.x.toFixed(1)},${window.game.camera.quaternion.y.toFixed(1)},${window.game.camera.quaternion.z.toFixed(1)},${window.game.camera.quaternion.w.toFixed(1)}
+            <br/>
+            state1=${window.game.logic.state1}
+            <br/>
+            state2=${window.game.logic.state2}
+        `;
+        }
+        setInterval(func, 1000);
+    </script> -->
+
+    <details open style="width: 300px;">
+        <summary role="button">帮助</summary>
+        <p><kbd>A</kbd>左移 <kbd>D</kbd>右移</p>
+        <p><kbd>W</kbd>变形</p>
+        <p></p>
+    </details>
+
+    <!-- <div class="progress_container">
+        <progress id="res_progress" value="0" max="100"></progress>
+    </div> -->
+
+    <div id="dialog_startgame" class="modal">
+        <div class="modal-content">
+            <button onclick="onClickStartGame()">开始游戏</button>
+        </div>
+    </div>
+
+    <div id="dialog_win" class="modal">
+        <div class="modal-content">
+            <button onclick="onClickNextLevel()">下一关</button>
+        </div>
+    </div>
+
+    <script>
+        function openDialog(name) {
+            document.getElementById(name).style.display = "block";
+        }
+
+        function closeDialog(name) {
+            document.getElementById(name).style.display = "none";
+        }
+
+        function onClickStartGame() {
+            if (!window.game || !window.game.logic) {
+                return;
+            }
+            closeDialog("dialog_startgame");
+            game.logic.startGame(0);
+        }
+
+        function onClickNextLevel() {
+            if (!window.game || !window.game.logic) {
+                return;
+            }
+            closeDialog("dialog_win");
+            game.logic.startGame(game.logic.levelId + 1);
+        }
+    </script>
+
+
+    <script src="main.js" type="module"></script>
+
+</body>
+
+</html>

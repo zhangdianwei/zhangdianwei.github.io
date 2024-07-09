@@ -19,10 +19,10 @@ function onClick() {
   <Card :bordered="false" :dis-hover="true">
     <template #title>
 
-      <a @click="onClick">
+      <Button type="success" @click="onClick">
         <Icon type="md-eye" />
         {{ routeData.title }}
-      </a>
+      </Button>
 
     </template>
 

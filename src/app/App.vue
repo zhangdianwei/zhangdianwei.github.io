@@ -28,20 +28,45 @@ const curView = computed(() => {
   return curRouteData.value?.comp;
 })
 
+function onClickItem(routeData) {
+  window.location.hash = routeData.name;
+}
+
 </script>
 
 <template>
-  <div v-if="curView">
+  <div v-if="false">
     <Suspense>
       <component :is="curView" :link="curRouteData.link" />
     </Suspense>
   </div>
   <div v-else>
-    <Grid :col="2">
+    <!-- <Grid :col="4">
       <GridItem v-for="routeData in routesArray">
         <AppItem :routeData="routeData"></AppItem>
       </GridItem>
-    </Grid>
+    </Grid> -->
+
+    <Row justify="end">
+      <Col :span="2">
+      <List>
+        <ListItem v-for="routeData in routesArray">
+          <div style="text-align: center; width: 100%;">
+            <Button type="text" @click="onClickItem(routeData)">{{ routeData.title }}</Button>
+
+          </div>
+        </ListItem>
+      </List>
+      </Col>
+      <Col :span="22">
+      <div v-if="curView">
+        <Suspense>
+          <component :is="curView" :link="curRouteData.link" />
+        </Suspense>
+      </div>
+      </Col>
+    </Row>
+
 
   </div>
 </template>

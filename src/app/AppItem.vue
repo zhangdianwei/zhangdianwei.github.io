@@ -1,7 +1,7 @@
 <script setup>
 const props = defineProps({
   routeData: {
-    name: "",
+    id: "",
     title: "",
     comp: null,
     desc: "",
@@ -9,24 +9,19 @@ const props = defineProps({
 })
 
 function onClick() {
-  location.hash = props.routeData.name;
+  location.hash = props.routeData.id;
 }
 
 </script>
 
 <template>
 
-  <Card :bordered="false" :dis-hover="true">
-    <template #title>
+  <div style="width: 100%; text-align: center; ">
+    <Button type="success" size="large" @click="onClick">
+      <Icon type="md-eye" />
+      {{ routeData.title }}
+    </Button>
+  </div>
 
-      <Button type="success" @click="onClick">
-        <Icon type="md-eye" />
-        {{ routeData.title }}
-      </Button>
-
-    </template>
-
-    {{ routeData.desc }}
-  </Card>
 
 </template>

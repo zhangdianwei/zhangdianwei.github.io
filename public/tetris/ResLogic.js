@@ -1,5 +1,5 @@
 import { FontLoader } from "FontLoader"
-import { GLTFLoader } from '/three@0.152.0/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'GLTFLoader';
 
 class ResLogic {
     constructor() {

@@ -1,5 +1,5 @@
 import { ShapeDefine } from "./ShapeDefine.js"
-import { TextGeometry } from "/three@0.152.0/examples/jsm/geometries/TextGeometry.js"
+import { TextGeometry } from "TextGeometry"
 
 class Helper {
 

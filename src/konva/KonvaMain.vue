@@ -51,8 +51,9 @@ const myStageRef = ref(null);
 const myLayerRef = ref(null);
 
 function onAnimationFrame() {
-    requestAnimationFrame(onAnimationFrame);
-
+    if (!myRectRef.value) {
+        return;
+    }
     var myrect = myRectRef.value.getNode();
     coordConfig.value.rectConfig.x = myrect.x();
     coordConfig.value.rectConfig.y = myrect.y();
@@ -66,6 +67,8 @@ function onAnimationFrame() {
     coordConfig.value.rectConfig.rotation = myrect.rotation();
     coordConfig.value.rectConfig.scaleX = myrect.scaleX();
     coordConfig.value.rectConfig.scaleY = myrect.scaleY();
+
+    requestAnimationFrame(onAnimationFrame);
 }
 
 onMounted(() => {

@@ -16,12 +16,12 @@ const shapes = computed(() => {
     const a = alpha.value * Math.PI / 180;
     for (let r = 0; r < rows.value; r++) {
         for (let c = 0; c < cols.value; c++) {
-            const x1 = w * c;
-            const y1 = -h * Math.sin(a) * r;
+            const x1 = w * c + r * h * Math.cos(a);
+            const y1 = h * Math.sin(a) * r;
             const x2 = x1 + w;
             const y2 = y1;
             const x3 = x2 + h * Math.cos(a);
-            const y3 = -(r + 1) * h * Math.sin(a);
+            const y3 = (r + 1) * h * Math.sin(a);
             const x4 = x1 + h * Math.cos(a);
             const y4 = y3;
             const data = {
@@ -52,7 +52,7 @@ const arrows = computed(() => {
         },
         {
             type: "Arrow",
-            points: [0, 0, 0, -height.value * rows.value],
+            points: [0, 0, 0, height.value * rows.value],
             pointerLength: 20,
             pointerWidth: 20,
             fill: 'black',
@@ -68,6 +68,7 @@ const stageData = ref({
     draggable: true,
     x: 100,
     y: 600,
+    scaleY: -1,
     children: [
         {
             type: "Layer",

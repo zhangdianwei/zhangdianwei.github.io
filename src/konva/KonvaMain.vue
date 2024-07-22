@@ -2,6 +2,7 @@
 import { onMounted, readonly, ref } from "vue";
 import { Transformer } from "konva"
 import VueKonva from 'vue-konva'
+import KonvaStage from "./KonvaStage.vue"
 
 
 const SW = 800;
@@ -97,6 +98,26 @@ onMounted(() => {
     window.coordConfig = coordConfig;
     window.VueKonva = VueKonva;
 })
+
+const myStageConfig = {
+    type: "Stage",
+    width: 800,
+    height: 600,
+    children: [
+        {
+            type: "Layer",
+            children: [
+                {
+                    type: "Circle",
+                    x: 100,
+                    y: 200,
+                    radius: 70,
+                    fill: 'red',
+                }
+            ]
+        }
+    ]
+}
 
 </script>
 
@@ -204,7 +225,10 @@ onMounted(() => {
         </Row>
 
     </Card>
+    <KonvaStage></KonvaStage>
+    <Card>
 
+    </Card>
 
 
 

@@ -3,7 +3,11 @@ import { ref, computed } from "vue"
 import AppItem from './AppItem.vue'
 import TankMain from '../tank/TankMain.vue'
 import KonvaMain from '../konva/KonvaMain.vue'
-import EasyLink from '../easy_link/EasyLink.vue';
+import EasyLink from '../easy_link/EasyLink.vue'
+import GridSquare from "../comp/GridSquare.vue"
+import GridParallelogram from "../comp/GridParallelogram.vue"
+import GridParallelogramA from "../comp/GridParallelogramA.vue"
+import KonvaStageTest from "../konva/KonvaStageTest.vue"
 
 const routesArray = [
   { id: "TankMain", title: "坦克大战", comp: TankMain },
@@ -13,6 +17,10 @@ const routesArray = [
   { id: "jigsaw", title: "拼图游戏", comp: EasyLink, link: 'jigsaw/index.html' },
   { id: "shader", title: "shader小例子", comp: EasyLink, link: 'shader/index.html' },
   { id: "tetris", title: "俄罗斯方块", comp: EasyLink, link: 'tetris/index.html' },
+  { id: "KonvaStageTest", title: "KonvaStageTest", comp: KonvaStageTest },
+  { id: "GridSquare", title: "矩形网格", comp: GridSquare },
+  { id: "GridParallelogram", title: "平头平行四边形网格", comp: GridParallelogram },
+  { id: "GridParallelogramA", title: "尖头平行四边形网格", comp: GridParallelogramA },
 ];
 
 const curPath = ref(window.location.hash.slice(1))

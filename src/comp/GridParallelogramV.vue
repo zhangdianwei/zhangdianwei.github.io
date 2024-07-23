@@ -6,8 +6,8 @@ const width = ref(130);
 const height = ref(100);
 const alpha = ref(60);
 
-const rows = ref(9);
-const cols = ref(5);
+const rows = ref(4);
+const cols = ref(10);
 
 const shapes = computed(() => {
     var ret = [];
@@ -20,27 +20,32 @@ const shapes = computed(() => {
         for (let c = 0; c < cols.value; c++) {
             let data = null;
             let x1, y1, x2, y2, x3, y3, x4, y4;
-            if (r % 2 == 0) {
-                x1 = w * c + w / 2;
-                y1 = h * r / 2;
-                x2 = w * c + w;
-                y2 = h * r / 2 + h / 2;
-                x3 = x1;
-                y3 = y1 + h;
-                x4 = w * c;
-                y4 = y2;
 
+            x1 = w * c + w / 2;
+            y1 = h * r;
+            x2 = x1 + w / 2;
+            y2 = y1 + h / 2;
+            x3 = x1;
+            y3 = y1 + h;
+            x4 = w * c;
+            y4 = y2;
+
+            x1 -= w * Math.floor(c / 2);
+            x2 -= w * Math.floor(c / 2);
+            x3 -= w * Math.floor(c / 2);
+            x4 -= w * Math.floor(c / 2);
+
+            if (c % 2 == 1) {
+                x1 -= w / 2;
+                x2 -= w / 2;
+                x3 -= w / 2;
+                x4 -= w / 2;
+                y1 += h / 2;
+                y2 += h / 2;
+                y3 += h / 2;
+                y4 += h / 2;
             }
-            else {
-                x1 = w * c + w;
-                y1 = h * r / 2;
-                x2 = x1 + w / 2;
-                y2 = h * r / 2 + h / 2;
-                x3 = x1;
-                y3 = y1 + h;
-                x4 = x1 - w / 2;
-                y4 = y2;
-            }
+
             y1 *= -1;
             y2 *= -1;
             y3 *= -1;
@@ -53,6 +58,7 @@ const shapes = computed(() => {
                 strokeWidth: 1,
                 closed: true,
                 name: `${r}_${c} line`,
+                id: `${r}_${c}`,
             }
             ret.push(data);
 
@@ -75,7 +81,7 @@ const arrows = computed(() => {
     return [
         {
             type: "Arrow",
-            points: [0, 0, width.value * cols.value, 0],
+            points: [0, 0, width.value * cols.value / 2, 0],
             pointerLength: 20,
             pointerWidth: 20,
             fill: 'black',
@@ -84,7 +90,7 @@ const arrows = computed(() => {
         },
         {
             type: "Arrow",
-            points: [0, 0, 0, -height.value * rows.value / 2],
+            points: [0, 0, 0, -height.value * rows.value],
             pointerLength: 20,
             pointerWidth: 20,
             fill: 'black',

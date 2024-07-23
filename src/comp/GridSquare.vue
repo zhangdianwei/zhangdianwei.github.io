@@ -35,9 +35,9 @@ function refreshBoxStage() {
     }
 
     var arrowx = arrowLayer.findOne("#arrowx");
-    arrowx.points([0, 0, boxConfig.value.boxWidth * boxConfig.value.cols, 0]);
+    arrowx.points([0, 0, boxConfig.value.boxWidth * boxConfig.value.cols + boxConfig.value.offsetX, 0]);
     var arrowy = arrowLayer.findOne("#arrowy");
-    arrowy.points([0, 0, 0, boxConfig.value.boxHeight * boxConfig.value.rows]);
+    arrowy.points([0, 0, 0, boxConfig.value.boxHeight * boxConfig.value.rows + boxConfig.value.offsetY]);
 }
 
 function initBoxStage() {

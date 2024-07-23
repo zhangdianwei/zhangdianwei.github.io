@@ -16,7 +16,7 @@ const shapes = computed(() => {
     const a = alpha.value * Math.PI / 180;
     for (let r = 0; r < rows.value; r++) {
         for (let c = 0; c < cols.value; c++) {
-            const x1 = w * c + r * h * Math.cos(a);
+            const x1 = w * c;
             const y1 = h * Math.sin(a) * r;
             const x2 = x1 + w;
             const y2 = y1;
@@ -106,21 +106,19 @@ onMounted(() => {
             <KonvaStage ref="stageRef" v-model="stageData"></KonvaStage>
         </div>
         </Col>
-        <Col :span="12">
+        <Col :span="4">
         <Form :label-width="100">
-            <FormItem label="width">
+            <FormItem label="地块横边(px)">
                 <InputNumber v-model="width"></InputNumber>
             </FormItem>
-            <FormItem label="height">
+            <FormItem label="地块竖边(px)">
                 <InputNumber v-model="height"></InputNumber>
             </FormItem>
-            <FormItem label="alpha">
-                <InputNumber v-model="alpha"></InputNumber>
+            <FormItem label="偏转角度">
+                <Slider v-model="alpha" :min="0" :max="90"></Slider>
             </FormItem>
-            <FormItem label="rows">
+            <FormItem label="行 / 列">
                 <InputNumber v-model="rows"></InputNumber>
-            </FormItem>
-            <FormItem label="cols">
                 <InputNumber v-model="cols"></InputNumber>
             </FormItem>
         </Form>

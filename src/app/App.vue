@@ -5,8 +5,8 @@ import TankMain from '../tank/TankMain.vue'
 import KonvaMain from '../konva/KonvaMain.vue'
 import EasyLink from '../easy_link/EasyLink.vue'
 import GridSquare from "../comp/GridSquare.vue"
-import GridParallelogram from "../comp/GridParallelogram.vue"
-import GridParallelogramA from "../comp/GridParallelogramA.vue"
+import GridParallelogramH from "../comp/GridParallelogramH.vue"
+import GridParallelogramV from "../comp/GridParallelogramV.vue"
 import KonvaStageTest from "../konva/KonvaStageTest.vue"
 
 const routesArray = [
@@ -19,8 +19,8 @@ const routesArray = [
   { id: "tetris", title: "俄罗斯方块", comp: EasyLink, link: 'tetris/index.html' },
   { id: "KonvaStageTest", title: "KonvaStageTest", comp: KonvaStageTest },
   { id: "GridSquare", title: "矩形网格", comp: GridSquare },
-  { id: "GridParallelogram", title: "平头平行四边形网格", comp: GridParallelogram },
-  { id: "GridParallelogramA", title: "尖头平行四边形网格", comp: GridParallelogramA },
+  { id: "GridParallelogramH", title: "横向平行四边形网格", comp: GridParallelogramH },
+  { id: "GridParallelogramV", title: "纵向平行四边形网格", comp: GridParallelogramV },
 ];
 
 const curPath = ref(window.location.hash.slice(1))

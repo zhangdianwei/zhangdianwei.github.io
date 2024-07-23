@@ -2,11 +2,11 @@
 import KonvaStage from "../konva/KonvaStage.vue";
 import { ref, onMounted, computed } from "vue";
 
-const width = ref(100);
+const width = ref(130);
 const height = ref(100);
 const alpha = ref(60);
 
-const rows = ref(4);
+const rows = ref(9);
 const cols = ref(5);
 
 const shapes = computed(() => {
@@ -14,17 +14,38 @@ const shapes = computed(() => {
     const w = width.value;
     const h = height.value;
     const a = alpha.value * Math.PI / 180;
+    const sinA = Math.sin(a);
+    const cosA = Math.cos(a);
     for (let r = 0; r < rows.value; r++) {
         for (let c = 0; c < cols.value; c++) {
-            const x1 = w * c;
-            const y1 = h * Math.sin(a) * r;
-            const x2 = x1 + w;
-            const y2 = y1;
-            const x3 = x2 + h * Math.cos(a);
-            const y3 = (r + 1) * h * Math.sin(a);
-            const x4 = x1 + h * Math.cos(a);
-            const y4 = y3;
-            const data = {
+            let data = null;
+            let x1, y1, x2, y2, x3, y3, x4, y4;
+            if (r % 2 == 0) {
+                x1 = w * c + w / 2;
+                y1 = h * r / 2;
+                x2 = w * c + w;
+                y2 = h * r / 2 + h / 2;
+                x3 = x1;
+                y3 = y1 + h;
+                x4 = w * c;
+                y4 = y2;
+
+            }
+            else {
+                x1 = w * c + w;
+                y1 = h * r / 2;
+                x2 = x1 + w / 2;
+                y2 = h * r / 2 + h / 2;
+                x3 = x1;
+                y3 = y1 + h;
+                x4 = x1 - w / 2;
+                y4 = y2;
+            }
+            y1 *= -1;
+            y2 *= -1;
+            y3 *= -1;
+            y4 *= -1;
+            data = {
                 type: "Line",
                 points: [x1, y1, x2, y2, x3, y3, x4, y4],
                 fill: '#c9ada7',
@@ -34,6 +55,17 @@ const shapes = computed(() => {
                 name: `${r}_${c} line`,
             }
             ret.push(data);
+
+            var text = {
+                type: "Text",
+                text: `(${r},${c})`,
+                x: x4,
+                y: y2,
+                align: 'center',
+                width: w,
+                height: h,
+            }
+            ret.push(text);
         }
     }
     return ret;
@@ -52,7 +84,7 @@ const arrows = computed(() => {
         },
         {
             type: "Arrow",
-            points: [0, 0, 0, height.value * rows.value],
+            points: [0, 0, 0, -height.value * rows.value / 2],
             pointerLength: 20,
             pointerWidth: 20,
             fill: 'black',
@@ -68,7 +100,6 @@ const stageData = ref({
     draggable: true,
     x: 100,
     y: 600,
-    scaleY: -1,
     children: [
         {
             type: "Layer",
@@ -106,21 +137,16 @@ onMounted(() => {
             <KonvaStage ref="stageRef" v-model="stageData"></KonvaStage>
         </div>
         </Col>
-        <Col :span="12">
+        <Col :span="4">
         <Form :label-width="100">
-            <FormItem label="width">
-                <InputNumber v-model="width"></InputNumber>
+            <FormItem label="地块主边(px)">
+                <Slider v-model="width" :min="50" :max="200" :show-input="true"></Slider>
             </FormItem>
-            <FormItem label="height">
-                <InputNumber v-model="height"></InputNumber>
+            <FormItem label="地块次边(px)">
+                <Slider v-model="height" :min="50" :max="200" :show-input="true"></Slider>
             </FormItem>
-            <FormItem label="alpha">
-                <InputNumber v-model="alpha"></InputNumber>
-            </FormItem>
-            <FormItem label="rows">
+            <FormItem label="行 / 列">
                 <InputNumber v-model="rows"></InputNumber>
-            </FormItem>
-            <FormItem label="cols">
                 <InputNumber v-model="cols"></InputNumber>
             </FormItem>
         </Form>

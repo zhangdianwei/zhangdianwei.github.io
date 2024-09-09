@@ -8,6 +8,7 @@ import GridSquare from "../comp/GridSquare.vue"
 import GridParallelogramH from "../comp/GridParallelogramH.vue"
 import GridParallelogramV from "../comp/GridParallelogramV.vue"
 import KonvaStageTest from "../konva/KonvaStageTest.vue"
+import TrigoCalc from "../comp/TrigoCalc.vue"
 
 const routesArray = [
   { id: "TankMain", title: "坦克大战", comp: TankMain },
@@ -21,6 +22,7 @@ const routesArray = [
   { id: "GridSquare", title: "矩形网格", comp: GridSquare },
   { id: "GridParallelogramH", title: "横向平行四边形网格", comp: GridParallelogramH },
   { id: "GridParallelogramV", title: "纵向平行四边形网格", comp: GridParallelogramV },
+  { id: "TrigoCalc", title: "三角函数计算器", comp: TrigoCalc },
 ];
 
 const curPath = ref(window.location.hash.slice(1))
@@ -45,7 +47,8 @@ function onClickItem(routeData) {
 <template>
   <div v-if="curView">
     <Suspense>
-      <component :is="curView" :link="curRouteData.link" />
+      <component v-if="curRouteData.link" :is="curView" :link="curRouteData.link" />
+      <component v-else="!curRouteData.link" :is="curView" />
     </Suspense>
   </div>
   <div v-else>

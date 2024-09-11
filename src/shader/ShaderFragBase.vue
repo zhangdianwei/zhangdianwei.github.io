@@ -80,7 +80,6 @@ onLoop(({ elapsed }) => {
             materialRef.value.uniforms.u_resolution.value.x = tresCanvasParentRef.value.clientWidth;
             materialRef.value.uniforms.u_resolution.value.y = tresCanvasParentRef.value.clientHeight;
         }
-
     }
 })
 
@@ -172,14 +171,14 @@ function onClickItem(catIndex, itemIndex) {
         <Col :span="12">
         <div ref="tresCanvasParentRef" style="width: 100%; height: 100%;">
             <TresCanvas clear-color="#FDF5E6">
-                <TresPerspectiveCamera :position="[0, 5, 5]" :rotation="[0, 0, 0]"></TresPerspectiveCamera>
+                <TresPerspectiveCamera :position="[0, 0, 5]"></TresPerspectiveCamera>
                 <TresAxesHelper :args="[2]"></TresAxesHelper>
                 <TresMesh>
-                    <TresBoxGeometry :args="[2, 2, 2]" />
+                    <TresBoxGeometry :args="[10, 10, 2]" />
                     <TresShaderMaterial ref="materialRef" :uniforms="uniforms" :vertexShader="CommonVert"
                         :fragmentShader="CommonFrag" />
                 </TresMesh>
-                <OrbitControls />
+                <!-- <OrbitControls /> -->
             </TresCanvas>
         </div>
         </Col>

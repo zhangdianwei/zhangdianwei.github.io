@@ -15,51 +15,252 @@ const Data = [
             {
                 name: "普通渐变1",
                 frag: `
-uniform float u_time;
 uniform vec2 u_resolution;
+varying vec2 UV;
 void main() {
-    vec2 st = gl_FragCoord.xy/u_resolution;
+    vec2 st = UV;
     float c = st.x;
-    gl_FragColor = vec4(c, 0.0, 0.0, 1.0);
+    gl_FragColor = vec4(c, c, c, 1.0);
 }
 `},
-            { name: "普通渐变2", vert: null, frag: null },
-            { name: "普通渐变3", vert: null, frag: null },
-            { name: "普通渐变4", vert: null, frag: null },
-            { name: "普通渐变5", vert: null, frag: null },
+            {
+                name: "普通渐变2",
+                frag: `
+uniform vec2 u_resolution;
+varying vec2 UV;
+void main() {
+    vec2 st = UV;
+    float c = 1.0-st.x-st.y; //写出渐变方程
+    c = abs(c);
+    gl_FragColor = vec4(c, c, c, 1.0);
+}
+
+                `
+            },
+            {
+                name: "普通渐变3",
+                frag: `
+uniform vec2 u_resolution;
+varying vec2 UV;
+void main() {
+    vec2 st = UV;
+    float c = st.x*st.x*st.x-st.y; //写出渐变方程
+    c = abs(c);
+    gl_FragColor = vec4(c, c, c, 1.0);
+}
+
+                `
+            },
+            {
+                name: "普通渐变4",
+                frag: `
+uniform vec2 u_resolution;
+varying vec2 UV;
+void main() {
+    vec2 st = UV;
+    float c = (st.x-0.5)*2.0;
+    c = abs(c);
+    gl_FragColor = vec4(0.0, c, 0.0, 1.0);
+}
+`
+            },
+            {
+                name: "普通渐变5",
+                frag: `
+uniform vec2 u_resolution;
+varying vec2 UV;
+void main() {
+    vec2 st = UV;
+    float c = 1.0-distance(st, vec2(0.5))*1.0;
+    gl_FragColor = vec4(0.0, c, c, 1.0);
+}
+`
+            },
         ]
     },
     {
         name: "渐变和切变，可以用于边缘平滑",
         children: [
-            { name: "渐变和切变1", vert: null, frag: null },
-            { name: "渐变和切变2", vert: null, frag: null },
-            { name: "颜色混合(颜色渐变)", vert: null, frag: null },
+            {
+                name: "渐变和切变1",
+                frag: `
+uniform vec2 u_resolution;
+
+varying vec2 UV;
+void main() {
+    vec2 st = UV;
+    
+    float c = distance(st, vec2(0.5))*2.0;
+    c = smoothstep(0.8, 0.9, c);
+    
+    gl_FragColor = vec4(c, c, c, 1.0);
+}
+`
+            },
+            {
+                name: "渐变和切变2",
+                frag: `
+
+uniform vec2 u_resolution;
+
+varying vec2 UV;
+void main() {
+    vec2 st = UV;
+    
+    float c = st.x*st.x*st.x-st.y;
+    c = abs(c);
+    c = smoothstep(0.005, 0.015, c);
+
+    gl_FragColor = vec4(c, c, c, 1.0);
+}
+
+`
+            },
+            {
+                name: "颜色混合(颜色渐变)",
+                frag: `
+uniform vec2 u_resolution;
+
+varying vec2 UV;
+void main() {
+    vec2 st = UV;
+    
+    float c = st.x*st.y;
+    vec3 color = mix(vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), c);
+    
+    gl_FragColor = vec4(color, 1.0);
+}
+`
+            },
         ]
     },
     {
         name: "重复图形",
         children: [
-            { name: "重复图形1", vert: null, frag: null },
-            { name: "重复图形2", vert: null, frag: null },
-            { name: "重复图形3", vert: null, frag: null },
+            {
+                name: "重复图形1",
+                frag: `
+uniform vec2 u_resolution;
+
+varying vec2 UV;
+void main() {
+    vec2 st = UV;
+    st *= 3.0;
+
+    vec2 c = floor(st)*0.5;
+    
+    gl_FragColor = vec4(c, 0.0, 1.0);
+}
+
+`
+            },
+            {
+                name: "重复图形2",
+                frag: `
+uniform vec2 u_resolution;
+
+varying vec2 UV;
+void main() {
+    vec2 st = UV;
+    st *= 3.0;
+
+    vec2 c = fract(st);
+    
+    gl_FragColor = vec4(c, 0.0, 1.0);
+}
+
+`
+            },
+            {
+                name: "重复图形3",
+                frag: `
+
+uniform vec2 u_resolution;
+
+varying vec2 UV;
+void main() {
+    vec2 st = UV;
+    st *= 3.0;
+
+    vec2 center = 0.5+floor(st);
+    float c = distance(st, center)*2.0;
+    
+    gl_FragColor = vec4(c, c, c, 1.0);
+}
+`
+            },
         ]
     },
     {
         name: "简单动画",
         children: [
-            { name: "平移动画", vert: null, frag: null },
-            { name: "缩放动画", vert: null, frag: null },
-            { name: "旋转动画", vert: null, frag: null },
+            {
+                name: "平移动画",
+                frag: `
+uniform vec2 u_resolution;
+uniform float u_time;
+
+varying vec2 UV;
+void main() {
+    vec2 st = UV;
+    st.x -= fract(u_time*0.2)*2.0-1.0;
+
+    float c = distance(st, vec2(0.5))*2.0;
+    c = step(0.5, c);
+
+    gl_FragColor = vec4(c, c, c, 1.0);
+}
+`
+            },
+            {
+                name: "缩放动画",
+                frag: `
+uniform vec2 u_resolution;
+uniform float u_time;
+
+varying vec2 UV;
+void main() {
+    vec2 st = UV;
+    st -= 0.5;
+    st /= sin(u_time);
+
+    float c = distance(st, vec2(0.0))*2.0;
+    c = step(1.0, c);
+
+    gl_FragColor = vec4(c, c, c, 1.0);
+}
+`
+            },
+            {
+                name: "旋转动画",
+                frag: `
+uniform vec2 u_resolution;
+uniform float u_time;
+
+varying vec2 UV;
+void main() {
+    vec2 st = UV;
+    st -= 0.5;
+    float theta = mod(u_time, 6.28);
+    st = mat2(cos(theta), sin(theta), -sin(theta), cos(theta)) * st; //构造了一个绕Z轴的旋转矩阵
+
+    float c = st.x;
+    c = abs(c);
+    c = step(0.05, c);
+
+    gl_FragColor = vec4(c, c, c, 1.0);
+}
+`
+            },
         ]
     },
 ];
 
 const CommonVert = `
+varying vec2 UV;
 void main() {
-    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
-    vec4 viewPosition = viewMatrix * modelPosition;
-    gl_Position = projectionMatrix * viewPosition;
+    UV = uv;
+    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4( position, 1.0 );
 }
 `;
 const CommonFrag = `
@@ -169,16 +370,16 @@ function onClickItem(catIndex, itemIndex) {
         </Card>
         </Col>
         <Col :span="12">
-        <div ref="tresCanvasParentRef" style="width: 100%; height: 100%;">
+        <div ref="tresCanvasParentRef" class="tresCanvasBorder">
             <TresCanvas clear-color="#FDF5E6">
                 <TresPerspectiveCamera :position="[0, 0, 5]"></TresPerspectiveCamera>
                 <TresAxesHelper :args="[2]"></TresAxesHelper>
                 <TresMesh>
-                    <TresBoxGeometry :args="[10, 10, 2]" />
+                    <TresBoxGeometry :args="[2, 2, 2]" />
                     <TresShaderMaterial ref="materialRef" :uniforms="uniforms" :vertexShader="CommonVert"
                         :fragmentShader="CommonFrag" />
                 </TresMesh>
-                <!-- <OrbitControls /> -->
+                <OrbitControls />
             </TresCanvas>
         </div>
         </Col>
@@ -191,3 +392,12 @@ function onClickItem(catIndex, itemIndex) {
         </Col>
     </Row>
 </template>
+
+<style lang="css">
+.tresCanvasBorder {
+    border: 1px solid black;
+    width: 100%;
+    height: 100%;
+    /* aspect-ratio: 1; */
+}
+</style>

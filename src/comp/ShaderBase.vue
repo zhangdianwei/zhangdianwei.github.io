@@ -5,13 +5,24 @@ import { OrbitControls } from '@tresjs/cientos'
 import { EditorView, basicSetup } from "codemirror"
 import { cpp } from "@codemirror/lang-cpp"
 
-import { Mesh, BoxGeometry, ShaderMaterial } from 'three'
+import { TresCanvas, useRenderLoop } from '@tresjs/core'
+const { onLoop } = useRenderLoop()
 
 const Data = [
     {
         name: "渐变和切变",
         children: [
-            { name: "普通渐变1", vert: null, frag: null },
+            {
+                name: "普通渐变1",
+                frag: `
+uniform float u_time;
+uniform vec2 u_resolution;
+void main() {
+    vec2 st = gl_FragCoord.xy/u_resolution;
+    float c = st.x;
+    gl_FragColor = vec4(c, 0.0, 0.0, 1.0);
+}
+`},
             { name: "普通渐变2", vert: null, frag: null },
             { name: "普通渐变3", vert: null, frag: null },
             { name: "普通渐变4", vert: null, frag: null },
@@ -54,24 +65,28 @@ void main() {
 const CommonFrag = `
 precision mediump float;
 void main() {
-  gl_FragColor = vec4(0.5, 0.0, 0.0, 1.0);
-}
-`;
-const CommonFrag2 = `
-precision mediump float;
-void main() {
-  gl_FragColor = vec4(0.5, 0.5, 0.0, 1.0);
+  gl_FragColor = vec4(0.5, 0.5, 0.5, 1.0);
 }
 `;
 
 const uniforms = {
-    uTime: { value: 0 },
+    u_time: { value: 0.0 },
+    u_resolution: { value: { x: 800, y: 600 } },
 }
-const vertexShader = ref(CommonVert);
-const fragmentShader = ref(CommonFrag);
+onLoop(({ elapsed }) => {
+    if (materialRef.value) {
+        materialRef.value.uniforms.u_time.value = elapsed;
+        if (tresCanvasParentRef.value) {
+            materialRef.value.uniforms.u_resolution.value.x = tresCanvasParentRef.value.clientWidth;
+            materialRef.value.uniforms.u_resolution.value.y = tresCanvasParentRef.value.clientHeight;
+        }
+
+    }
+})
 
 const showAxesHelper = ref(true);
 const materialRef = shallowRef(null);
+const tresCanvasParentRef = shallowRef(null);
 
 const codeContainerV = ref(null);
 let codeViewV = null;
@@ -81,6 +96,8 @@ onMounted(() => {
     const onVertCodeChanged = EditorView.updateListener.of((update) => {
         if (update.docChanged) {
             let material = materialRef.value;
+            if (!material)
+                return;
             material.vertexShader = update.state.doc.toString();
             material.needsUpdate = true;
         }
@@ -94,6 +111,8 @@ onMounted(() => {
     const onFragCodeChanged = EditorView.updateListener.of((update) => {
         if (update.docChanged) {
             let material = materialRef.value;
+            if (!material)
+                return;
             material.fragmentShader = update.state.doc.toString();
             material.needsUpdate = true;
         }
@@ -105,11 +124,18 @@ onMounted(() => {
     });
 });
 
+watch(materialRef, () => {
+    onClickItem(0, 0);
+})
+
 function formatCode(code) {
     return code.trim();
 }
 
-function onClickItem(cat, item) {
+function onClickItem(catIndex, itemIndex) {
+    let cat = Data[catIndex];
+    let item = cat.children[itemIndex];
+
     let vert = item.vert ? item.vert : CommonVert;
     let frag = item.frag ? item.frag : CommonFrag;
 
@@ -129,39 +155,36 @@ function onClickItem(cat, item) {
     editor.dispatch(transaction);
 }
 
-const geometry = new BoxGeometry(2, 2, 2)
-const material = new ShaderMaterial({ uniforms, vertexShader: vertexShader.value, fragmentShader: fragmentShader.value })
-let object = new Mesh(geometry, material);
-
 </script>
 
 <template>
     <Row>
         <Col :span="4">
-        <Card v-for="cat in Data">
+        <Card v-for="cat, catIndex in Data">
             <template #title>
                 <!-- <Icon type="md-desktop" /> -->
                 <h3>{{ cat.name }}</h3>
             </template>
-            <Button v-for="item in cat.children" @click="onClickItem(cat, item)">{{ item.name }}</Button>
+            <Button v-for="item, itemIndex in cat.children" @click="onClickItem(catIndex, itemIndex)">{{ item.name
+                }}</Button>
         </Card>
         </Col>
         <Col :span="12">
-        <TresCanvas clear-color="#FDF5E6">
-            <TresPerspectiveCamera :position="[0, 5, 5]" :rotation="[0, 0, 0]"></TresPerspectiveCamera>
-            <TresAxesHelper v-if="showAxesHelper"></TresAxesHelper>
-            <TresMesh>
-                <TresBoxGeometry :args="[2, 2, 2]" />
-                <TresShaderMaterial ref="materialRef" :uniforms="uniforms" :vertexShader="vertexShader"
-                    :fragmentShader="fragmentShader" />
-            </TresMesh>
-            <!-- <primitive v-if="object" :object="object" /> -->
-            <OrbitControls />
-        </TresCanvas>
-
+        <div ref="tresCanvasParentRef" style="width: 100%; height: 100%;">
+            <TresCanvas clear-color="#FDF5E6">
+                <TresPerspectiveCamera :position="[0, 5, 5]" :rotation="[0, 0, 0]"></TresPerspectiveCamera>
+                <TresAxesHelper :args="[2]"></TresAxesHelper>
+                <TresMesh>
+                    <TresBoxGeometry :args="[2, 2, 2]" />
+                    <TresShaderMaterial ref="materialRef" :uniforms="uniforms" :vertexShader="CommonVert"
+                        :fragmentShader="CommonFrag" />
+                </TresMesh>
+                <OrbitControls />
+            </TresCanvas>
+        </div>
         </Col>
         <Col :span="8">
-        <Checkbox v-model="showAxesHelper">是否显示坐标系</Checkbox>
+        <!-- <Checkbox v-model="showAxesHelper">是否显示坐标系</Checkbox> -->
         <Divider orientation="left">顶点着色器</Divider>
         <div ref="codeContainerV"></div>
         <Divider orientation="left">片段着色器</Divider>

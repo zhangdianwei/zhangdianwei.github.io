@@ -369,7 +369,7 @@ function onClickItem(catIndex, itemIndex) {
                 }}</Button>
         </Card>
         </Col>
-        <Col :span="12">
+        <Col :span="10">
         <div ref="tresCanvasParentRef" class="tresCanvasBorder">
             <TresCanvas clear-color="#FDF5E6">
                 <TresPerspectiveCamera :position="[0, 0, 5]"></TresPerspectiveCamera>
@@ -383,7 +383,7 @@ function onClickItem(catIndex, itemIndex) {
             </TresCanvas>
         </div>
         </Col>
-        <Col :span="8">
+        <Col :span="10">
         <!-- <Checkbox v-model="showAxesHelper">是否显示坐标系</Checkbox> -->
         <Divider orientation="left">顶点着色器</Divider>
         <div ref="codeContainerV"></div>

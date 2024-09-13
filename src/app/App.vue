@@ -10,6 +10,7 @@ import GridParallelogramV from "../comp/GridParallelogramV.vue"
 import KonvaStageTest from "../konva/KonvaStageTest.vue"
 import TrigoCalc from "../comp/TrigoCalc.vue"
 import ShaderFragBase from "../shader/ShaderFragBase.vue"
+import ShaderImageBase from "../shader/ShaderImageBase.vue"
 
 const routesArray = [
   { id: "TankMain", title: "坦克大战", comp: TankMain },
@@ -24,7 +25,8 @@ const routesArray = [
   { id: "GridParallelogramH", title: "横向平行四边形网格", comp: GridParallelogramH },
   { id: "GridParallelogramV", title: "纵向平行四边形网格", comp: GridParallelogramV },
   { id: "TrigoCalc", title: "三角函数计算器", comp: TrigoCalc },
-  { id: "ShaderFragBase", title: "Shader-基础操作", comp: ShaderFragBase },
+  { id: "ShaderFragBase", title: "Shader-函数入门", comp: ShaderFragBase },
+  { id: "ShaderImageBase", title: "Shader-图像入门", comp: ShaderImageBase },
 ];
 
 const curPath = ref(window.location.hash.slice(1))

@@ -15,7 +15,31 @@ const Data = [
         children: [
             {
                 name: "显示图像",
-                frag: null
+                frag: `
+varying vec2 UV;
+uniform sampler2D u_tex0;
+
+vec4 drawMyImg(vec2 st)
+{
+    vec2 texCoord = UV;
+
+    vec4 color = texture2D(u_tex0, texCoord);
+
+    if(texCoord.x<0.0 || texCoord.x>1.0 || texCoord.y<0.0 || texCoord.y>1.0){
+        color = vec4(0.0);
+    }
+
+    return color;
+}
+
+void main() {
+    vec2 st = vec2(0,0);
+
+    vec4 color = drawMyImg(st-vec2(0.25, 0.2));
+
+    gl_FragColor = color;
+}
+`
             },
         ]
     },
@@ -37,16 +61,10 @@ void main() {
 const uniforms = {
     u_time: { value: 0.0 },
     u_resolution: { value: { x: 800, y: 600 } },
-    u_tex: { value: null },
+    u_tex0: { value: null },
 }
 onLoop(({ elapsed }) => {
-    if (materialRef.value) {
-        materialRef.value.uniforms.u_time.value = elapsed;
-        if (tresCanvasParentRef.value) {
-            materialRef.value.uniforms.u_resolution.value.x = tresCanvasParentRef.value.clientWidth;
-            materialRef.value.uniforms.u_resolution.value.y = tresCanvasParentRef.value.clientHeight;
-        }
-    }
+    uniforms.u_time.value = elapsed;
 })
 
 const showAxesHelper = ref(true);
@@ -88,10 +106,13 @@ onMounted(() => {
         parent: codeContainerF.value,
     });
 
+    uniforms.u_resolution.value.x = tresCanvasParentRef.value.clientWidth;
+    uniforms.u_resolution.value.y = tresCanvasParentRef.value.clientHeight;
+
     useTexture({
         map: 'img/img1.png'
     }).then((res) => {
-        uniforms.u_tex = res.map;
+        uniforms.u_tex0.value = res.map;
     });
 });
 

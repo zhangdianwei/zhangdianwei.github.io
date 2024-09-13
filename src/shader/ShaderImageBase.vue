@@ -167,7 +167,7 @@ function onClickItem(catIndex, itemIndex) {
                 <TresPerspectiveCamera :position="[0, 0, 5]"></TresPerspectiveCamera>
                 <TresAxesHelper :args="[2]"></TresAxesHelper>
                 <TresMesh>
-                    <TresBoxGeometry :args="[2, 2, 2]" />
+                    <TresBoxGeometry :args="[2, 3.6, 2]" />
                     <TresShaderMaterial ref="materialRef" :uniforms="uniforms" :vertexShader="CommonVert"
                         :fragmentShader="CommonFrag" />
                 </TresMesh>

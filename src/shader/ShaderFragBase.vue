@@ -264,7 +264,6 @@ void main() {
 }
 `;
 const CommonFrag = `
-precision mediump float;
 void main() {
   gl_FragColor = vec4(0.5, 0.5, 0.5, 1.0);
 }
@@ -275,13 +274,7 @@ const uniforms = {
     u_resolution: { value: { x: 800, y: 600 } },
 }
 onLoop(({ elapsed }) => {
-    if (materialRef.value) {
-        materialRef.value.uniforms.u_time.value = elapsed;
-        if (tresCanvasParentRef.value) {
-            materialRef.value.uniforms.u_resolution.value.x = tresCanvasParentRef.value.clientWidth;
-            materialRef.value.uniforms.u_resolution.value.y = tresCanvasParentRef.value.clientHeight;
-        }
-    }
+    uniforms.u_time.value = elapsed;
 })
 
 const showAxesHelper = ref(true);
@@ -322,6 +315,9 @@ onMounted(() => {
         extensions: [basicSetup, cpp(), onFragCodeChanged],
         parent: codeContainerF.value,
     });
+
+    uniforms.u_resolution.value.x = tresCanvasParentRef.value.clientWidth;
+    uniforms.u_resolution.value.y = tresCanvasParentRef.value.clientHeight;
 });
 
 watch(materialRef, () => {

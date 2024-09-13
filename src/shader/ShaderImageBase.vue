@@ -6,6 +6,7 @@ import { EditorView, basicSetup } from "codemirror"
 import { cpp } from "@codemirror/lang-cpp"
 
 import { TresCanvas, useRenderLoop } from '@tresjs/core'
+import { useTexture } from '@tresjs/core'
 const { onLoop } = useRenderLoop()
 
 const Data = [
@@ -28,7 +29,6 @@ void main() {
 }
 `;
 const CommonFrag = `
-precision mediump float;
 void main() {
   gl_FragColor = vec4(0.5, 0.5, 0.5, 1.0);
 }
@@ -37,6 +37,7 @@ void main() {
 const uniforms = {
     u_time: { value: 0.0 },
     u_resolution: { value: { x: 800, y: 600 } },
+    u_tex: { value: null },
 }
 onLoop(({ elapsed }) => {
     if (materialRef.value) {
@@ -85,6 +86,12 @@ onMounted(() => {
         doc: ``,
         extensions: [basicSetup, cpp(), onFragCodeChanged],
         parent: codeContainerF.value,
+    });
+
+    useTexture({
+        map: 'img/img1.png'
+    }).then((res) => {
+        uniforms.u_tex = res.map;
     });
 });
 

@@ -18,26 +18,70 @@ const Data = [
                 frag: `
 varying vec2 UV;
 uniform sampler2D u_tex0;
-
-vec4 drawMyImg(vec2 st)
-{
-    vec2 texCoord = UV;
-
-    vec4 color = texture2D(u_tex0, texCoord);
-
-    if(texCoord.x<0.0 || texCoord.x>1.0 || texCoord.y<0.0 || texCoord.y>1.0){
-        color = vec4(0.0);
-    }
-
-    return color;
+void main() {
+    vec4 color = texture2D(u_tex0, UV);
+    gl_FragColor = color;
 }
+`
+            },
+            {
+                name: "图像变色",
+                frag: `
+varying vec2 UV;
+uniform sampler2D u_tex0;
+uniform float u_time;
+void main() {
+    vec4 color = texture2D(u_tex0, UV);
+    float scale = abs(sin(u_time));
+    scale *= 1.5;
+    color.rgb *= scale;
+    gl_FragColor = color;
+}
+`
+            },
+            {
+                name: "图像置灰",
+                frag: `
+varying vec2 UV;
+uniform sampler2D u_tex0;
+uniform float u_time;
+void main() {
+    vec4 color = texture2D(u_tex0, UV);
+    float gray = color.r * 0.299 + color.g * 0.587 + color.b * 0.114;
+    gl_FragColor = vec4(gray, gray, gray, color.a);
+}
+`
+            },
+            {
+                name: "图像描边",
+                frag: `
+varying vec2 UV;
+uniform sampler2D u_tex0;
+uniform float u_time;
 
 void main() {
-    vec2 st = vec2(0,0);
+    vec4 self = texture2D(u_tex0, UV);
 
-    vec4 color = drawMyImg(st-vec2(0.25, 0.2));
+    if(self.a>0.5){
+        gl_FragColor = self;
+        return;
+    }
 
-    gl_FragColor = color;
+    float outlineW = abs(sin(u_time))*0.01;
+    // outlineW = 0.01;
+
+    int strokeCount = 0;
+    strokeCount += texture2D(u_tex0, vec2(UV.x-outlineW, UV.y)).a>0.0 ? 1 : 0;
+    strokeCount += texture2D(u_tex0, vec2(UV.x+outlineW, UV.y)).a>0.0 ? 1 : 0;
+    strokeCount += texture2D(u_tex0, vec2(UV.x, UV.y-outlineW)).a>0.0 ? 1 : 0;
+    strokeCount += texture2D(u_tex0, vec2(UV.x, UV.y+outlineW)).a>0.0 ? 1 : 0;
+
+    if (strokeCount>0){
+        self.rgb = vec3(1.0, 0.0, 1.0);
+        self.a = 1.0;
+    }
+
+    gl_FragColor = self;
 }
 `
             },
@@ -189,7 +233,7 @@ function onClickItem(catIndex, itemIndex) {
 .tresCanvasBorder {
     border: 1px solid black;
     width: 100%;
-    height: 100%;
+    height: 500px;
     /* aspect-ratio: 1; */
 }
 </style>

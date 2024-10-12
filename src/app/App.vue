@@ -11,6 +11,7 @@ import KonvaStageTest from "../konva/KonvaStageTest.vue"
 import TrigoCalc from "../comp/TrigoCalc.vue"
 import ShaderFragBase from "../shader/ShaderFragBase.vue"
 import ShaderImageBase from "../shader/ShaderImageBase.vue"
+import ShowVideo from "../easy_link/ShowVideo.vue"
 
 const routesArray = [
   { id: "TankMain", title: "坦克大战", comp: TankMain },
@@ -27,6 +28,7 @@ const routesArray = [
   { id: "TrigoCalc", title: "三角函数计算器", comp: TrigoCalc },
   { id: "ShaderFragBase", title: "Shader-函数入门", comp: ShaderFragBase },
   { id: "ShaderImageBase", title: "Shader-图像入门", comp: ShaderImageBase },
+  { id: "v-puzzle", title: "拼图演示", comp: ShowVideo, link: 'video/puzzle.mkv' },
 ];
 
 const curPath = ref(window.location.hash.slice(1))

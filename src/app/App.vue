@@ -29,6 +29,7 @@ const routesArray = [
   { id: "ShaderFragBase", title: "Shader-函数入门", comp: ShaderFragBase },
   { id: "ShaderImageBase", title: "Shader-图像入门", comp: ShaderImageBase },
   { id: "v-puzzle", title: "拼图演示", comp: ShowVideo, link: 'video/puzzle.mkv' },
+  { id: "v-ice", title: "冰块演示", comp: ShowVideo, link: 'video/ice.mkv' },
 ];
 
 const curPath = ref(window.location.hash.slice(1))

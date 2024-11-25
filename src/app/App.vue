@@ -21,6 +21,7 @@ const routesArray = [
   { id: "jigsaw", title: "拼图游戏", comp: EasyLink, link: 'jigsaw/index.html' },
   { id: "shader", title: "shader小例子", comp: EasyLink, link: 'shader/index.html' },
   { id: "tetris", title: "俄罗斯方块", comp: EasyLink, link: 'tetris/index.html' },
+  { id: "heart", title: "跳动的爱心", comp: EasyLink, link: 'webui/heart.html' },
   { id: "KonvaStageTest", title: "KonvaStageTest", comp: KonvaStageTest },
   { id: "GridSquare", title: "矩形网格", comp: GridSquare },
   { id: "GridParallelogramH", title: "横向平行四边形网格", comp: GridParallelogramH },

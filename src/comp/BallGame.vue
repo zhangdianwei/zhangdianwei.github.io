@@ -1,9 +1,32 @@
 <template>
     <canvas ref="canvasRef"></canvas>
+    <div class="startlayer" v-if="gameState == 'Init'">
+        <Button type="primary">RESTART</Button>
+    </div>
 </template>
+
+<style scoped>
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.startlayer {
+    z-index: 10;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+</style>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+
+const GameState = {
+    Wait: "Wait",
+    Play: "Play",
+}
 
 const canvasRef = ref(null)
 let ctx = null
@@ -15,6 +38,7 @@ let bound = {};
 let emmitAcc = 0;
 let score = 0;
 let totalTime = 0;
+let gameState = GameState.Wait;
 
 window.x = { ctx, background, objects, circle, squares, bound, emmitAcc }
 
@@ -382,7 +406,8 @@ function checkCollision() {
             removeSquare(square);
         }
         else {
-            score -= 1;
+            // score -= 1;
+            score = 0;
             removeSquare(square);
         }
     }
@@ -411,6 +436,7 @@ function drawStrokedText(ctx, text, x, y, options = {}) {
 
 let lastFrameTickTime = 0;
 const onFrameTick = () => {
+
     if (!ctx) return;
     if (!canvasRef.value) return;
 
@@ -419,7 +445,6 @@ const onFrameTick = () => {
     }
     let now = Date.now();
     let interval = now - lastFrameTickTime;
-
 
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, canvasRef.value.width, canvasRef.value.height)
@@ -574,10 +599,4 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
-canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
-</style>
+

@@ -667,6 +667,13 @@ onMounted(() => {
             else if (obj.x < x - ballBgWidth / 2 + radius) {
                 obj.speed = Math.abs(obj.speed);
             }
+
+            if (obj.x > bound.xMax) {
+                obj.x = bound.xMin;
+            }
+            if (obj.x < bound.xMin) {
+                obj.x = bound.xMax;
+            }
         }).bind(obj);
         objects.push(obj);
 

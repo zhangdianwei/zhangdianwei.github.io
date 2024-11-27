@@ -1,8 +1,9 @@
 <template>
+    <audio src="ballgame/ball_bgm.ogg" id="ball_bgm" loop="true"></audio>
+    <audio src="ballgame/ball_bomb.ogg" id="ball_bomb"></audio>
+    <audio src="ballgame/ball_collect.ogg" id="ball_collect"></audio>
+    <audio src="ballgame/ball_click.ogg" id="ball_click"></audio>
     <canvas ref="canvasRef"></canvas>
-    <div class="startlayer" v-if="gameState == 'Init'">
-        <Button type="primary">RESTART</Button>
-    </div>
 </template>
 
 <style scoped>
@@ -40,6 +41,10 @@ let score = 0;
 let maxScore = 0;
 let totalTime = 0;
 let gameState = GameState.Wait;
+let ball_collect = null;
+let ball_bgm = null;
+let ball_bomb = null;
+let ball_click = null;
 
 // 判断圆形和方形是否相交
 function isIntersect(circle, square) {
@@ -415,7 +420,7 @@ function randRange(min, max) {
 }
 
 function getSquareSpeed() {
-    return 4 + totalTime / 10000;
+    return 4 + totalTime / 5000;
 }
 
 function checkEmmitSquare(interval) {
@@ -491,11 +496,17 @@ function checkCollision() {
         if (square.boxType === BoxType.Red) {
             score += 1;
             removeSquare(square);
+
+            ball_collect.play();
         }
         else {
             score = 0;
+            totalTime = 0;
             removeSquare(square);
             circle.blast();
+
+            ball_bomb.play();
+
         }
 
         if (score > maxScore) {
@@ -531,46 +542,62 @@ const onFrameTick = () => {
     if (!ctx) return;
     if (!canvasRef.value) return;
 
-    if (!lastFrameTickTime) {
-        lastFrameTickTime = Date.now();
+    if (gameState == GameState.Play) {
+        if (!lastFrameTickTime) {
+            lastFrameTickTime = Date.now();
+        }
+        let now = Date.now();
+        let interval = now - lastFrameTickTime;
+
+        for (let i = 0; i < objects.length; i++) {
+            const obj = objects[i];
+            if (obj.update) {
+                obj.update(interval);
+            }
+        }
+
+        checkEmmitSquare(interval);
+        checkSquareAnim(interval);
+        checkCollision(interval);
+
+        lastFrameTickTime = now;
+        totalTime += interval;
+
+        requestAnimationFrame(onFrameTick)
     }
-    let now = Date.now();
-    let interval = now - lastFrameTickTime;
 
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, canvasRef.value.width, canvasRef.value.height)
 
     for (let i = 0; i < objects.length; i++) {
         const obj = objects[i];
-        if (obj.update) {
-            obj.update(interval);
-        }
-    }
-
-    checkEmmitSquare(interval);
-    checkSquareAnim(interval);
-    checkCollision(interval);
-
-    for (let i = 0; i < objects.length; i++) {
-        const obj = objects[i];
         obj.draw(ctx);
     }
 
-    drawStrokedText(ctx, `SCORE:${score}`, bound.centerX, bound.yMax * 0.75)
-    drawStrokedText(ctx, `  MAX:${maxScore}`, bound.centerX, bound.yMax * 0.75 + 64)
+    if (gameState == GameState.Wait) {
+        drawStrokedText(ctx, `点击屏幕开始游戏`, bound.centerX, bound.yMax * 0.5)
+    }
 
-    lastFrameTickTime = now;
-    totalTime += interval;
-
-    requestAnimationFrame(onFrameTick)
+    drawStrokedText(ctx, `当前得分:${score}`, bound.centerX, bound.yMax * 0.75)
+    drawStrokedText(ctx, `得分冠军:${maxScore}`, bound.centerX, bound.yMax * 0.75 + 64)
 }
 
+function onClick(event) {
+
+    if (gameState == GameState.Wait) {
+        gameState = GameState.Play;
+        ball_bgm.play();
+        onFrameTick();
+    }
+    else {
+        ball_click.play();
+        circle.speed = -circle.speed;
+    }
+}
 
 // 鼠标事件处理
 function handleMouseDown(event) {
-    circle.speed = -circle.speed;
-
-    // 防止触发默认行为（如文本选择）
+    onClick();
     event.preventDefault();
 }
 
@@ -582,8 +609,7 @@ function handleMouseUp(event) {
 
 // 触摸事件处理
 function handleTouchStart(event) {
-    circle.speed = -circle.speed;
-    // 防止触发默认行为（如滚动）
+    onClick();
     event.preventDefault();
 }
 
@@ -627,6 +653,11 @@ onMounted(() => {
     window.addEventListener('touchstart', handleTouchStart);
     window.addEventListener('touchmove', handleTouchMove);
     window.addEventListener('touchend', handleTouchEnd);
+
+    ball_bgm = document.getElementById("ball_bgm");
+    ball_collect = document.getElementById("ball_collect");
+    ball_bomb = document.getElementById("ball_bomb");
+    ball_click = document.getElementById("ball_click");
 
     // bound
     {
@@ -675,15 +706,16 @@ onMounted(() => {
 
             if (obj.x > bound.xMax) {
                 obj.x = bound.xMin;
+                obj.speed = Math.abs(obj.speed);
             }
             if (obj.x < bound.xMin) {
                 obj.x = bound.xMax;
+                obj.speed = -Math.abs(obj.speed);
             }
         }).bind(obj);
         objects.push(obj);
 
         circle = obj;
-        window.circle = circle;
     }
 
     onFrameTick()

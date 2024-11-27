@@ -304,10 +304,14 @@ function randRange(min, max) {
     return Math.random() * (max - min) + min;
 }
 
+function getSquareSpeed() {
+    return 4 + totalTime / 10000;
+}
+
 function checkEmmitSquare(interval) {
     emmitAcc += interval;
 
-    if (emmitAcc <= 3000) {
+    if (emmitAcc <= 2000) {
         return;
     }
 
@@ -335,7 +339,7 @@ function checkEmmitSquare(interval) {
     }
 
     let speedX = randRange(-1.3, 1.3)
-    obj.setVelocity(speedX, 4);
+    obj.setVelocity(speedX, getSquareSpeed());
 }
 
 function checkSquareAnim() {
@@ -389,7 +393,7 @@ function drawStrokedText(ctx, text, x, y, options = {}) {
     ctx.save();
 
     // 设置文字样式
-    ctx.font = options.font || '64px Courier New';
+    ctx.font = options.font || '52px Courier New';
     ctx.textAlign = options.align || 'center';
     ctx.textBaseline = options.baseline || 'center';
 
@@ -437,7 +441,7 @@ const onFrameTick = () => {
     }
 
     drawStrokedText(ctx, `SCORE:${score}`, bound.centerX, bound.yMax * 0.75)
-    drawStrokedText(ctx, `TIME:${(totalTime / 1000).toFixed(1)}`, bound.centerX, bound.yMax * 0.75 + 64)
+    // drawStrokedText(ctx, `TIME:${(totalTime / 1000).toFixed(1)}`, bound.centerX, bound.yMax * 0.75 + 64)
 
     lastFrameTickTime = now;
     totalTime += interval;
@@ -545,10 +549,10 @@ onMounted(() => {
             obj.x += (obj.speed * interval / 1000);
 
             if (obj.x > x + ballBgWidth / 2 - radius) {
-                obj.speed = -obj.speed;
+                obj.speed = -Math.abs(obj.speed);
             }
             else if (obj.x < x - ballBgWidth / 2 + radius) {
-                obj.speed = -obj.speed;
+                obj.speed = Math.abs(obj.speed);
             }
         }).bind(obj);
         objects.push(obj);

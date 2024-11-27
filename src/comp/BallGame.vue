@@ -9,18 +9,54 @@ const canvasRef = ref(null)
 let ctx = null
 let background = null;
 let objects = [];
+let circle = null;
 let squares = [];
 let bound = {};
 let emmitAcc = 0;
+let score = 0;
 
 window.x = { ctx, background, objects, squares, bound, emmitAcc }
 
-const SHAPE_TYPES = {
-    ROUNDED_RECT: 'roundedRect',
-    // 可以继续添加其他形状类型
-    CIRCLE: 'circle',
-    RECTANGLE: 'rectangle'
-};
+// 判断圆形和方形是否相交
+function isIntersect(circle, square) {
+    // 获取圆的中心点和半径
+    const circleX = circle.x;
+    const circleY = circle.y;
+    const circleRadius = circle.radius;
+
+    // 获取方形的位置和尺寸
+    const squareX = square.x;
+    const squareY = square.y;
+    const squareWidth = square.width;
+    const squareHeight = square.height;
+
+    // 找到方形上最近的点
+    let closestX = Math.max(squareX, Math.min(circleX, squareX + squareWidth));
+    let closestY = Math.max(squareY, Math.min(circleY, squareY + squareHeight));
+
+    // 计算圆心到最近点的距离
+    let distanceX = circleX - closestX;
+    let distanceY = circleY - closestY;
+    let distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+
+    // 如果距离小于等于圆的半径，则相交
+    return distanceSquared <= (circleRadius * circleRadius);
+}
+
+// 查找所有与圆形相交的方形
+function findIntersectingSquares(circle, squareList) {
+    for (let square of squareList) {
+        if (isIntersect(circle, square)) {
+            return square;
+        }
+    }
+    return null;
+}
+
+const BoxType = {
+    Black: "Black",
+    Red: "Red",
+}
 
 class RoundedRectConfig {
     constructor(x, y, width = 100, height = 50, radius = 10) {
@@ -152,8 +188,6 @@ class RoundedRectConfig {
     }
 }
 
-
-
 class CircleConfig {
     constructor(x, y, radius = 50) {
         this.color = 'black';
@@ -268,26 +302,34 @@ function randInt(min, max) {
 function checkEmmitSquare(interval) {
     emmitAcc += interval;
 
-    if (emmitAcc <= 2000) {
+    if (emmitAcc <= 3000) {
         return;
     }
 
-    if (squares.length > 0) {
-        return;
-    }
+    // if (squares.length > 0) {
+    //     return;
+    // }
 
     emmitAcc = 0;
 
     let width = 60;
     let height = 60;
-    let x = bound.centerX + randInt(-bound.width / 2, bound.width / 2);
+    let x = bound.centerX - width / 2 //+ randInt(-bound.width / 2, bound.width / 2);
     let y = bound.yMin;
     let obj = new RoundedRectConfig(x, y, width, height, 0);
-    obj.color = 'black';
     objects.push(obj);
     squares.push(obj);
 
-    obj.setVelocity(1, 1);
+    if (randInt(0, 101) < 30) {
+        obj.boxType = BoxType.Red;
+        obj.color = '#f6416c';
+    }
+    else {
+        obj.boxType = BoxType.Black;
+        obj.color = '#252a34';
+    }
+
+    obj.setVelocity(0, 2);
 }
 
 function checkSquareAnim() {
@@ -305,27 +347,55 @@ function checkSquareAnim() {
 
     for (let i = 0; i < shouldRemoves.length; i++) {
         const obj = shouldRemoves[i];
+        removeSquare(obj);
+    }
+}
 
-        let index = squares.indexOf(obj);
-        if (index >= 0) {
-            squares.splice(index, 1);
-        }
+function removeSquare(obj) {
+    let index = squares.indexOf(obj);
+    if (index >= 0) {
+        squares.splice(index, 1);
+    }
 
-        index = objects.indexOf(obj);
-        if (index >= 0) {
-            objects.splice(index, 1);
-        }
+    index = objects.indexOf(obj);
+    if (index >= 0) {
+        objects.splice(index, 1);
     }
 }
 
 function checkCollision() {
-    // if (squares.length > 1) {
-    //     let obj = squares.shift();
-    //     let index = objects.indexOf(obj);
-    //     if (index >= 0) {
-    //         objects.splice(index, 1);
-    //     }
-    // }
+    let square = findIntersectingSquares(circle, squares);
+    if (square) {
+        if (square.boxType === BoxType.Red) {
+            score += 1;
+            removeSquare(square);
+        }
+        else {
+            score -= 1;
+            removeSquare(square);
+        }
+    }
+}
+
+// 带描边的文字
+function drawStrokedText(ctx, text, x, y, options = {}) {
+    ctx.save();
+
+    // 设置文字样式
+    ctx.font = options.font || '50px Courier New';
+    ctx.textAlign = options.align || 'center';
+    ctx.textBaseline = options.baseline || 'center';
+
+    // 设置描边
+    ctx.strokeStyle = options.strokeColor || 'black';
+    ctx.lineWidth = options.strokeWidth || 5;
+    ctx.strokeText(text, x, y);
+
+    // 设置填充
+    ctx.fillStyle = options.fillColor || 'white';
+    ctx.fillText(text, x, y);
+
+    ctx.restore();
 }
 
 let lastFrameTickTime = 0;
@@ -357,6 +427,8 @@ const onFrameTick = () => {
         const obj = objects[i];
         obj.draw(ctx);
     }
+
+    drawStrokedText(ctx, `SCORE:${score}`, bound.centerX, bound.yMax * 0.75)
 
     lastFrameTickTime = now;
 
@@ -402,7 +474,7 @@ onMounted(() => {
     let ballBgWidth = 0;
     let ballBgHeight = 0;
     {
-        let width = bound.width / 2;
+        let width = bound.width * 0.8;
         let height = 60;
         let x = centerX - width / 2;
         let y = centerY - height / 2;
@@ -421,7 +493,7 @@ onMounted(() => {
         let y = centerY;
         let obj = new CircleConfig(x, y, radius);
         obj.color = '#FF4500';
-        let speed = 0;
+        let speed = 3;
         obj.update = (() => {
             obj.x += speed;
 
@@ -433,6 +505,8 @@ onMounted(() => {
             }
         }).bind(obj);
         objects.push(obj);
+
+        circle = obj;
     }
 
     onFrameTick()

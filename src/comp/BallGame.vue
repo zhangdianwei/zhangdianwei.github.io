@@ -41,6 +41,7 @@ let emitIndex = 0;
 let score = 0;
 let maxScore = 0;
 let totalTime = 0;
+let squareSpeedScale = 1;
 let gameState = GameState.Wait;
 let ball_collect = null;
 let ball_bgm = null;
@@ -420,12 +421,6 @@ function randRange(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-function getSquareSpeedScale() {
-    let calcTime = Math.min(totalTime, 60000)
-    let ratio = calcTime / 60000 * 4 + 1;
-    return ratio;
-}
-
 function checkEmitSquare(interval) {
 
     emitAcc += interval;
@@ -458,9 +453,8 @@ function checkEmitSquare(interval) {
     }
     emitIndex = (emitIndex + 1) % 3;
 
-    let speedScale = getSquareSpeedScale();
-    let speedX = randRange(-0.8, 0.8) * speedScale
-    let speedY = 2 * speedScale
+    let speedX = randRange(-0.8, 0.8) * squareSpeedScale
+    let speedY = 2 * squareSpeedScale
     obj.setVelocity(speedX, speedY)
 }
 
@@ -501,6 +495,7 @@ function checkCollision() {
     if (square) {
         if (square.boxType === BoxType.Red) {
             score += 1;
+            squareSpeedScale += 0.3;
             removeSquare(square);
 
             ball_collect.play();
@@ -642,6 +637,7 @@ function initData() {
     score = 0;
     totalTime = 0;
     emitIndex = 0;
+    squareSpeedScale = 1;
 }
 
 onMounted(() => {

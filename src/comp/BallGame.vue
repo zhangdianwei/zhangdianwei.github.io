@@ -40,8 +40,6 @@ let score = 0;
 let totalTime = 0;
 let gameState = GameState.Wait;
 
-window.x = { ctx, background, objects, circle, squares, bound, emmitAcc }
-
 // 判断圆形和方形是否相交
 function isIntersect(circle, square) {
     // 获取圆的中心点和半径
@@ -213,6 +211,40 @@ class RoundedRectConfig {
     }
 }
 
+class Ball {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 20;
+        this.angle = Math.random() * Math.PI * 2;
+        this.speed = 20;
+        this.life = 1000;
+        this.alpha = 100;
+        this.color = `rgb(255,69,1,${this.alpha})`;
+    }
+
+    draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+    }
+
+    update(interval) {
+        this.x = this.x + Math.cos(this.angle) * this.speed;
+        this.y = this.y + Math.sin(this.angle) * this.speed;
+        this.angle += Math.PI / 180; // Rotate the direction slightly
+        this.speed *= 0.9; // Slowly decrease speed
+        this.radius -= 1;
+        if (this.radius < 0) {
+            this.radius = 0
+        }
+        this.alpha -= Math.floor(interval / 1000 * 255);
+        // this.color = `rgb(255,69,1,${this.alpha})`
+        this.life -= interval;
+    }
+}
+
 class CircleConfig {
     constructor(x, y, radius = 50) {
         this.color = 'black';
@@ -233,13 +265,33 @@ class CircleConfig {
         this.useGradient = true;
         this.highlightColor = 'rgba(255, 255, 255, 0.8)';
         this.shadowCenter = 'rgba(0, 0, 0, 0.2)';
-    }
 
-    // ... 保持其他现有方法不变 ...
+        this.balls = [];
+    }
 
     draw(ctx) {
         ctx.save();
 
+        if (this.balls.length > 0) {
+            this.drawBalls(ctx);
+        }
+        else {
+            this.drawSelf(ctx);
+        }
+
+        ctx.restore();
+    }
+
+    update(interval) {
+        if (this.balls.length > 0) {
+            this.updateBalls(interval);
+        }
+        else if (this.updateSelf) {
+            this.updateSelf(interval);
+        }
+    }
+
+    drawSelf(ctx) {
         // 应用阴影
         ctx.shadowColor = this.shadowColor;
         ctx.shadowBlur = this.shadowBlur;
@@ -284,8 +336,41 @@ class CircleConfig {
             this.counterclockwise
         );
         ctx.fill();
+    }
 
-        ctx.restore();
+    blast() {
+        let numBalls = 10;
+        this.balls = [];
+        for (let i = 0; i < numBalls; i++) {
+            this.balls.push(new Ball(this.x, this.y));
+        }
+    }
+
+    updateBalls(interval) {
+        let shouldRemoves = []
+        for (let i = 0; i < this.balls.length; i++) {
+            const ball = this.balls[i];
+            ball.update(interval);
+
+            if (ball.life < 0) {
+                shouldRemoves.push(ball);
+            }
+        }
+
+        for (let i = 0; i < shouldRemoves.length; i++) {
+            const ball = shouldRemoves[i];
+            let index = this.balls.indexOf(ball);
+            if (index >= 0) {
+                this.balls.splice(index);
+            }
+        }
+    }
+
+    drawBalls(ctx) {
+        for (let i = 0; i < this.balls.length; i++) {
+            const ball = this.balls[i];
+            ball.draw(ctx);
+        }
     }
 
     // 设置阴影
@@ -333,6 +418,7 @@ function getSquareSpeed() {
 }
 
 function checkEmmitSquare(interval) {
+
     emmitAcc += interval;
 
     if (emmitAcc <= 2000) {
@@ -406,9 +492,9 @@ function checkCollision() {
             removeSquare(square);
         }
         else {
-            // score -= 1;
             score = 0;
             removeSquare(square);
+            circle.blast();
         }
     }
 }
@@ -572,7 +658,7 @@ onMounted(() => {
         let obj = new CircleConfig(x, y, radius);
         obj.color = '#FF4500';
         obj.speed = 300;
-        obj.update = ((interval) => {
+        obj.updateSelf = ((interval) => {
             obj.x += (obj.speed * interval / 1000);
 
             if (obj.x > x + ballBgWidth / 2 - radius) {
@@ -585,6 +671,7 @@ onMounted(() => {
         objects.push(obj);
 
         circle = obj;
+        window.circle = circle;
     }
 
     onFrameTick()

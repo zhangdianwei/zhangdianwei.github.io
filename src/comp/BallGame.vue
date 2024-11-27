@@ -435,6 +435,40 @@ const onFrameTick = () => {
     requestAnimationFrame(onFrameTick)
 }
 
+
+// 鼠标事件处理
+function handleMouseDown(event) {
+    circle.speed = -circle.speed;
+    console.log(circle.speed);
+
+    // 防止触发默认行为（如文本选择）
+    event.preventDefault();
+}
+
+function handleMouseMove(event) {
+}
+
+function handleMouseUp(event) {
+}
+
+// 触摸事件处理
+function handleTouchStart(event) {
+    circle.speed = -circle.speed;
+    // 防止触发默认行为（如滚动）
+    event.preventDefault();
+}
+
+function handleTouchMove(event) {
+
+    // 防止触发默认行为（如滚动）
+    event.preventDefault();
+}
+
+function handleTouchEnd(event) {
+    console.log('Touch end');
+}
+
+
 onMounted(() => {
     ctx = canvasRef.value.getContext('2d')
 
@@ -458,6 +492,12 @@ onMounted(() => {
     background.addColorStop(1, '#155e75');
 
     window.addEventListener('resize', resizeCanvas)
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleTouchEnd);
 
     // bound
     {
@@ -493,15 +533,15 @@ onMounted(() => {
         let y = centerY;
         let obj = new CircleConfig(x, y, radius);
         obj.color = '#FF4500';
-        let speed = 3;
+        obj.speed = 3;
         obj.update = (() => {
-            obj.x += speed;
+            obj.x += obj.speed;
 
             if (obj.x > x + ballBgWidth / 2 - radius) {
-                speed = -speed;
+                obj.speed = -obj.speed;
             }
             else if (obj.x < x - ballBgWidth / 2 + radius) {
-                speed = -speed;
+                obj.speed = -obj.speed;
             }
         }).bind(obj);
         objects.push(obj);
@@ -514,6 +554,12 @@ onMounted(() => {
 
 onUnmounted(() => {
     window.removeEventListener('resize', resizeCanvas)
+    window.removeEventListener('mousedown', handleMouseDown);
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleMouseUp);
+    window.removeEventListener('touchstart', handleTouchStart);
+    window.removeEventListener('touchmove', handleTouchMove);
+    window.removeEventListener('touchend', handleTouchEnd);
 })
 </script>
 

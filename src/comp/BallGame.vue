@@ -14,8 +14,9 @@ let squares = [];
 let bound = {};
 let emmitAcc = 0;
 let score = 0;
+let totalTime = 0;
 
-window.x = { ctx, background, objects, squares, bound, emmitAcc }
+window.x = { ctx, background, objects, circle, squares, bound, emmitAcc }
 
 // 判断圆形和方形是否相交
 function isIntersect(circle, square) {
@@ -333,11 +334,12 @@ function checkEmmitSquare(interval) {
         obj.color = '#252a34';
     }
 
-    let speedX = randRange(-1.6, 1.6)
+    let speedX = randRange(-1.3, 1.3)
     obj.setVelocity(speedX, 4);
 }
 
 function checkSquareAnim() {
+
     let shouldRemoves = [];
 
     for (let i = 0; i < squares.length; i++) {
@@ -414,6 +416,7 @@ const onFrameTick = () => {
     let now = Date.now();
     let interval = now - lastFrameTickTime;
 
+
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, canvasRef.value.width, canvasRef.value.height)
 
@@ -434,8 +437,10 @@ const onFrameTick = () => {
     }
 
     drawStrokedText(ctx, `SCORE:${score}`, bound.centerX, bound.yMax * 0.75)
+    drawStrokedText(ctx, `TIME:${(totalTime / 1000).toFixed(1)}`, bound.centerX, bound.yMax * 0.75 + 64)
 
     lastFrameTickTime = now;
+    totalTime += interval;
 
     requestAnimationFrame(onFrameTick)
 }
@@ -486,14 +491,12 @@ onMounted(() => {
     bound.xMax = bound.centerX + bound.width / 2;
     bound.yMin = bound.centerY - bound.height / 2;
     bound.yMax = bound.centerY + bound.height / 2;
-    console.log(bound);
-
 
     const centerX = canvasRef.value.width / 2
     const centerY = canvasRef.value.height / 2
     background = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(centerX, centerY))
-    background.addColorStop(0, '#164e63');
-    background.addColorStop(1, '#155e75');
+    background.addColorStop(0, '#71c9ce');
+    background.addColorStop(1, '#a6e3e9');
 
     window.addEventListener('resize', resizeCanvas)
     window.addEventListener('mousedown', handleMouseDown);
@@ -511,14 +514,14 @@ onMounted(() => {
         let y = centerY - height / 2;
         let obj = new RoundedRectConfig(x, y, width, height, 5);
         obj.color = '#A9A9A988';
-        objects.push(obj);
+        // objects.push(obj);
     }
 
     // 小球背景框
     let ballBgWidth = 0;
     let ballBgHeight = 0;
     {
-        let width = bound.width * 0.8;
+        let width = bound.width * 0.6;
         let height = 60;
         let x = centerX - width / 2;
         let y = bound.yMax * 0.6;
@@ -537,9 +540,9 @@ onMounted(() => {
         let y = bound.yMax * 0.6 + radius;
         let obj = new CircleConfig(x, y, radius);
         obj.color = '#FF4500';
-        obj.speed = 5;
-        obj.update = (() => {
-            obj.x += obj.speed;
+        obj.speed = 300;
+        obj.update = ((interval) => {
+            obj.x += (obj.speed * interval / 1000);
 
             if (obj.x > x + ballBgWidth / 2 - radius) {
                 obj.speed = -obj.speed;

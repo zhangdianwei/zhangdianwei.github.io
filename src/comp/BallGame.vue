@@ -1,8 +1,8 @@
 <template>
-    <audio src="ballgame/ball_bgm.ogg" id="ball_bgm" loop="true"></audio>
-    <audio src="ballgame/ball_bomb.ogg" id="ball_bomb"></audio>
-    <audio src="ballgame/ball_collect.ogg" id="ball_collect"></audio>
-    <audio src="ballgame/ball_click.ogg" id="ball_click"></audio>
+    <audio src="ballgame/ball_bgm.mp3" id="ball_bgm" loop="true"></audio>
+    <audio src="ballgame/ball_bomb.mp3" id="ball_bomb"></audio>
+    <audio src="ballgame/ball_collect.mp3" id="ball_collect"></audio>
+    <audio src="ballgame/ball_click.mp3" id="ball_click"></audio>
     <canvas ref="canvasRef"></canvas>
 </template>
 
@@ -539,8 +539,9 @@ function drawStrokedText(ctx, text, x, y, options = {}) {
 let lastFrameTickTime = 0;
 const onFrameTick = () => {
 
-    if (!ctx) return;
-    if (!canvasRef.value) return;
+    if (!ctx || !canvasRef.value) {
+        return;
+    }
 
     if (gameState == GameState.Play) {
         if (!lastFrameTickTime) {
@@ -580,17 +581,24 @@ const onFrameTick = () => {
 
     drawStrokedText(ctx, `当前得分:${score}`, bound.centerX, bound.yMax * 0.75)
     drawStrokedText(ctx, `得分冠军:${maxScore}`, bound.centerX, bound.yMax * 0.75 + 64)
+
 }
 
 function onClick(event) {
 
     if (gameState == GameState.Wait) {
         gameState = GameState.Play;
+        ball_collect.load();
+        ball_bgm.load();
+        ball_bomb.load();
+        ball_click.load();
         ball_bgm.play();
         onFrameTick();
     }
     else {
-        ball_click.play();
+        // ball_bgm.play();
+        // ball_bomb.play();
+        // ball_collect.play();
         circle.speed = -circle.speed;
     }
 }
@@ -729,6 +737,7 @@ onUnmounted(() => {
     window.removeEventListener('touchstart', handleTouchStart);
     window.removeEventListener('touchmove', handleTouchMove);
     window.removeEventListener('touchend', handleTouchEnd);
+    ball_bgm.pause();
 })
 </script>
 

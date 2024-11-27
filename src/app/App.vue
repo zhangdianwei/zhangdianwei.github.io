@@ -12,6 +12,7 @@ import TrigoCalc from "../comp/TrigoCalc.vue"
 import ShaderFragBase from "../shader/ShaderFragBase.vue"
 import ShaderImageBase from "../shader/ShaderImageBase.vue"
 import ShowVideo from "../easy_link/ShowVideo.vue"
+import BallGame from "../comp/BallGame.vue"
 
 const routesArray = [
   { id: "TankMain", title: "坦克大战", comp: TankMain },
@@ -30,6 +31,7 @@ const routesArray = [
   { id: "ShaderImageBase", title: "Shader-图像入门", comp: ShaderImageBase },
   { id: "v-puzzle", title: "拼图演示", comp: ShowVideo, link: 'video/puzzle.mkv' },
   { id: "v-ice", title: "冰块演示", comp: ShowVideo, link: 'video/ice.mkv' },
+  { id: "BallGame", title: "小球碰撞游戏", comp: BallGame },
 ];
 
 const curPath = ref(window.location.hash.slice(1))

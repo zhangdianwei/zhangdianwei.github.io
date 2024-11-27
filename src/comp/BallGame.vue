@@ -299,6 +299,10 @@ function randInt(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
 }
 
+function randRange(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
 function checkEmmitSquare(interval) {
     emmitAcc += interval;
 
@@ -329,7 +333,8 @@ function checkEmmitSquare(interval) {
         obj.color = '#252a34';
     }
 
-    obj.setVelocity(0, 2);
+    let speedX = randRange(-1.6, 1.6)
+    obj.setVelocity(speedX, 4);
 }
 
 function checkSquareAnim() {
@@ -382,7 +387,7 @@ function drawStrokedText(ctx, text, x, y, options = {}) {
     ctx.save();
 
     // 设置文字样式
-    ctx.font = options.font || '50px Courier New';
+    ctx.font = options.font || '64px Courier New';
     ctx.textAlign = options.align || 'center';
     ctx.textBaseline = options.baseline || 'center';
 
@@ -439,7 +444,6 @@ const onFrameTick = () => {
 // 鼠标事件处理
 function handleMouseDown(event) {
     circle.speed = -circle.speed;
-    console.log(circle.speed);
 
     // 防止触发默认行为（如文本选择）
     event.preventDefault();
@@ -517,7 +521,7 @@ onMounted(() => {
         let width = bound.width * 0.8;
         let height = 60;
         let x = centerX - width / 2;
-        let y = centerY - height / 2;
+        let y = bound.yMax * 0.6;
         let obj = new RoundedRectConfig(x, y, width, height, height / 2);
         obj.color = '#A9A9A9';
         objects.push(obj);
@@ -530,10 +534,10 @@ onMounted(() => {
     {
         let radius = 30;
         let x = centerX;
-        let y = centerY;
+        let y = bound.yMax * 0.6 + radius;
         let obj = new CircleConfig(x, y, radius);
         obj.color = '#FF4500';
-        obj.speed = 3;
+        obj.speed = 5;
         obj.update = (() => {
             obj.x += obj.speed;
 

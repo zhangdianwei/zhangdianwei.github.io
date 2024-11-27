@@ -47,6 +47,7 @@ let ball_collect = null;
 let ball_bgm = null;
 let ball_bomb = null;
 let ball_click = null;
+let useEvent = null;
 
 // 判断圆形和方形是否相交
 function isIntersect(circle, square) {
@@ -521,7 +522,7 @@ function drawStrokedText(ctx, text, x, y, options = {}) {
     ctx.save();
 
     // 设置文字样式
-    ctx.font = options.font || '52px Courier New';
+    ctx.font = options.font || '40px Courier New';
     ctx.textAlign = options.align || 'center';
     ctx.textBaseline = options.baseline || 'center';
 
@@ -578,10 +579,9 @@ const onFrameTick = () => {
         drawStrokedText(ctx, `点击屏幕开始游戏`, bound.centerX, bound.yMax * 0.5)
     }
 
-    drawStrokedText(ctx, `当前得分:${score}`, bound.centerX, bound.yMax * 0.75)
-    drawStrokedText(ctx, `最高得分:${maxScore}`, bound.centerX, bound.yMax * 0.75 + 64)
-
-    // drawStrokedText(ctx, events.join(","), bound.centerX, bound.yMax * 0.75 + 64 * 2)
+    let textDiff = 130
+    drawStrokedText(ctx, `当前得分:${score}`, bound.centerX, bound.yMax * 0.6 + textDiff)
+    drawStrokedText(ctx, `最高得分:${maxScore}`, bound.centerX, bound.yMax * 0.6 + textDiff + 50)
 
     requestAnimationFrame(onFrameTick)
 }
@@ -606,12 +606,13 @@ function onClick(event) {
     }
 }
 
-let events = []
 // 鼠标事件处理
 function handleMouseDown(event) {
-    return;
-    if (events.indexOf("mouse") < 0) {
-        events.push("mouse")
+    if (!useEvent) {
+        useEvent = "mouse";
+    }
+    if (useEvent != "mouse") {
+        return;
     }
     onClick();
     event.preventDefault();
@@ -625,8 +626,11 @@ function handleMouseUp(event) {
 
 // 触摸事件处理
 function handleTouchStart(event) {
-    if (events.indexOf("touch") < 0) {
-        events.push("touch")
+    if (!useEvent) {
+        useEvent = "touch";
+    }
+    if (useEvent != "touch") {
+        return;
     }
     onClick();
     event.preventDefault();

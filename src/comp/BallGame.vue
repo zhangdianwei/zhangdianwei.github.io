@@ -420,8 +420,10 @@ function randRange(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-function getSquareSpeed() {
-    return 4 + totalTime / 5000;
+function getSquareSpeedScale() {
+    let calcTime = Math.min(totalTime, 60000)
+    let ratio = calcTime / 60000 * 4 + 1;
+    return ratio;
 }
 
 function checkEmitSquare(interval) {
@@ -446,7 +448,7 @@ function checkEmitSquare(interval) {
     objects.push(obj);
     squares.push(obj);
 
-    if (emitIndex == 3) {
+    if (emitIndex == 2) {
         obj.boxType = BoxType.Red;
         obj.color = '#f6416c';
     }
@@ -454,11 +456,12 @@ function checkEmitSquare(interval) {
         obj.boxType = BoxType.Black;
         obj.color = '#252a34';
     }
-    emitIndex = (emitIndex + 1) % 4;
+    emitIndex = (emitIndex + 1) % 3;
 
-    let speedX = randRange(-1.3, 1.3)
-    obj.setVelocity(speedX, getSquareSpeed());
-    console.log(getSquareSpeed())
+    let speedScale = getSquareSpeedScale();
+    let speedX = randRange(-0.8, 0.8) * speedScale
+    let speedY = 2 * speedScale
+    obj.setVelocity(speedX, speedY)
 }
 
 function checkSquareAnim() {
@@ -581,7 +584,7 @@ const onFrameTick = () => {
     }
 
     drawStrokedText(ctx, `当前得分:${score}`, bound.centerX, bound.yMax * 0.75)
-    drawStrokedText(ctx, `得分冠军:${maxScore}`, bound.centerX, bound.yMax * 0.75 + 64)
+    drawStrokedText(ctx, `最高得分:${maxScore}`, bound.centerX, bound.yMax * 0.75 + 64)
 
     requestAnimationFrame(onFrameTick)
 }
@@ -637,7 +640,6 @@ function handleTouchEnd(event) {
 function initData() {
     emitAcc = 0;
     score = 0;
-    maxScore = 0;
     totalTime = 0;
     emitIndex = 0;
 }

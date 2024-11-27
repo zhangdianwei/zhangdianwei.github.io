@@ -581,6 +581,8 @@ const onFrameTick = () => {
     drawStrokedText(ctx, `当前得分:${score}`, bound.centerX, bound.yMax * 0.75)
     drawStrokedText(ctx, `最高得分:${maxScore}`, bound.centerX, bound.yMax * 0.75 + 64)
 
+    // drawStrokedText(ctx, events.join(","), bound.centerX, bound.yMax * 0.75 + 64 * 2)
+
     requestAnimationFrame(onFrameTick)
 }
 
@@ -604,8 +606,13 @@ function onClick(event) {
     }
 }
 
+let events = []
 // 鼠标事件处理
 function handleMouseDown(event) {
+    return;
+    if (events.indexOf("mouse") < 0) {
+        events.push("mouse")
+    }
     onClick();
     event.preventDefault();
 }
@@ -618,6 +625,9 @@ function handleMouseUp(event) {
 
 // 触摸事件处理
 function handleTouchStart(event) {
+    if (events.indexOf("touch") < 0) {
+        events.push("touch")
+    }
     onClick();
     event.preventDefault();
 }

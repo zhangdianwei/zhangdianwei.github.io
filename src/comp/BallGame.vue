@@ -523,9 +523,11 @@ onMounted(() => {
 
     const centerX = canvasRef.value.width / 2
     const centerY = canvasRef.value.height / 2
-    background = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(centerX, centerY))
+    // background = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(centerX, centerY))
+    background = ctx.createLinearGradient(0, 0, canvasRef.value.width, 0)
     background.addColorStop(0, '#71c9ce');
-    background.addColorStop(1, '#a6e3e9');
+    background.addColorStop(0.5, '#8edbdf');
+    background.addColorStop(1, '#71c9ce');
 
     window.addEventListener('resize', resizeCanvas)
     window.addEventListener('mousedown', handleMouseDown);

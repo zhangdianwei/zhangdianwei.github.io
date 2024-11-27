@@ -3,7 +3,7 @@
     <audio src="ballgame/ball_bomb.mp3" id="ball_bomb"></audio>
     <audio src="ballgame/ball_collect.mp3" id="ball_collect"></audio>
     <audio src="ballgame/ball_click.mp3" id="ball_click"></audio>
-    <canvas ref="canvasRef"></canvas>
+    <canvas ref="canvasRef" type="2d"></canvas>
 </template>
 
 <style scoped>
@@ -36,7 +36,8 @@ let objects = [];
 let circle = null;
 let squares = [];
 let bound = {};
-let emmitAcc = 0;
+let emitAcc = 0;
+let emitIndex = 0;
 let score = 0;
 let maxScore = 0;
 let totalTime = 0;
@@ -423,11 +424,11 @@ function getSquareSpeed() {
     return 4 + totalTime / 5000;
 }
 
-function checkEmmitSquare(interval) {
+function checkEmitSquare(interval) {
 
-    emmitAcc += interval;
+    emitAcc += interval;
 
-    if (emmitAcc <= 2000) {
+    if (emitAcc <= 2000) {
         return;
     }
 
@@ -435,7 +436,7 @@ function checkEmmitSquare(interval) {
     //     return;
     // }
 
-    emmitAcc = 0;
+    emitAcc = 0;
 
     let width = 60;
     let height = 60;
@@ -445,7 +446,7 @@ function checkEmmitSquare(interval) {
     objects.push(obj);
     squares.push(obj);
 
-    if (randInt(0, 101) < 30) {
+    if (emitIndex == 3) {
         obj.boxType = BoxType.Red;
         obj.color = '#f6416c';
     }
@@ -453,9 +454,11 @@ function checkEmmitSquare(interval) {
         obj.boxType = BoxType.Black;
         obj.color = '#252a34';
     }
+    emitIndex = (emitIndex + 1) % 4;
 
     let speedX = randRange(-1.3, 1.3)
     obj.setVelocity(speedX, getSquareSpeed());
+    console.log(getSquareSpeed())
 }
 
 function checkSquareAnim() {
@@ -500,8 +503,8 @@ function checkCollision() {
             ball_collect.play();
         }
         else {
-            score = 0;
-            totalTime = 0;
+            initData();
+
             removeSquare(square);
             circle.blast();
 
@@ -557,14 +560,12 @@ const onFrameTick = () => {
             }
         }
 
-        checkEmmitSquare(interval);
+        checkEmitSquare(interval);
         checkSquareAnim(interval);
         checkCollision(interval);
 
         lastFrameTickTime = now;
         totalTime += interval;
-
-        requestAnimationFrame(onFrameTick)
     }
 
     ctx.fillStyle = background;
@@ -582,6 +583,7 @@ const onFrameTick = () => {
     drawStrokedText(ctx, `当前得分:${score}`, bound.centerX, bound.yMax * 0.75)
     drawStrokedText(ctx, `得分冠军:${maxScore}`, bound.centerX, bound.yMax * 0.75 + 64)
 
+    requestAnimationFrame(onFrameTick)
 }
 
 function onClick(event) {
@@ -593,6 +595,7 @@ function onClick(event) {
         ball_bomb.load();
         ball_click.load();
         ball_bgm.play();
+        initData();
         onFrameTick();
     }
     else {
@@ -631,6 +634,13 @@ function handleTouchEnd(event) {
     console.log('Touch end');
 }
 
+function initData() {
+    emitAcc = 0;
+    score = 0;
+    maxScore = 0;
+    totalTime = 0;
+    emitIndex = 0;
+}
 
 onMounted(() => {
     ctx = canvasRef.value.getContext('2d')
@@ -666,6 +676,9 @@ onMounted(() => {
     ball_collect = document.getElementById("ball_collect");
     ball_bomb = document.getElementById("ball_bomb");
     ball_click = document.getElementById("ball_click");
+
+    gameState = GameState.Wait;
+    initData();
 
     // bound
     {

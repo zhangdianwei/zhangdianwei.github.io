@@ -29,8 +29,8 @@ const routesArray = [
   { id: "TrigoCalc", title: "三角函数计算器", comp: TrigoCalc },
   { id: "ShaderFragBase", title: "Shader-函数入门", comp: ShaderFragBase },
   { id: "ShaderImageBase", title: "Shader-图像入门", comp: ShaderImageBase },
-  { id: "v-puzzle", title: "拼图演示", comp: ShowVideo, link: 'video/puzzle.mkv' },
-  { id: "v-ice", title: "冰块演示", comp: ShowVideo, link: 'video/ice.mkv' },
+  { id: "v-puzzle", title: "拼图演示", comp: ShowVideo, link: 'video/puzzle.mp4' },
+  { id: "v-ice", title: "冰块演示", comp: ShowVideo, link: 'video/ice.mp4' },
   { id: "BallGame", title: "小球碰撞游戏", comp: BallGame },
 ];
 

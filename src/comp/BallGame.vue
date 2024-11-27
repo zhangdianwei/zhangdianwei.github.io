@@ -37,6 +37,7 @@ let squares = [];
 let bound = {};
 let emmitAcc = 0;
 let score = 0;
+let maxScore = 0;
 let totalTime = 0;
 let gameState = GameState.Wait;
 
@@ -496,6 +497,10 @@ function checkCollision() {
             removeSquare(square);
             circle.blast();
         }
+
+        if (score > maxScore) {
+            maxScore = score;
+        }
     }
 }
 
@@ -552,7 +557,7 @@ const onFrameTick = () => {
     }
 
     drawStrokedText(ctx, `SCORE:${score}`, bound.centerX, bound.yMax * 0.75)
-    // drawStrokedText(ctx, `TIME:${(totalTime / 1000).toFixed(1)}`, bound.centerX, bound.yMax * 0.75 + 64)
+    drawStrokedText(ctx, `  MAX:${maxScore}`, bound.centerX, bound.yMax * 0.75 + 64)
 
     lastFrameTickTime = now;
     totalTime += interval;

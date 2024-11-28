@@ -13,6 +13,7 @@ import ShaderFragBase from "../shader/ShaderFragBase.vue"
 import ShaderImageBase from "../shader/ShaderImageBase.vue"
 import ShowVideo from "../easy_link/ShowVideo.vue"
 import BallGame from "../comp/BallGame.vue"
+import ThreeHello from "../comp/ThreeHello.vue"
 
 const routesArray = [
   { id: "TankMain", title: "坦克大战", comp: TankMain },
@@ -32,6 +33,7 @@ const routesArray = [
   { id: "v-puzzle", title: "拼图演示", comp: ShowVideo, link: 'video/puzzle.mp4' },
   { id: "v-ice", title: "冰块演示", comp: ShowVideo, link: 'video/ice.mp4' },
   { id: "BallGame", title: "小球碰撞游戏", comp: BallGame },
+  { id: "ThreeHello", title: "Three.js模板", comp: ThreeHello },
 ];
 
 const curPath = ref(window.location.hash.slice(1))

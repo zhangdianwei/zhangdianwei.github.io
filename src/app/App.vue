@@ -32,7 +32,7 @@ const routesArray = [
   { id: "ShaderImageBase", title: "Shader-图像入门", comp: ShaderImageBase },
   { id: "d-puzzle", title: "d-拼图演示", comp: ShowVideo, link: 'video/puzzle.mp4' },
   { id: "d-ice", title: "d-冰块演示", comp: ShowVideo, link: 'video/ice.mp4' },
-  { id: "d-door", title: "d-传送门", comp: ShAowVideo, link: 'video/door.mp4' },
+  { id: "d-door", title: "d-传送门", comp: ShowVideo, link: 'video/door.mp4' },
   { id: "BallGame", title: "小球碰撞游戏", comp: BallGame },
   { id: "ThreeHello", title: "Three.js模板", comp: ThreeHello },
 ];

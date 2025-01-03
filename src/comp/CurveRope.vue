@@ -6,18 +6,20 @@ import { Plane, Raycaster, LineSegments, WireframeGeometry, TextureLoader, Arrow
 
 const canvasRef = shallowRef(null);
 const curveRef = shallowRef(null);
-const sphereRef = shallowRef(null);
 const cameraRef = shallowRef(null);
-const controlPointsRef = shallowRef(null);
+
 const textureLoader = new TextureLoader();
-let textureRope = null;
+let textureRope = textureLoader.load('img/rope3.png');
+var ropeMaterial = new MeshBasicMaterial({ map: textureRope });
+
+const controlPointsRef = shallowRef(null);
 let activeControlPoint = -1;
 let raycaster = new Raycaster();
 
 let controlPoints = reactive([
-    new Vector3(-5, -5, 0),
-    new Vector3(0, 5, 0),
-    new Vector3(5, 0, 0),
+    new Vector3(0, -8, 0),
+    new Vector3(0, 2, 0),
+    new Vector3(0, 8, 0),
 ]);
 
 function visualizeTangent(point, tangent, length = 1, color = 0xff0000) {
@@ -33,19 +35,21 @@ function visualizeTangent(point, tangent, length = 1, color = 0xff0000) {
 
 function refreshCurve() {
     const curve = new QuadraticBezierCurve(...controlPoints);
+    const curveLength = curve.getLength();
+    console.log("curveLength", curveLength);
 
-    const segCount = 6;
+    const segCount = 30;
     var vertices = []
     var uvs = [];
     for (let i = 0; i < segCount; i++) {
         let ratio1 = i / segCount;
-        let point1 = curve.getPoint(ratio1);
-        let tagent1 = curve.getTangent(ratio1);
+        let point1 = curve.getPointAt(ratio1);
+        let tagent1 = curve.getTangentAt(ratio1);
         let normal1 = new Vector2(-tagent1.y, tagent1.x).normalize();
 
         let ratio2 = (i + 1) / segCount;
-        let point2 = curve.getPoint(ratio2);
-        let tagent2 = curve.getTangent(ratio2);
+        let point2 = curve.getPointAt(ratio2);
+        let tagent2 = curve.getTangentAt(ratio2);
         let normal2 = new Vector2(-tagent2.y, tagent2.x).normalize();
 
         if (0) {
@@ -59,10 +63,10 @@ function refreshCurve() {
         // console.log(`ratio1=${ratio1}`, `point1`, point1, `normal1`, normal1);
 
         let rect = [
-            point1.clone().add(normal1.clone().multiplyScalar(0.8)),
-            point1.clone().sub(normal1.clone().multiplyScalar(0.8)),
-            point2.clone().add(normal2.clone().multiplyScalar(0.8)),
-            point2.clone().sub(normal2.clone().multiplyScalar(0.8)),
+            point1.clone().add(normal1.clone().multiplyScalar(0.4)),
+            point1.clone().sub(normal1.clone().multiplyScalar(0.4)),
+            point2.clone().add(normal2.clone().multiplyScalar(0.4)),
+            point2.clone().sub(normal2.clone().multiplyScalar(0.4)),
         ];
 
         vertices.push(rect[0]);
@@ -72,12 +76,16 @@ function refreshCurve() {
         vertices.push(rect[3]);
         vertices.push(rect[2]);
 
-        uvs.push(new Vector2(0, 0));//0
-        uvs.push(new Vector2(1, 0));//1
-        uvs.push(new Vector2(0, 1));//2
-        uvs.push(new Vector2(1, 0));//1
-        uvs.push(new Vector2(1, 1));//3
-        uvs.push(new Vector2(0, 1));//2
+        let uv1 = 0;
+        let uv2 = 1;
+        console.log(`ratio1=${ratio1.toFixed(2)}`, `uv1=${(uv1).toFixed(2)}`, `uv2=${uv2.toFixed(2)}`);
+
+        uvs.push(new Vector2(0, uv1));//0
+        uvs.push(new Vector2(1, uv1));//1
+        uvs.push(new Vector2(0, uv2));//2
+        uvs.push(new Vector2(1, uv1));//1
+        uvs.push(new Vector2(1, uv2));//3
+        uvs.push(new Vector2(0, uv2));//2
     }
     // const trigoIndex = 1;
     // const trigoCount = 1;
@@ -117,7 +125,7 @@ function refreshCurve() {
     }
 
     // 曲线
-    if (1)
+    if (0)
     {
         const points = curve.getPoints(50);
         const geometry = new BufferGeometry().setFromPoints(points);
@@ -136,26 +144,21 @@ function refreshCurve() {
         curveRef.value.add(curveObject);
     }
 
-    // 矩形框
-    if (1) {
+    // 网格
+    if (0) {
         const wireframe = new WireframeGeometry(geometry);
         const line = new LineSegments(
             wireframe,
-            new LineBasicMaterial({ color: 0x000000 })
+            new LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 })
         );
         line.position.z = 0.001;
         curveRef.value.add(line);
     }
 
     // 带纹理
-    if (0) {
-        textureLoader.load('img/rope.png', function (texture) {
-            textureRope = texture;
-
-            var material = new MeshBasicMaterial({ map: textureRope });
-            var curveObject = new Mesh(geometry, material);
-            curveRef.value.add(curveObject);
-        });
+    if (1) {
+        var curveObject = new Mesh(geometry, ropeMaterial);
+        curveRef.value.add(curveObject);
     }
 }
 
@@ -183,17 +186,11 @@ function onMouseMove(event) {
     }
 }
 function onMouseDown(event) {
-    let mouse = { x: 0, y: 0 };
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-    // 更新射线投射器
+    let mouse = { x: (event.clientX / window.innerWidth) * 2 - 1, y: -(event.clientY / window.innerHeight) * 2 + 1 };
     raycaster.setFromCamera(mouse, cameraRef.value);
 
-    // 计算物体和射线的焦点
     const intersects = raycaster.intersectObjects(controlPointsRef.value.children);
 
-    // 如果有相交的物体
     if (intersects.length > 0) {
         const object = intersects[0].object;
         const index = controlPointsRef.value.children.indexOf(object);
@@ -222,8 +219,8 @@ function onMouseUp(event) {
 
             <TresGroup ref="controlPointsRef">
                 <TresMesh v-for="(point, i) in controlPoints" :key="i" :position="point">
-                    <TresSphereGeometry :args="[0.4, 4, 4]"></TresSphereGeometry>
-                    <TresMeshBasicMaterial color="red" :transparent="true" :opacity="0.5"></TresMeshBasicMaterial>
+                    <TresSphereGeometry :args="[0.4, 8, 8]"></TresSphereGeometry>
+                    <TresMeshBasicMaterial color="red" :transparent="true" :opacity="0.1"></TresMeshBasicMaterial>
                 </TresMesh>
             </TresGroup>
         </TresCanvas>

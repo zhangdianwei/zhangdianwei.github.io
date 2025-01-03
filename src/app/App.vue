@@ -14,6 +14,7 @@ import ShaderImageBase from "../shader/ShaderImageBase.vue"
 import ShowVideo from "../easy_link/ShowVideo.vue"
 import BallGame from "../comp/BallGame.vue"
 import ThreeHello from "../comp/ThreeHello.vue"
+import CurveRope from "../comp/CurveRope.vue"
 
 const routesArray = [
   { id: "TankMain", title: "坦克大战", comp: TankMain },
@@ -34,7 +35,7 @@ const routesArray = [
   { id: "d-ice", title: "d-冰块演示", comp: ShowVideo, link: 'video/ice.mp4' },
   { id: "d-door", title: "d-传送门", comp: ShowVideo, link: 'video/door.mp4' },
   { id: "BallGame", title: "小球碰撞游戏", comp: BallGame },
-  { id: "ThreeHello", title: "Three.js模板", comp: ThreeHello },
+  { id: "CurveRope", title: "曲线绳子", comp: CurveRope },
 ];
 
 const curPath = ref(window.location.hash.slice(1))

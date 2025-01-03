@@ -15,6 +15,7 @@ import ShowVideo from "../easy_link/ShowVideo.vue"
 import BallGame from "../comp/BallGame.vue"
 import ThreeHello from "../comp/ThreeHello.vue"
 import CurveRope from "../comp/CurveRope.vue"
+import CurveRopePixi from "../comp/CurveRopePixi.vue"
 
 const routesArray = [
   { id: "TankMain", title: "坦克大战", comp: TankMain },
@@ -36,6 +37,7 @@ const routesArray = [
   { id: "d-door", title: "d-传送门", comp: ShowVideo, link: 'video/door.mp4' },
   { id: "BallGame", title: "小球碰撞游戏", comp: BallGame },
   { id: "CurveRope", title: "曲线绳子", comp: CurveRope },
+  { id: "CurveRopePixi", title: "曲线绳子(Pixi)", comp: CurveRopePixi },
 ];
 
 const curPath = ref(window.location.hash.slice(1))

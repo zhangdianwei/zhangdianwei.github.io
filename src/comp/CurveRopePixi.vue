@@ -1,13 +1,13 @@
 <script setup>
 import { onMounted, reactive, ref, watch } from 'vue';
-import { Circle, Graphics, Application, Assets, Sprite, Container } from 'pixi.js';
+import { Point, MeshRope, Texture, buildGeometryFromPath, Mesh, GraphicsPath, Circle, Graphics, Application, Assets, Sprite, Container } from 'pixi.js';
 
 const rootRef = ref(null);
 let app = null;
 
-let controlPoints = [];
 let activeControlPoint = -1;
 let controlPointsNode = null;
+
 let curveNode = null;
 
 const textures = [
@@ -15,13 +15,34 @@ const textures = [
     await Assets.load('./img/rope2.png'),
     await Assets.load('./img/rope3.png'),
 ]
-let activeTexture = 0;
+let activeTexture = 1;
+
+function getControlPoints() {
+    return controlPointsNode.children.map((node) => {
+        return new Point(node.x, node.y);
+    });
+}
 
 function drawControlPoints() {
+    let controlPoints = getControlPoints();
+    let texture = textures[activeTexture];
+
+    // if (curveNode) {
+    //     app.stage.removeChild(curveNode);
+    //     curveNode = null;
+    // }
+    if (!curveNode) {
+        curveNode = new Graphics();
+    }
+    curveNode.clear();
+    curveNode.moveTo(controlPoints[0].x, controlPoints[0].y);
+    curveNode.bezierCurveTo(controlPoints[1].x, controlPoints[1].y, controlPoints[2].x, controlPoints[2].y, controlPoints[3].x, controlPoints[3].y);
+    curveNode.stroke({ width: 5, color: 0xaa0000, alpha: 0.5 });
+    app.stage.addChild(curveNode);
+
+
     for (let i = 0; i < controlPoints.length; i++) {
-        const point = controlPoints[i];
         let node = controlPointsNode.children[i];
-        node.position.set(point.x, point.y);
         node.clear();
         node.circle(0, 0, node.hitArea.radius);
         node.fill(0x00adb5);
@@ -29,12 +50,6 @@ function drawControlPoints() {
             node.stroke({ width: 3, color: 0x393e46 });
         }
     }
-
-    curveNode.clear();
-    curveNode.moveTo(controlPoints[0].x, controlPoints[0].y);
-    curveNode.bezierCurveTo(controlPoints[1].x, controlPoints[1].y, controlPoints[2].x, controlPoints[2].y, controlPoints[3].x, controlPoints[3].y);
-    curveNode.stroke({ width: 50, texture: textures[activeTexture] });
-    console.log(controlPoints);
 }
 
 
@@ -58,8 +73,7 @@ function onPointerMove(e) {
     if (activeControlPoint >= 0) {
         const { x, y } = e.data.global;
         let local = controlPointsNode.toLocal({ x, y });
-        controlPoints[activeControlPoint].x = local.x;
-        controlPoints[activeControlPoint].y = local.y;
+        controlPointsNode.children[activeControlPoint].position.set(local.x, local.y);
         drawControlPoints();
     }
 }
@@ -80,39 +94,32 @@ onMounted(async () => {
 
     // 初始化控制点
     {
-        controlPoints.push({ x: center.x, y: center.y - 300 });
-        controlPoints.push({ x: center.x - 300, y: center.y - 100 });
-        controlPoints.push({ x: center.x + 300, y: center.y + 100 });
-        controlPoints.push({ x: center.x, y: center.y + 300 });
-
         controlPointsNode = new Container();
         app.stage.addChild(controlPointsNode);
-        for (let i = 0; i < controlPoints.length; i++) {
+        for (let i = 0; i < 4; i++) {
             let node = new Graphics();
             controlPointsNode.addChild(node);
             node.hitArea = new Circle(0, 0, 30);
         }
-
-        curveNode = new Graphics();
-        app.stage.addChild(curveNode);
+        let curveNodes = controlPointsNode.children.slice(controlPointsNode.children.length - 4);
+        curveNodes[0].position.set(center.x, center.y + 300);
+        curveNodes[1].position.set(center.x - 300, center.y - 100);
+        curveNodes[2].position.set(center.x + 300, center.y + 100);
+        curveNodes[3].position.set(center.x, center.y - 300);
 
         drawControlPoints();
     }
 
     {
         document.addEventListener('keydown', (event) => {
-            if (event.key == 1) {
-                activeTexture = 0;
-                drawControlPoints();
+            if (event.key >= 1 && event.key <= 9) {
+                if (textures[event.key - 1]) {
+                    activeTexture = event.key - 1;
+                    drawControlPoints();
+
+                }
             }
-            else if (event.key == 2) {
-                activeTexture = 1;
-                drawControlPoints();
-            }
-            else if (event.key == 3) {
-                activeTexture = 2;
-                drawControlPoints();
-            }
+
         });
     }
 
@@ -124,9 +131,13 @@ onMounted(async () => {
     // bun = app.screen.width / 2;
     // bun = app.screen.height / 2;
     // appge.addChild(bunny);
-    // appker.add(() => {
-    //    ny.rotation += 0.05;
-    // });
+    app.ticker.add(() => {
+        for (let i = 0; i < controlPointsNode.children.length; i++) {
+            let node = controlPointsNode.children[i];
+            // node.y = Math.sin(app.ticker.lastTime / 1000 + i * 0.1) * 100 + center.y;
+        }
+        drawControlPoints();
+    });
 });
 </script>
 <template>

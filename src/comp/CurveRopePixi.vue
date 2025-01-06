@@ -134,53 +134,122 @@ function makeCurveType2(controlPoints) {
     const b = new Bezier(...controlPoints);
     const totalLength = b.length();
     const segCount = Math.floor(totalLength / 20);
-    const curves = splitCurveByLength(b, segCount);
-    for (let i = 0; i < curves.length; i++) {
-        const curve = curves[i];
+    let luts = b.getLUT(500);
+    let perSegLength = totalLength / segCount;
+    let historyLength = 0;
+    let historyIndex = 0;
+    for (let i = 1; i <= segCount; i++) {
+        let targetLength = perSegLength * i;
 
-        const lut1 = curve.get(0)
-        const tagent1 = curve.derivative(0);
-        const normal1 = curve.normal(0);
-        normal1.x *= 20;
-        normal1.y *= 20;
+        for (let j = historyIndex + 1; j < luts.length; j++) {
+            let lastPoint = luts[j - 1];
+            let curPoint = luts[j];
+            const dx = curPoint.x - lastPoint.x;
+            const dy = curPoint.y - lastPoint.y;
+            historyLength += Math.sqrt(dx * dx + dy * dy);
+            // historyLength += b.split(lastPoint.t, curPoint.t).length();
 
-        const lut2 = curve.get(1)
-        const tagent2 = curve.derivative(1);
-        const normal2 = curve.normal(1);
-        normal2.x *= 20;
-        normal2.y *= 20;
+            if (historyLength >= targetLength || j == luts.length - 1) {
 
-        let rect = [
-            new Point(lut1.x + normal1.x, lut1.y + normal1.y),
-            new Point(lut1.x - normal1.x, lut1.y - normal1.y),
-            new Point(lut2.x - normal2.x, lut2.y - normal2.y),
-            new Point(lut2.x + normal2.x, lut2.y + normal2.y),
-        ];
+                console.log("split", lastPoint, curPoint)
 
-        aPosition.push(rect[0].x, rect[0].y);
-        aPosition.push(rect[1].x, rect[1].y);
-        aPosition.push(rect[2].x, rect[2].y);
+                const lut1 = luts[historyIndex];
+                const normal1 = b.normal(lut1.t);
+                normal1.x *= 20;
+                normal1.y *= 20;
 
-        aPosition.push(rect[0].x, rect[0].y);
-        aPosition.push(rect[2].x, rect[2].y);
-        aPosition.push(rect[3].x, rect[3].y);
+                const lut2 = curPoint;
+                const normal2 = b.normal(lut2.t);
+                normal2.x *= 20;
+                normal2.y *= 20;
 
-        aColor.push(1, 1, 1);
-        aColor.push(1, 1, 1);
-        aColor.push(1, 1, 1);
+                let rect = [
+                    new Point(lut1.x + normal1.x, lut1.y + normal1.y),
+                    new Point(lut1.x - normal1.x, lut1.y - normal1.y),
+                    new Point(lut2.x - normal2.x, lut2.y - normal2.y),
+                    new Point(lut2.x + normal2.x, lut2.y + normal2.y),
+                ];
 
-        aColor.push(1, 1, 1);
-        aColor.push(1, 1, 1);
-        aColor.push(1, 1, 1);
+                historyIndex = j;
 
-        aUV.push(0, 0);
-        aUV.push(1, 0);
-        aUV.push(1, 1);
+                aPosition.push(rect[0].x, rect[0].y);
+                aPosition.push(rect[1].x, rect[1].y);
+                aPosition.push(rect[2].x, rect[2].y);
 
-        aUV.push(0, 0);
-        aUV.push(1, 1);
-        aUV.push(0, 1);
+                aPosition.push(rect[0].x, rect[0].y);
+                aPosition.push(rect[2].x, rect[2].y);
+                aPosition.push(rect[3].x, rect[3].y);
+
+                aColor.push(1, 1, 1);
+                aColor.push(1, 1, 1);
+                aColor.push(1, 1, 1);
+
+                aColor.push(1, 1, 1);
+                aColor.push(1, 1, 1);
+                aColor.push(1, 1, 1);
+
+                aUV.push(0, 0);
+                aUV.push(1, 0);
+                aUV.push(1, 1);
+
+                aUV.push(0, 0);
+                aUV.push(1, 1);
+                aUV.push(0, 1);
+
+                break;
+            }
+        }
+
+
     }
+
+    // const curves = splitCurveByLength(b, segCount);
+    // for (let i = 0; i < curves.length; i++) {
+    //     const curve = curves[i];
+
+    //     const lut1 = curve.get(0)
+    //     const tagent1 = curve.derivative(0);
+    //     const normal1 = curve.normal(0);
+    //     normal1.x *= 20;
+    //     normal1.y *= 20;
+
+    //     const lut2 = curve.get(1)
+    //     const tagent2 = curve.derivative(1);
+    //     const normal2 = curve.normal(1);
+    //     normal2.x *= 20;
+    //     normal2.y *= 20;
+
+    //     let rect = [
+    //         new Point(lut1.x + normal1.x, lut1.y + normal1.y),
+    //         new Point(lut1.x - normal1.x, lut1.y - normal1.y),
+    //         new Point(lut2.x - normal2.x, lut2.y - normal2.y),
+    //         new Point(lut2.x + normal2.x, lut2.y + normal2.y),
+    //     ];
+
+    //     aPosition.push(rect[0].x, rect[0].y);
+    //     aPosition.push(rect[1].x, rect[1].y);
+    //     aPosition.push(rect[2].x, rect[2].y);
+
+    //     aPosition.push(rect[0].x, rect[0].y);
+    //     aPosition.push(rect[2].x, rect[2].y);
+    //     aPosition.push(rect[3].x, rect[3].y);
+
+    //     aColor.push(1, 1, 1);
+    //     aColor.push(1, 1, 1);
+    //     aColor.push(1, 1, 1);
+
+    //     aColor.push(1, 1, 1);
+    //     aColor.push(1, 1, 1);
+    //     aColor.push(1, 1, 1);
+
+    //     aUV.push(0, 0);
+    //     aUV.push(1, 0);
+    //     aUV.push(1, 1);
+
+    //     aUV.push(0, 0);
+    //     aUV.push(1, 1);
+    //     aUV.push(0, 1);
+    // }
 
     const geometry = new Geometry({ attributes: { aPosition, aColor, aUV } });
     const shader = Shader.from({ gl: { vertex, fragment, }, resources: { uTexture: texture.source, }, });
@@ -231,7 +300,7 @@ function drawControlPoints() {
         app.stage.removeChild(curveNode);
         curveNode = null;
     }
-    curveNode = makeCurveType2(controlPoints);
+    curveNode = makeCurveType1(controlPoints);
     app.stage.addChild(curveNode);
 
     for (let i = 0; i < controlPoints.length; i++) {

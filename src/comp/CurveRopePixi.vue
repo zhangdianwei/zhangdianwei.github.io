@@ -11,6 +11,12 @@ let controlPointsNode = null;
 
 let curveNode = null;
 
+const categoryList = ref(["以t分割", "以长度分割"])
+const selectedCategory = ref("以长度分割");
+function onSelectCategory(item) {
+
+}
+
 const vertex = `
 in vec2 aPosition;
 in vec3 aColor;
@@ -134,7 +140,7 @@ function makeCurveType2(controlPoints) {
     const b = new Bezier(...controlPoints);
     const totalLength = b.length();
     const segCount = Math.floor(totalLength / 20);
-    let luts = b.getLUT(500);
+    let luts = b.getLUT(300);
     let perSegLength = totalLength / segCount;
     let historyLength = 0;
     let historyIndex = 0;
@@ -146,8 +152,8 @@ function makeCurveType2(controlPoints) {
             let curPoint = luts[j];
             const dx = curPoint.x - lastPoint.x;
             const dy = curPoint.y - lastPoint.y;
-            historyLength += Math.sqrt(dx * dx + dy * dy);
-            // historyLength += b.split(lastPoint.t, curPoint.t).length();
+            // historyLength += Math.sqrt(dx * dx + dy * dy);
+            historyLength += b.split(lastPoint.t, curPoint.t).length();
 
             if (historyLength >= targetLength || j == luts.length - 1) {
 
@@ -300,7 +306,12 @@ function drawControlPoints() {
         app.stage.removeChild(curveNode);
         curveNode = null;
     }
-    curveNode = makeCurveType1(controlPoints);
+    if (selectedCategory.value == "以t分割") {
+        curveNode = makeCurveType1(controlPoints);        
+    }
+    else {
+        curveNode = makeCurveType2(controlPoints);
+    }
     app.stage.addChild(curveNode);
 
     for (let i = 0; i < controlPoints.length; i++) {
@@ -339,6 +350,10 @@ function onPointerMove(e) {
         drawControlPoints();
     }
 }
+
+watch(selectedCategory, () => {
+    drawControlPoints();
+})
 
 onMounted(async () => {
     app = new Application();
@@ -391,5 +406,17 @@ onMounted(async () => {
 });
 </script>
 <template>
-    <div ref="rootRef" style="width: 100%; height: 100%;"></div>
+
+    <Row>
+        <Col :span="4">
+        <label>算法</label>
+        <Select v-model="selectedCategory" @on-select="onSelectCategory" size="large">
+            <Option v-for="item in categoryList" :value="item" :key="item">{{ item }}</Option>
+        </Select>
+        </Col>
+        <Col :span="20">
+        <div ref="rootRef" style="width: 100%; height: 100%;"></div>
+        </Col>
+    </Row>
+
 </template>

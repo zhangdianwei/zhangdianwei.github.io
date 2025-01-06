@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, reactive, ref, watch } from 'vue';
-import { Point, MeshRope, Texture, buildGeometryFromPath, Mesh, GraphicsPath, Circle, Graphics, Application, Assets, Sprite, Container } from 'pixi.js';
+import { Shader, Geometry, Point, MeshRope, Texture, buildGeometryFromPath, Mesh, GraphicsPath, Circle, Graphics, Application, Assets, Sprite, Container } from 'pixi.js';
+import { Bezier } from "bezier-js";
 
 const rootRef = ref(null);
 let app = null;
@@ -9,6 +10,41 @@ let activeControlPoint = -1;
 let controlPointsNode = null;
 
 let curveNode = null;
+
+const vertex = `
+in vec2 aPosition;
+in vec3 aColor;
+in vec2 aUV;
+
+out vec3 vColor;
+out vec2 vUV;
+
+uniform mat3 uProjectionMatrix;
+uniform mat3 uWorldTransformMatrix;
+
+uniform mat3 uTransformMatrix;
+
+
+void main() {
+
+    mat3 mvp = uProjectionMatrix * uWorldTransformMatrix * uTransformMatrix;
+    gl_Position = vec4((mvp * vec3(aPosition, 1.0)).xy, 0.0, 1.0);
+
+    vColor = aColor;
+    vUV = aUV;
+}
+`;
+
+const fragment = `
+in vec3 vColor;
+in vec2 vUV;
+
+uniform sampler2D uTexture;
+
+void main() {
+    gl_FragColor = texture2D(uTexture, vUV) * vec4(vColor, 1.0);
+}
+`;
 
 const textures = [
     await Assets.load('./img/rope1.png'),
@@ -23,23 +59,155 @@ function getControlPoints() {
     });
 }
 
+function makeCurveType1(controlPoints) {
+    let texture = textures[activeTexture];
+
+    let aPosition = [];
+    let aColor = [];
+    let aUV = [];
+
+    const b = new Bezier(...controlPoints);
+    const luts = b.getLUT(50);
+    for (let i = 0; i < luts.length; i++) {
+        if (i == luts.length - 1) {
+            break;
+        }
+
+        const lut1 = luts[i];
+        const tagent1 = b.derivative(lut1.t);
+        const normal1 = b.normal(lut1.t);
+        normal1.x *= 20;
+        normal1.y *= 20;
+
+        const lut2 = luts[i + 1];
+        const tagent2 = b.derivative(lut2.t);
+        const normal2 = b.normal(lut2.t);
+        normal2.x *= 20;
+        normal2.y *= 20;
+
+        let rect = [
+            new Point(lut1.x + normal1.x, lut1.y + normal1.y),
+            new Point(lut1.x - normal1.x, lut1.y - normal1.y),
+            new Point(lut2.x - normal2.x, lut2.y - normal2.y),
+            new Point(lut2.x + normal2.x, lut2.y + normal2.y),
+        ];
+
+        aPosition.push(rect[0].x, rect[0].y);
+        aPosition.push(rect[1].x, rect[1].y);
+        aPosition.push(rect[2].x, rect[2].y);
+
+        aPosition.push(rect[0].x, rect[0].y);
+        aPosition.push(rect[2].x, rect[2].y);
+        aPosition.push(rect[3].x, rect[3].y);
+
+        aColor.push(1, 1, 1);
+        aColor.push(1, 1, 1);
+        aColor.push(1, 1, 1);
+
+        aColor.push(1, 1, 1);
+        aColor.push(1, 1, 1);
+        aColor.push(1, 1, 1);
+
+        aUV.push(0, 0);
+        aUV.push(1, 0);
+        aUV.push(1, 1);
+
+        aUV.push(0, 0);
+        aUV.push(1, 1);
+        aUV.push(0, 1);
+    }
+
+    const geometry = new Geometry({ attributes: { aPosition, aColor, aUV } });
+    const shader = Shader.from({ gl: { vertex, fragment, }, resources: { uTexture: texture.source, }, });
+    curveNode = new Mesh({ geometry, shader, });
+
+    return curveNode;
+}
+
+function makeCurveType2(controlPoints) {
+    let texture = textures[activeTexture];
+
+    let aPosition = [];
+    let aColor = [];
+    let aUV = [];
+
+    const b = new Bezier(...controlPoints);
+    const luts = b.getLUT(50);
+    for (let i = 0; i < luts.length; i++) {
+        if (i == luts.length - 1) {
+            break;
+        }
+
+        const lut1 = luts[i];
+        const tagent1 = b.derivative(lut1.t);
+        const normal1 = b.normal(lut1.t);
+        normal1.x *= 20;
+        normal1.y *= 20;
+
+        const lut2 = luts[i + 1];
+        const tagent2 = b.derivative(lut2.t);
+        const normal2 = b.normal(lut2.t);
+        normal2.x *= 20;
+        normal2.y *= 20;
+
+        let rect = [
+            new Point(lut1.x + normal1.x, lut1.y + normal1.y),
+            new Point(lut1.x - normal1.x, lut1.y - normal1.y),
+            new Point(lut2.x - normal2.x, lut2.y - normal2.y),
+            new Point(lut2.x + normal2.x, lut2.y + normal2.y),
+        ];
+
+        aPosition.push(rect[0].x, rect[0].y);
+        aPosition.push(rect[1].x, rect[1].y);
+        aPosition.push(rect[2].x, rect[2].y);
+
+        aPosition.push(rect[0].x, rect[0].y);
+        aPosition.push(rect[2].x, rect[2].y);
+        aPosition.push(rect[3].x, rect[3].y);
+
+        aColor.push(1, 1, 1);
+        aColor.push(1, 1, 1);
+        aColor.push(1, 1, 1);
+
+        aColor.push(1, 1, 1);
+        aColor.push(1, 1, 1);
+        aColor.push(1, 1, 1);
+
+        aUV.push(0, 0);
+        aUV.push(1, 0);
+        aUV.push(1, 1);
+
+        aUV.push(0, 0);
+        aUV.push(1, 1);
+        aUV.push(0, 1);
+    }
+
+    const geometry = new Geometry({ attributes: { aPosition, aColor, aUV } });
+    const shader = Shader.from({ gl: { vertex, fragment, }, resources: { uTexture: texture.source, }, });
+    curveNode = new Mesh({ geometry, shader, });
+
+    return curveNode;
+}
+
 function drawControlPoints() {
     let controlPoints = getControlPoints();
     let texture = textures[activeTexture];
 
-    // if (curveNode) {
-    //     app.stage.removeChild(curveNode);
-    //     curveNode = null;
+    // if (!curveNode) {
+    //     curveNode = new Graphics();
     // }
-    if (!curveNode) {
-        curveNode = new Graphics();
-    }
-    curveNode.clear();
-    curveNode.moveTo(controlPoints[0].x, controlPoints[0].y);
-    curveNode.bezierCurveTo(controlPoints[1].x, controlPoints[1].y, controlPoints[2].x, controlPoints[2].y, controlPoints[3].x, controlPoints[3].y);
-    curveNode.stroke({ width: 5, color: 0xaa0000, alpha: 0.5 });
-    app.stage.addChild(curveNode);
+    // curveNode.clear();
+    // curveNode.moveTo(controlPoints[0].x, controlPoints[0].y);
+    // curveNode.bezierCurveTo(controlPoints[1].x, controlPoints[1].y, controlPoints[2].x, controlPoints[2].y, controlPoints[3].x, controlPoints[3].y);
+    // curveNode.stroke({ width: 5, color: 0xaa0000, alpha: 0.5 });
+    // app.stage.addChild(curveNode);
 
+    if (curveNode) {
+        app.stage.removeChild(curveNode);
+        curveNode = null;
+    }
+    curveNode = makeCurveType2(controlPoints);
+    app.stage.addChild(curveNode);
 
     for (let i = 0; i < controlPoints.length; i++) {
         let node = controlPointsNode.children[i];
@@ -123,21 +291,9 @@ onMounted(async () => {
         });
     }
 
-
-
-    // conexture = await Assets.load('https://pixijs.com/assets/bunny.png');
-    // conunny = new Sprite(texture);
-    // bunnchor.set(0.5);
-    // bun = app.screen.width / 2;
-    // bun = app.screen.height / 2;
-    // appge.addChild(bunny);
-    app.ticker.add(() => {
-        for (let i = 0; i < controlPointsNode.children.length; i++) {
-            let node = controlPointsNode.children[i];
-            // node.y = Math.sin(app.ticker.lastTime / 1000 + i * 0.1) * 100 + center.y;
-        }
-        drawControlPoints();
-    });
+    // app.ticker.add(() => {
+    //     drawControlPoints();
+    // });
 });
 </script>
 <template>

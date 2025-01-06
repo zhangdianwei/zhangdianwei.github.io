@@ -13,6 +13,7 @@
     "@tresjs/cientos": "^3.9.0",
     "@tresjs/core": "^3.9.0",
     "@tweenjs/tween.js": "^23.1.2",
+    "bezier-js": "^6.1.4",
     "codemirror": "^6.0.1",
     "intersects": "^2.7.2",
     "konva": "^9.3.12",

@@ -51,7 +51,7 @@ const textures = [
     await Assets.load('./img/rope2.png'),
     await Assets.load('./img/rope3.png'),
 ]
-let activeTexture = 1;
+let activeTexture = 2;
 
 function getControlPoints() {
     return controlPointsNode.children.map((node) => {
@@ -132,21 +132,21 @@ function makeCurveType2(controlPoints) {
     let aUV = [];
 
     const b = new Bezier(...controlPoints);
-    const luts = b.getLUT(50);
-    for (let i = 0; i < luts.length; i++) {
-        if (i == luts.length - 1) {
-            break;
-        }
+    const totalLength = b.length();
+    const segCount = Math.floor(totalLength / 20);
+    const curves = splitCurveByLength(b, segCount);
+    for (let i = 0; i < curves.length; i++) {
+        const curve = curves[i];
 
-        const lut1 = luts[i];
-        const tagent1 = b.derivative(lut1.t);
-        const normal1 = b.normal(lut1.t);
+        const lut1 = curve.get(0)
+        const tagent1 = curve.derivative(0);
+        const normal1 = curve.normal(0);
         normal1.x *= 20;
         normal1.y *= 20;
 
-        const lut2 = luts[i + 1];
-        const tagent2 = b.derivative(lut2.t);
-        const normal2 = b.normal(lut2.t);
+        const lut2 = curve.get(1)
+        const tagent2 = curve.derivative(1);
+        const normal2 = curve.normal(1);
         normal2.x *= 20;
         normal2.y *= 20;
 
@@ -189,18 +189,43 @@ function makeCurveType2(controlPoints) {
     return curveNode;
 }
 
+function splitCurveByLength(curve, parts) {
+    const totalLength = curve.length();
+    const segmentLength = totalLength / parts;
+    const result = [];
+
+    // 创建查找表
+    const lut = curve.getLUT(500);
+    let currentLength = 0;
+    let lastSperateIndex = 0;
+
+    for (let i = 1; i <= parts; i++) {
+        const targetLength = segmentLength * i;
+
+        // 在LUT中找到最接近目标长度的点
+        for (let j = lastSperateIndex + 1; j < lut.length; j++) {
+            const lastPoint = lut[j - 1];
+            const point = lut[j];
+            const dx = point.x - lastPoint.x;
+            const dy = point.y - lastPoint.y;
+            currentLength += Math.sqrt(dx * dx + dy * dy);
+
+            if (currentLength >= targetLength || j == lut.length - 1) {
+                let seg = curve.split(lut[lastSperateIndex].t, point.t);
+                result.push(seg);
+                lastSperateIndex = j;
+                break;
+            }
+        }
+    }
+
+    // 分割曲线
+    return result;
+}
+
 function drawControlPoints() {
     let controlPoints = getControlPoints();
     let texture = textures[activeTexture];
-
-    // if (!curveNode) {
-    //     curveNode = new Graphics();
-    // }
-    // curveNode.clear();
-    // curveNode.moveTo(controlPoints[0].x, controlPoints[0].y);
-    // curveNode.bezierCurveTo(controlPoints[1].x, controlPoints[1].y, controlPoints[2].x, controlPoints[2].y, controlPoints[3].x, controlPoints[3].y);
-    // curveNode.stroke({ width: 5, color: 0xaa0000, alpha: 0.5 });
-    // app.stage.addChild(curveNode);
 
     if (curveNode) {
         app.stage.removeChild(curveNode);

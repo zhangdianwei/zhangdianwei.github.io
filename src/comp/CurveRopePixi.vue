@@ -11,11 +11,8 @@ let controlPointsNode = null;
 
 let curveNode = null;
 
-const categoryList = ref(["以t分割", "以长度分割"])
-const selectedCategory = ref("以长度分割");
-function onSelectCategory(item) {
-
-}
+const categoryList = ref(["以t分割", "以长度分割", "平行曲线方式"])
+const selectedCategory = ref("平行曲线方式");
 
 const vertex = `
 in vec2 aPosition;
@@ -209,53 +206,124 @@ function makeCurveType2(controlPoints) {
 
     }
 
-    // const curves = splitCurveByLength(b, segCount);
-    // for (let i = 0; i < curves.length; i++) {
-    //     const curve = curves[i];
+    const geometry = new Geometry({ attributes: { aPosition, aColor, aUV } });
+    const shader = Shader.from({ gl: { vertex, fragment, }, resources: { uTexture: texture.source, }, });
+    curveNode = new Mesh({ geometry, shader, });
 
-    //     const lut1 = curve.get(0)
-    //     const tagent1 = curve.derivative(0);
-    //     const normal1 = curve.normal(0);
-    //     normal1.x *= 20;
-    //     normal1.y *= 20;
+    return curveNode;
+}
 
-    //     const lut2 = curve.get(1)
-    //     const tagent2 = curve.derivative(1);
-    //     const normal2 = curve.normal(1);
-    //     normal2.x *= 20;
-    //     normal2.y *= 20;
+function getLength(curveArray) {
+    let totalLength = 0;
+    for (let i = 0; i < curveArray.length; i++) {
+        const curve = curveArray[i];
+        totalLength += curve.length();
+    }
+    return totalLength;
+}
+function makeCurveType3(controlPoints) {
+    let texture = textures[activeTexture];
 
-    //     let rect = [
-    //         new Point(lut1.x + normal1.x, lut1.y + normal1.y),
-    //         new Point(lut1.x - normal1.x, lut1.y - normal1.y),
-    //         new Point(lut2.x - normal2.x, lut2.y - normal2.y),
-    //         new Point(lut2.x + normal2.x, lut2.y + normal2.y),
-    //     ];
+    let aPosition = [];
+    let aColor = [];
+    let aUV = [];
 
-    //     aPosition.push(rect[0].x, rect[0].y);
-    //     aPosition.push(rect[1].x, rect[1].y);
-    //     aPosition.push(rect[2].x, rect[2].y);
+    const b = new Bezier(...controlPoints);
+    const b1 = b.offset(20);
+    const b2 = b.offset(-20);
 
-    //     aPosition.push(rect[0].x, rect[0].y);
-    //     aPosition.push(rect[2].x, rect[2].y);
-    //     aPosition.push(rect[3].x, rect[3].y);
+    const segCount = 1;
+    const curves = [b, b1, b2];
+    const curveLength = [b.length(), getLength(b1), getLength(b2)];
+    const perSegLength = [curveLength[0] / segCount, curveLength[1] / segCount, curveLength[2] / segCount];
+    const luts_cache = new Map();
+    const curveid_cache = new Map();
 
-    //     aColor.push(1, 1, 1);
-    //     aColor.push(1, 1, 1);
-    //     aColor.push(1, 1, 1);
+    function findNearestLUT_oneCurve(curve, targetLength) {
+        let luts = luts_cache.get(curve);
+        if (!luts) {
+            luts = curve.getLUT();
+            luts_cache[curve] = luts;
+        }
 
-    //     aColor.push(1, 1, 1);
-    //     aColor.push(1, 1, 1);
-    //     aColor.push(1, 1, 1);
+        if (targetLength == 0) {
+            return luts[0];
+        }
 
-    //     aUV.push(0, 0);
-    //     aUV.push(1, 0);
-    //     aUV.push(1, 1);
+        let length = 0;
+        for (let i = 1; i < luts.length; i++) {
+            const dx = luts[i].x - luts[i - 1].x;
+            const dy = luts[i].y - luts[i - 1].y;
+            const diff_length = Math.sqrt(dx * dx + dy * dy);
+            length += diff_length;
+            if (length >= targetLength || i == luts.length - 1) {
+                return luts[i];
+            }
+        }
+    }
 
-    //     aUV.push(0, 0);
-    //     aUV.push(1, 1);
-    //     aUV.push(0, 1);
-    // }
+    function findNearestLUT(curveId, targetLength) {
+        const sub_curves = curves[curveId];
+        const sub_lengths = sub_curves.map((c) => c.length());
+
+        let need_sub_curve_id = sub_curves.length - 1;
+        for (let i = 0; i < sub_lengths.length; i++) {
+            if (targetLength <= sub_lengths[i]) {
+                need_sub_curve_id = i;
+                break;
+            }
+            else {
+                targetLength -= sub_lengths[i];
+            }
+        }
+
+        let curve = sub_curves[need_sub_curve_id];
+        let lut = findNearestLUT_oneCurve(curve, targetLength);
+        return lut;
+    }
+
+    let historyLut1 = findNearestLUT(1, 0);
+    let historyLut2 = findNearestLUT(2, 0);
+    for (let segIndex = 1; segIndex <= segCount; segIndex++) {
+        let targetLength1 = segIndex * perSegLength[1];
+        let targetLength2 = segIndex * perSegLength[2];
+
+        const lut1 = historyLut1;
+        const lut2 = historyLut2;
+        const lut3 = findNearestLUT(1, targetLength1);
+        const lut4 = findNearestLUT(2, targetLength2);
+
+        let rect = [
+            new Point(lut1.x, lut1.y),
+            new Point(lut2.x, lut2.y),
+            new Point(lut3.x, lut3.y),
+            new Point(lut4.x, lut4.y),
+        ];
+
+        aPosition.push(rect[0].x, rect[0].y);
+        aPosition.push(rect[1].x, rect[1].y);
+        aPosition.push(rect[2].x, rect[2].y);
+
+        aPosition.push(rect[0].x, rect[0].y);
+        aPosition.push(rect[2].x, rect[2].y);
+        aPosition.push(rect[3].x, rect[3].y);
+
+        aColor.push(1, 1, 1);
+        aColor.push(1, 1, 1);
+        aColor.push(1, 1, 1);
+
+        aColor.push(1, 1, 1);
+        aColor.push(1, 1, 1);
+        aColor.push(1, 1, 1);
+
+        aUV.push(0, 0);
+        aUV.push(1, 0);
+        aUV.push(1, 1);
+
+        aUV.push(0, 0);
+        aUV.push(1, 1);
+        aUV.push(0, 1);
+    }
 
     const geometry = new Geometry({ attributes: { aPosition, aColor, aUV } });
     const shader = Shader.from({ gl: { vertex, fragment, }, resources: { uTexture: texture.source, }, });
@@ -264,55 +332,55 @@ function makeCurveType2(controlPoints) {
     return curveNode;
 }
 
-function splitCurveByLength(curve, parts) {
-    const totalLength = curve.length();
-    const segmentLength = totalLength / parts;
-    const result = [];
-
-    // 创建查找表
-    const lut = curve.getLUT(500);
-    let currentLength = 0;
-    let lastSperateIndex = 0;
-
-    for (let i = 1; i <= parts; i++) {
-        const targetLength = segmentLength * i;
-
-        // 在LUT中找到最接近目标长度的点
-        for (let j = lastSperateIndex + 1; j < lut.length; j++) {
-            const lastPoint = lut[j - 1];
-            const point = lut[j];
-            const dx = point.x - lastPoint.x;
-            const dy = point.y - lastPoint.y;
-            currentLength += Math.sqrt(dx * dx + dy * dy);
-
-            if (currentLength >= targetLength || j == lut.length - 1) {
-                let seg = curve.split(lut[lastSperateIndex].t, point.t);
-                result.push(seg);
-                lastSperateIndex = j;
-                break;
-            }
-        }
-    }
-
-    // 分割曲线
-    return result;
-}
-
 function drawControlPoints() {
     let controlPoints = getControlPoints();
-    let texture = textures[activeTexture];
 
     if (curveNode) {
         app.stage.removeChild(curveNode);
         curveNode = null;
     }
-    if (selectedCategory.value == "以t分割") {
-        curveNode = makeCurveType1(controlPoints);        
+    // if (selectedCategory.value == "以t分割") {
+    //     curveNode = makeCurveType1(controlPoints);
+    // }
+    // else if (selectedCategory.value == "以长度分割") {
+    //     curveNode = makeCurveType2(controlPoints);
+    // }
+    // else if (selectedCategory.value == "平行曲线方式") {
+    //     curveNode = makeCurveType3(controlPoints);
+    // }
+    if (curveNode) {
+        app.stage.addChild(curveNode);
     }
-    else {
-        curveNode = makeCurveType2(controlPoints);
-    }
-    app.stage.addChild(curveNode);
+
+    // const b0 = new Bezier(...controlPoints);
+    // const b1 = b0.offset(-20);
+    // const b2 = b0.offset(20);
+    // let node = new Graphics();
+    // node.moveTo(controlPoints[0].x, controlPoints[0].y);
+    // node.bezierCurveTo(controlPoints[1].x, controlPoints[1].y, controlPoints[2].x, controlPoints[2].y, controlPoints[3].x, controlPoints[3].y);
+    // node.stroke({ width: 5, color: 0xaa0000 });
+    // app.stage.addChild(node);
+    // for (let i = 0; i < b1.length; i++) {
+    //     const curve = b1[i];
+    //     node = new Graphics();
+    //     let points = curve.points;
+    //     node.moveTo(points[0].x, points[0].y);
+    //     node.bezierCurveTo(points[1].x, points[1].y, points[2].x, points[2].y, points[3].x, points[3].y);
+    //     node.stroke({ width: 5, color: 0x0000aa });
+    //     app.stage.addChild(node);
+    // }
+    // for (let i = 0; i < b1.length; i++) {
+    //     const curve = b2[i];
+    //     node = new Graphics();
+    //     let points = curve.points;
+    //     node.moveTo(points[0].x, points[0].y);
+    //     node.bezierCurveTo(points[1].x, points[1].y, points[2].x, points[2].y, points[3].x, points[3].y);
+    //     node.stroke({ width: 5, color: 0x00aa00 });
+    //     app.stage.addChild(node);
+    // }
+
+
+
 
     for (let i = 0; i < controlPoints.length; i++) {
         let node = controlPointsNode.children[i];
@@ -324,7 +392,6 @@ function drawControlPoints() {
         }
     }
 }
-
 
 function onPointerDown(e) {
     const position = e.data.global;
@@ -410,7 +477,7 @@ onMounted(async () => {
     <Row>
         <Col :span="4">
         <label>算法</label>
-        <Select v-model="selectedCategory" @on-select="onSelectCategory" size="large">
+        <Select v-model="selectedCategory" size="large">
             <Option v-for="item in categoryList" :value="item" :key="item">{{ item }}</Option>
         </Select>
         </Col>

@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, reactive, ref, watch } from 'vue';
-import { Shader, Geometry, Point, MeshRope, Texture, buildGeometryFromPath, Mesh, GraphicsPath, Circle, Graphics, Application, Assets, Sprite, Container } from 'pixi.js';
+import { Shader, Geometry, Point, Mesh, Circle, Graphics, Application, Assets, Container } from 'pixi.js';
 import { Bezier } from "bezier-js";
 
 const rootRef = ref(null);
@@ -14,6 +14,16 @@ let subNode = null;
 
 const categoryList = ref(["以t分割", "以长度分割", "平行曲线方式"])
 const selectedCategory = ref("平行曲线方式");
+
+const showGrid = ref(false);
+watch(showGrid, () => {
+    drawControlPoints();
+})
+
+const segCountRef = ref(30);
+watch(segCountRef, () => {
+    drawControlPoints();
+})
 
 const vertex = `
 in vec2 aPosition;
@@ -71,7 +81,7 @@ function makeCurveType1(controlPoints) {
     let aUV = [];
 
     const b = new Bezier(...controlPoints);
-    const luts = b.getLUT(50);
+    const luts = b.getLUT(segCountRef.value);
     for (let i = 0; i < luts.length; i++) {
         if (i == luts.length - 1) {
             break;
@@ -137,7 +147,7 @@ function makeCurveType2(controlPoints) {
 
     const b = new Bezier(...controlPoints);
     const totalLength = b.length();
-    const segCount = Math.floor(totalLength / 20);
+    const segCount = segCountRef.value;//Math.floor(totalLength / 20);
     let luts = b.getLUT(300);
     let perSegLength = totalLength / segCount;
     let historyLength = 0;
@@ -235,7 +245,7 @@ function makeCurveType3(controlPoints) {
 
     const curves = [b, b1, b2];
     const curveLength = [b.length(), getLength(b1), getLength(b2)];
-    const segCount = 10; Math.ceil(curveLength[0] / 30);
+    const segCount = segCountRef.value; // Math.ceil(curveLength[0] / 30);
     const perSegLength = [curveLength[0] / segCount, curveLength[1] / segCount, curveLength[2] / segCount];
     const luts_cache = new Map();
 
@@ -363,10 +373,28 @@ function drawControlPoints() {
     subNode = new Container();
     app.stage.addChild(subNode);
 
-    if (subNode) {
+    if (subNode && showGrid.value) {
 
         const triangle = new Graphics();
         const points = curveNode.geometry.attributes.aPosition.buffer.data;
+        for (let i = 0; i < points.length / 12; i++) {
+            const index = i * 12;
+
+            const rect = [
+                new Point(points[index + 0], points[index + 1]),
+                new Point(points[index + 2], points[index + 3]),
+                new Point(points[index + 4], points[index + 5]),
+                new Point(points[index + 10], points[index + 11]),
+            ]
+            triangle.moveTo(rect[0].x, rect[0].y);
+            triangle.lineTo(rect[1].x, rect[1].y);
+            triangle.lineTo(rect[2].x, rect[2].y);
+            triangle.lineTo(rect[3].x, rect[3].y);
+            triangle.lineTo(rect[0].x, rect[0].y);
+            triangle.stroke({ width: 1, color: 0xaa0000, });
+
+        }
+        subNode.addChild(triangle);
 
 
         // const b0 = new Bezier(...controlPoints);
@@ -493,10 +521,30 @@ onMounted(async () => {
 
     <Row>
         <Col :span="4">
-        <label>算法</label>
-        <Select v-model="selectedCategory" size="large">
-            <Option v-for="item in categoryList" :value="item" :key="item">{{ item }}</Option>
-        </Select>
+
+        <List>
+            <ListItem>
+                算法：
+                <Select v-model="selectedCategory">
+                    <Option v-for="item in categoryList" :value="item" :key="item">{{ item }}</Option>
+                </Select>
+            </ListItem>
+
+            <ListItem>
+                <Checkbox v-model="showGrid">显示网格</Checkbox>
+            </ListItem>
+
+            <ListItem>
+                分段数：
+                <InputNumber v-model="segCountRef" :min="1" :max="100" :step="10" controls-outside />
+            </ListItem>
+        </List>
+
+
+
+
+
+
         </Col>
         <Col :span="20">
         <div ref="rootRef" style="width: 100%; height: 98vh;"></div>

@@ -10,6 +10,7 @@ let activeControlPoint = -1;
 let controlPointsNode = null;
 
 let curveNode = null;
+let subNode = null;
 
 const categoryList = ref(["以t分割", "以长度分割", "平行曲线方式"])
 const selectedCategory = ref("平行曲线方式");
@@ -232,12 +233,11 @@ function makeCurveType3(controlPoints) {
     const b1 = b.offset(20);
     const b2 = b.offset(-20);
 
-    const segCount = 1;
     const curves = [b, b1, b2];
     const curveLength = [b.length(), getLength(b1), getLength(b2)];
+    const segCount = 10; Math.ceil(curveLength[0] / 30);
     const perSegLength = [curveLength[0] / segCount, curveLength[1] / segCount, curveLength[2] / segCount];
     const luts_cache = new Map();
-    const curveid_cache = new Map();
 
     function findNearestLUT_oneCurve(curve, targetLength) {
         let luts = luts_cache.get(curve);
@@ -267,7 +267,7 @@ function makeCurveType3(controlPoints) {
         const sub_lengths = sub_curves.map((c) => c.length());
 
         let need_sub_curve_id = sub_curves.length - 1;
-        for (let i = 0; i < sub_lengths.length; i++) {
+        for (let i = 0; i < sub_lengths.length - 1; i++) {
             if (targetLength <= sub_lengths[i]) {
                 need_sub_curve_id = i;
                 break;
@@ -294,11 +294,14 @@ function makeCurveType3(controlPoints) {
         const lut4 = findNearestLUT(2, targetLength2);
 
         let rect = [
-            new Point(lut1.x, lut1.y),
             new Point(lut2.x, lut2.y),
+            new Point(lut1.x, lut1.y),
             new Point(lut3.x, lut3.y),
             new Point(lut4.x, lut4.y),
         ];
+
+        historyLut1 = lut3;
+        historyLut2 = lut4;
 
         aPosition.push(rect[0].x, rect[0].y);
         aPosition.push(rect[1].x, rect[1].y);
@@ -328,6 +331,7 @@ function makeCurveType3(controlPoints) {
     const geometry = new Geometry({ attributes: { aPosition, aColor, aUV } });
     const shader = Shader.from({ gl: { vertex, fragment, }, resources: { uTexture: texture.source, }, });
     curveNode = new Mesh({ geometry, shader, });
+    // console.log("curveNode", curveNode.geometry.attributes.aPosition.buffer.data.length)
 
     return curveNode;
 }
@@ -339,46 +343,59 @@ function drawControlPoints() {
         app.stage.removeChild(curveNode);
         curveNode = null;
     }
-    // if (selectedCategory.value == "以t分割") {
-    //     curveNode = makeCurveType1(controlPoints);
-    // }
-    // else if (selectedCategory.value == "以长度分割") {
-    //     curveNode = makeCurveType2(controlPoints);
-    // }
-    // else if (selectedCategory.value == "平行曲线方式") {
-    //     curveNode = makeCurveType3(controlPoints);
-    // }
+    if (selectedCategory.value == "以t分割") {
+        curveNode = makeCurveType1(controlPoints);
+    }
+    else if (selectedCategory.value == "以长度分割") {
+        curveNode = makeCurveType2(controlPoints);
+    }
+    else if (selectedCategory.value == "平行曲线方式") {
+        curveNode = makeCurveType3(controlPoints);
+    }
     if (curveNode) {
         app.stage.addChild(curveNode);
     }
 
-    // const b0 = new Bezier(...controlPoints);
-    // const b1 = b0.offset(-20);
-    // const b2 = b0.offset(20);
-    // let node = new Graphics();
-    // node.moveTo(controlPoints[0].x, controlPoints[0].y);
-    // node.bezierCurveTo(controlPoints[1].x, controlPoints[1].y, controlPoints[2].x, controlPoints[2].y, controlPoints[3].x, controlPoints[3].y);
-    // node.stroke({ width: 5, color: 0xaa0000 });
-    // app.stage.addChild(node);
-    // for (let i = 0; i < b1.length; i++) {
-    //     const curve = b1[i];
-    //     node = new Graphics();
-    //     let points = curve.points;
-    //     node.moveTo(points[0].x, points[0].y);
-    //     node.bezierCurveTo(points[1].x, points[1].y, points[2].x, points[2].y, points[3].x, points[3].y);
-    //     node.stroke({ width: 5, color: 0x0000aa });
-    //     app.stage.addChild(node);
-    // }
-    // for (let i = 0; i < b1.length; i++) {
-    //     const curve = b2[i];
-    //     node = new Graphics();
-    //     let points = curve.points;
-    //     node.moveTo(points[0].x, points[0].y);
-    //     node.bezierCurveTo(points[1].x, points[1].y, points[2].x, points[2].y, points[3].x, points[3].y);
-    //     node.stroke({ width: 5, color: 0x00aa00 });
-    //     app.stage.addChild(node);
-    // }
+    if (subNode) {
+        app.stage.removeChild(subNode);
+        subNode = null;
+    }
+    subNode = new Container();
+    app.stage.addChild(subNode);
 
+    if (subNode) {
+
+        const triangle = new Graphics();
+        const points = curveNode.geometry.attributes.aPosition.buffer.data;
+
+
+        // const b0 = new Bezier(...controlPoints);
+        // const b1 = b0.offset(-20);
+        // const b2 = b0.offset(20);
+        // let node = new Graphics();
+        // node.moveTo(controlPoints[0].x, controlPoints[0].y);
+        // node.bezierCurveTo(controlPoints[1].x, controlPoints[1].y, controlPoints[2].x, controlPoints[2].y, controlPoints[3].x, controlPoints[3].y);
+        // node.stroke({ width: 5, color: 0xaa0000, alpha: 0.1 });
+        // subNode.addChild(node);
+        // for (let i = 0; i < b1.length; i++) {
+        //     const curve = b1[i];
+        //     node = new Graphics();
+        //     let points = curve.points;
+        //     node.moveTo(points[0].x, points[0].y);
+        //     node.bezierCurveTo(points[1].x, points[1].y, points[2].x, points[2].y, points[3].x, points[3].y);
+        //     node.stroke({ width: 5, color: 0xaa0000, alpha: 0.1 });
+        //     subNode.addChild(node);
+        // }
+        // for (let i = 0; i < b1.length; i++) {
+        //     const curve = b2[i];
+        //     node = new Graphics();
+        //     let points = curve.points;
+        //     node.moveTo(points[0].x, points[0].y);
+        //     node.bezierCurveTo(points[1].x, points[1].y, points[2].x, points[2].y, points[3].x, points[3].y);
+        //     node.stroke({ width: 5, color: 0xaa0000, alpha: 0.1 });
+        //     subNode.addChild(node);
+        // }
+    }
 
 
 
@@ -424,7 +441,7 @@ watch(selectedCategory, () => {
 
 onMounted(async () => {
     app = new Application();
-    await app.init({ background: '#eeeeee', resizeTo: window });
+    await app.init({ background: '#eeeeee', resizeTo: rootRef.value });
     rootRef.value.appendChild(app.canvas);
 
     const center = { x: app.screen.width / 2, y: app.screen.height / 2 };
@@ -482,7 +499,7 @@ onMounted(async () => {
         </Select>
         </Col>
         <Col :span="20">
-        <div ref="rootRef" style="width: 100%; height: 100%;"></div>
+        <div ref="rootRef" style="width: 100%; height: 98vh;"></div>
         </Col>
     </Row>
 

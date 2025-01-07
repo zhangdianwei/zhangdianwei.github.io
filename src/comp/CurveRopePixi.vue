@@ -13,7 +13,7 @@ let curveNode = null;
 let subNode = null;
 
 const categoryList = ref(["以t分割", "以长度分割", "平行曲线方式"])
-const selectedCategory = ref("平行曲线方式");
+const selectedCategory = ref("以长度分割");
 
 const showGrid = ref(false);
 watch(showGrid, () => {
@@ -539,11 +539,6 @@ onMounted(async () => {
                 <InputNumber v-model="segCountRef" :min="1" :max="100" :step="10" controls-outside />
             </ListItem>
         </List>
-
-
-
-
-
 
         </Col>
         <Col :span="20">

@@ -152,12 +152,12 @@ function makeCurveType2(controlPoints) {
             let curPoint = luts[j];
             const dx = curPoint.x - lastPoint.x;
             const dy = curPoint.y - lastPoint.y;
-            // historyLength += Math.sqrt(dx * dx + dy * dy);
-            historyLength += b.split(lastPoint.t, curPoint.t).length();
+            historyLength += Math.sqrt(dx * dx + dy * dy);
+            // historyLength += b.split(lastPoint.t, curPoint.t).length();
 
             if (historyLength >= targetLength || j == luts.length - 1) {
 
-                console.log("split", lastPoint, curPoint)
+                // console.log("split", lastPoint, curPoint)
 
                 const lut1 = luts[historyIndex];
                 const normal1 = b.normal(lut1.t);

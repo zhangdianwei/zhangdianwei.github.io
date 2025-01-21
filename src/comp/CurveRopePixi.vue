@@ -2,6 +2,7 @@
 import { onMounted, reactive, ref, watch } from 'vue';
 import { Shader, Geometry, Point, Mesh, Circle, Graphics, Application, Assets, Container } from 'pixi.js';
 import { Bezier } from "bezier-js";
+import { Label } from 'konva/lib/shapes/Label';
 
 const rootRef = ref(null);
 let app = null;
@@ -11,6 +12,13 @@ let controlPointsNode = null;
 
 let curveNode = null;
 let subNode = null;
+
+const textureList = ref([
+    { value: 0, label: "纹理1" },
+    { value: 1, label: "纹理2" },
+    { value: 2, label: "纹理3" },
+]);
+const selectedTexture = ref(2);
 
 const categoryList = ref(["以t分割", "以长度分割", "平行曲线方式"])
 const selectedCategory = ref("以长度分割");
@@ -65,7 +73,6 @@ const textures = [
     await Assets.load('./img/rope2.png'),
     await Assets.load('./img/rope3.png'),
 ]
-let activeTexture = 2;
 
 function getControlPoints() {
     return controlPointsNode.children.map((node) => {
@@ -74,7 +81,7 @@ function getControlPoints() {
 }
 
 function makeCurveType1(controlPoints) {
-    let texture = textures[activeTexture];
+    let texture = textures[selectedTexture.value];
 
     let aPosition = [];
     let aColor = [];
@@ -139,7 +146,7 @@ function makeCurveType1(controlPoints) {
 }
 
 function makeCurveType2(controlPoints) {
-    let texture = textures[activeTexture];
+    let texture = textures[selectedTexture.value];
 
     let aPosition = [];
     let aColor = [];
@@ -233,7 +240,7 @@ function getLength(curveArray) {
     return totalLength;
 }
 function makeCurveType3(controlPoints) {
-    let texture = textures[activeTexture];
+    let texture = textures[selectedTexture.value];
 
     let aPosition = [];
     let aColor = [];
@@ -466,6 +473,9 @@ function onPointerMove(e) {
 watch(selectedCategory, () => {
     drawControlPoints();
 })
+watch(selectedTexture, () => {
+    drawControlPoints();
+})
 
 onMounted(async () => {
     app = new Application();
@@ -503,7 +513,7 @@ onMounted(async () => {
         document.addEventListener('keydown', (event) => {
             if (event.key >= 1 && event.key <= 9) {
                 if (textures[event.key - 1]) {
-                    activeTexture = event.key - 1;
+                    selectedTexture.value = event.key - 1;
                     drawControlPoints();
 
                 }
@@ -520,13 +530,21 @@ onMounted(async () => {
 <template>
 
     <Row>
+
         <Col :span="4">
 
-        <List>
+        <List style="padding-left: 20px;">
             <ListItem>
-                算法：
+                <p style="width: 100px;">算法：</p>
                 <Select v-model="selectedCategory">
                     <Option v-for="item in categoryList" :value="item" :key="item">{{ item }}</Option>
+                </Select>
+            </ListItem>
+
+            <ListItem>
+                <p style="width: 100px;">纹理类型：</p>
+                <Select v-model="selectedTexture">
+                    <Option v-for="item in textureList" :value="item.value" :key="item.value">{{ item.label }}</Option>
                 </Select>
             </ListItem>
 

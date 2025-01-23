@@ -16,6 +16,7 @@ import BallGame from "../comp/BallGame.vue"
 import ThreeHello from "../comp/ThreeHello.vue"
 import CurveRope from "../comp/CurveRope.vue"
 import CurveRopePixi from "../comp/CurveRopePixi.vue"
+import PixiHello from "../comp/PixiHello.vue"
 
 const routesArray = [
   { id: "TankMain", title: "坦克大战", comp: TankMain },
@@ -38,6 +39,7 @@ const routesArray = [
   { id: "BallGame", title: "小球碰撞游戏", comp: BallGame },
   { id: "CurveRope", title: "曲线绳子(Three)", comp: CurveRope },
   { id: "CurveRopePixi", title: "曲线绳子(Pixi)", comp: CurveRopePixi },
+  { id: "PixiHello", title: "PixiHello", comp: PixiHello },
 ];
 
 const curPath = ref(window.location.hash.slice(1))

@@ -34,22 +34,19 @@ watch(segCountRef, () => {
 })
 
 const vertex = `
-in vec2 aPosition;
-in vec3 aColor;
-in vec2 aUV;
+attribute vec2 aPosition;
+attribute vec3 aColor;
+attribute vec2 aUV;
 
-out vec3 vColor;
-out vec2 vUV;
+varying vec3 vColor;
+varying vec2 vUV;
 
-uniform mat3 uProjectionMatrix;
-uniform mat3 uWorldTransformMatrix;
-
-uniform mat3 uTransformMatrix;
-
+uniform mat3 projectionMatrix;
+uniform mat3 translationMatrix;
 
 void main() {
 
-    mat3 mvp = uProjectionMatrix * uWorldTransformMatrix * uTransformMatrix;
+    mat3 mvp = projectionMatrix * translationMatrix;
     gl_Position = vec4((mvp * vec3(aPosition, 1.0)).xy, 0.0, 1.0);
 
     vColor = aColor;
@@ -58,8 +55,8 @@ void main() {
 `;
 
 const fragment = `
-in vec3 vColor;
-in vec2 vUV;
+varying vec3 vColor;
+varying vec2 vUV;
 
 uniform sampler2D uTexture;
 
@@ -138,11 +135,7 @@ function makeCurveType1(controlPoints) {
         aUV.push(0, 1);
     }
 
-    const geometry = new Geometry({ attributes: { aPosition, aColor, aUV } });
-    const shader = Shader.from({ gl: { vertex, fragment, }, resources: { uTexture: texture.source, }, });
-    curveNode = new Mesh({ geometry, shader, });
-
-    return curveNode;
+    return createMesh(aPosition, aColor, aUV);
 }
 
 function makeCurveType2(controlPoints) {
@@ -220,13 +213,21 @@ function makeCurveType2(controlPoints) {
                 break;
             }
         }
-
-
     }
 
-    const geometry = new Geometry({ attributes: { aPosition, aColor, aUV } });
-    const shader = Shader.from({ gl: { vertex, fragment, }, resources: { uTexture: texture.source, }, });
-    curveNode = new Mesh({ geometry, shader, });
+    return createMesh(aPosition, aColor, aUV);
+}
+
+function createMesh(aPosition, aColor, aUV) {
+    const texture = textures[selectedTexture.value];
+    const uniforms = { uTexture: texture };
+    const geometry = new Geometry()
+        .addAttribute('aPosition', aPosition, 2)
+        .addAttribute('aColor', aColor, 3)
+        .addAttribute('aUV', aUV, 2)
+
+    const shader = Shader.from(vertex, fragment, uniforms);
+    curveNode = new Mesh(geometry, shader);
 
     return curveNode;
 }
@@ -345,13 +346,9 @@ function makeCurveType3(controlPoints) {
         aUV.push(0, 1);
     }
 
-    const geometry = new Geometry({ attributes: { aPosition, aColor, aUV } });
-    const shader = Shader.from({ gl: { vertex, fragment, }, resources: { uTexture: texture.source, }, });
-    curveNode = new Mesh({ geometry, shader, });
-    // console.log("curveNode", curveNode.geometry.attributes.aPosition.buffer.data.length)
-
-    return curveNode;
+    return createMesh(aPosition, aColor, aUV);
 }
+
 
 function drawControlPoints() {
     let controlPoints = getControlPoints();
@@ -370,6 +367,7 @@ function drawControlPoints() {
         curveNode = makeCurveType3(controlPoints);
     }
     if (curveNode) {
+        curveNode.eventMode = "none";
         app.stage.addChild(curveNode);
     }
 
@@ -383,7 +381,8 @@ function drawControlPoints() {
     if (subNode && showGrid.value) {
 
         const triangle = new Graphics();
-        const points = curveNode.geometry.attributes.aPosition.buffer.data;
+        // const points = curveNode.geometry.attributes.aPosition.buffer.data;
+        const points = curveNode.geometry.buffers[0].data;
         for (let i = 0; i < points.length / 12; i++) {
             const index = i * 12;
 
@@ -393,12 +392,12 @@ function drawControlPoints() {
                 new Point(points[index + 4], points[index + 5]),
                 new Point(points[index + 10], points[index + 11]),
             ]
+            triangle.lineStyle(1, 0xaa0000);
             triangle.moveTo(rect[0].x, rect[0].y);
             triangle.lineTo(rect[1].x, rect[1].y);
             triangle.lineTo(rect[2].x, rect[2].y);
             triangle.lineTo(rect[3].x, rect[3].y);
             triangle.lineTo(rect[0].x, rect[0].y);
-            triangle.stroke({ width: 1, color: 0xaa0000, });
 
         }
         subNode.addChild(triangle);
@@ -437,10 +436,14 @@ function drawControlPoints() {
     for (let i = 0; i < controlPoints.length; i++) {
         let node = controlPointsNode.children[i];
         node.clear();
-        node.circle(0, 0, node.hitArea.radius);
-        node.fill(0x00adb5);
+
+        node.beginFill(0x00adb5, 1);
+        node.drawCircle(0, 0, node.hitArea.radius);
+        node.endFill();
+
         if (i === activeControlPoint) {
-            node.stroke({ width: 3, color: 0x393e46 });
+            node.lineStyle(3, 0x393e46, 1);
+            node.drawCircle(0, 0, node.hitArea.radius);
         }
     }
 }
@@ -478,9 +481,8 @@ watch(selectedTexture, () => {
 })
 
 onMounted(async () => {
-    app = new Application();
-    await app.init({ background: '#eeeeee', resizeTo: rootRef.value });
-    rootRef.value.appendChild(app.canvas);
+    app = new Application({ background: '#eeeeee', resizeTo: rootRef.value });
+    rootRef.value.appendChild(app.view);
 
     const center = { x: app.screen.width / 2, y: app.screen.height / 2 };
 

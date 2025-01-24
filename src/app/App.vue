@@ -16,7 +16,7 @@ import BallGame from "../comp/BallGame.vue"
 import ThreeHello from "../comp/ThreeHello.vue"
 import CurveRope from "../comp/CurveRope.vue"
 import CurveRopePixi from "../comp/CurveRopePixi.vue"
-import PixiHello from "../comp/PixiHello.vue"
+import PixiHello from "../pixi/PixiHello.vue"
 
 const routesArray = [
   { id: "TankMain", title: "坦克大战", comp: TankMain },

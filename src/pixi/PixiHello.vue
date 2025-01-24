@@ -1,7 +1,7 @@
 <script setup>
 
 import { ref, shallowRef, watch, onMounted } from 'vue';
-import { Shader, Geometry, Point, Mesh, Circle, Graphics, Application, Assets, Container } from 'pixi.js';
+import { Shader, Geometry, Point, Mesh, Circle, Graphics, Application, Assets, Container, Sprite } from 'pixi.js';
 import { Mesh3D, Light, LightType, LightingEnvironment, CameraOrbitControl, Color, StandardMaterial } from 'pixi3d/pixi7'
 
 const rootRef = shallowRef(null);
@@ -10,7 +10,7 @@ let control = null;
 let center = null;
 
 let mesh = null;
-function initGame() {
+async function initGame() {
     mesh = app.stage.addChild(Mesh3D.createCube())
 }
 

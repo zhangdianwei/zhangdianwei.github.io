@@ -234,7 +234,7 @@ const myStageConfig = {
 
 </template>
 
-<style>
+<style scoped>
 .mylabel {
     background-color: antiquewhite;
     display: flex;

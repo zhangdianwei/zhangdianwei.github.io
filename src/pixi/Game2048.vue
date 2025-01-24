@@ -1,9 +1,11 @@
 <script setup>
 
 import { ref, shallowRef, watch, onMounted, onUnmounted } from 'vue';
-import { Shader, Geometry, Point, Mesh, Circle, Graphics, Application, Assets, Container, Sprite } from 'pixi.js';
+// import { Shader, Geometry, Point, Mesh, Circle, Graphics, Application, Assets, Container, Sprite } from 'pixi.js';
+import { OrbitControls } from '@tresjs/cientos'
 
-const rootRef = shallowRef(null);
+const pixiRef = shallowRef(null);
+const threeRef = shallowRef(null);
 var g = {};
 
 async function initGame() {
@@ -15,12 +17,11 @@ async function initGame() {
 }
 
 function update() {
-    g.rope.position.set(g.mousePos.x, g.mousePos.y);
+    // g.rope.position.set(g.mousePos.x, g.mousePos.y);
 }
 
 function onpointerdown(e) {
     g.mousePos = e.global;
-    updatePlayerPos();
 }
 
 function onpointermove(e) {
@@ -32,8 +33,9 @@ function onpointerup(e) {
 }
 
 onMounted(async () => {
-    g.app = new Application({ background: '#eeeeee', resizeTo: rootRef.value });
-    rootRef.value.appendChild(g.app.view);
+    return;
+    g.app = new Application({ background: '#eeeeee', resizeTo: pixiRef.value });
+    pixiRef.value.appendChild(g.app.view);
     g.center = { x: g.app.screen.width / 2, y: g.app.screen.height / 2 };
 
     g.app.stage.eventMode = "static";
@@ -54,11 +56,36 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-    g.app.destroy(true, true);
+    // g.app.destroy(true, true);
 })
 
 </script>
 
 <template>
-    <div ref="rootRef" style="width: 100%; height: 98vh;"></div>
+    <TresCanvas ref="threeRef" clear-color="#95e1d3" style="width: 200px; height: 200px;">
+        <TresPerspectiveCamera :position="[0, 20, 0]" :rotation="[0, 0, 0]"></TresPerspectiveCamera>
+        <TresAmbientLight :intensity="1" />
+
+        <TresAxesHelper></TresAxesHelper>
+        <TresGridHelper></TresGridHelper>
+
+        <!-- <OrbitControls /> -->
+    </TresCanvas>
+    <!-- <div style="position: relative; width: 100%; height: 100vh;"> -->
+
+    <!-- <TresCanvas ref="threeRef" clear-color="#95e1d3"
+            style="position: absolute; top: 0; left: 0; width: 50%; height: 20%;">
+            <TresPerspectiveCamera :position="[0, 20, 0]" :rotation="[0, 0, 0]"></TresPerspectiveCamera>
+            <TresAmbientLight :intensity="1" />
+
+            <TresAxesHelper></TresAxesHelper>
+            <TresGridHelper></TresGridHelper>
+
+            <OrbitControls />
+        </TresCanvas> -->
+
+    <!-- <div ref="pixiRef"
+            style="background-color: bisque; position: absolute; top: 0; left: 0; width: 100%; height: 20%;"></div> -->
+
+    <!-- </div> -->
 </template>

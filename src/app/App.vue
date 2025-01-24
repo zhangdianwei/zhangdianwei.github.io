@@ -41,6 +41,7 @@ const routesArray = [
   { id: "CurveRope", title: "曲线绳子(Three)", comp: CurveRope },
   { id: "CurveRopePixi", title: "曲线绳子(Pixi)", comp: CurveRopePixi },
   { id: "PixiHello", title: "PixiHello", comp: PixiHello },
+  { id: "ThreeHello", title: "ThreeHello", comp: ThreeHello },
   { id: "Game2048", title: "Game2048", comp: Game2048 },
 ];
 

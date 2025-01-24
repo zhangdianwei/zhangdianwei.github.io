@@ -389,7 +389,7 @@ function onClickItem(catIndex, itemIndex) {
     </Row>
 </template>
 
-<style lang="css">
+<style lang="css" scoped>
 .tresCanvasBorder {
     border: 1px solid black;
     width: 100%;

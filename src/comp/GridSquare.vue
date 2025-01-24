@@ -221,7 +221,7 @@ function setGroupSelected(group, select) {
 
 </template>
 
-<style>
+<style scoped>
 .boxborder {
     border: 1px solid black;
     background-color: aliceblue;

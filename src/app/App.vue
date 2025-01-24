@@ -17,6 +17,7 @@ import ThreeHello from "../comp/ThreeHello.vue"
 import CurveRope from "../comp/CurveRope.vue"
 import CurveRopePixi from "../comp/CurveRopePixi.vue"
 import PixiHello from "../pixi/PixiHello.vue"
+import Game2048 from "../pixi/Game2048.vue"
 
 const routesArray = [
   { id: "TankMain", title: "坦克大战", comp: TankMain },
@@ -40,6 +41,7 @@ const routesArray = [
   { id: "CurveRope", title: "曲线绳子(Three)", comp: CurveRope },
   { id: "CurveRopePixi", title: "曲线绳子(Pixi)", comp: CurveRopePixi },
   { id: "PixiHello", title: "PixiHello", comp: PixiHello },
+  { id: "Game2048", title: "Game2048", comp: Game2048 },
 ];
 
 const curPath = ref(window.location.hash.slice(1))

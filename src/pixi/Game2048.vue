@@ -16,6 +16,29 @@ var g = {
 };
 window.g = g;
 
+var CubeConfigs = {
+    "2": {
+        scale: 1,
+        color: 0x364f6b,
+    },
+    "4": {
+        scale: 1.2,
+        color: 0x3fc1c9,
+    },
+    "8": {
+        scale: 1.4,
+        color: 0x40514e,
+    },
+    "16": {
+        scale: 1.6,
+        color: 0x3f72af,
+    },
+    "32": {
+        scale: 1.8,
+        color: 0x00b8a9,
+    },
+}
+
 async function initGame() {
     // let rope = new Sprite(g.assets.rope1);
     // rope.anchor.set(0.5, 0.5);
@@ -25,7 +48,6 @@ async function initGame() {
 
     g.player = new Snake([8, 4, 2])
     g.scene.add(g.player);
-    // g.player.lookAt(new Vector3(1, 0, 0));
     g.player.add(g.camera);
 
     // 为g.player添加axis
@@ -39,51 +61,75 @@ class Snake extends THREE.Group {
         this.cubes = [];
         for (var i = 0; i < nums.length; i++) {
             var cube = createCube(nums[i]);
-            cube.position.set(i, 0, 0);
             this.cubes.push(cube);
             g.scene.add(cube);
-
-            cube.initPosition = cube.position.clone();
-            cube.lastUpdateTime = Date.now();
         }
 
-        this.trigo = g.assets.trigo.scene.clone();
-        this.trigo.rotateZ(Math.PI / 2);
-        this.cubes[0].modelParent.add(this.trigo);
+        // this.trigo = g.assets.trigo.scene.clone();
+        // this.trigo.rotateZ(Math.PI / 2);
+        // this.cubes[0].modelParent.add(this.trigo);
+
+        for (var i = 0; i < this.cubes.length; i++) {
+            // var cube = this.cubes[i];
+            // var trigo = g.assets.trigo.scene.clone();
+            // trigo.rotateZ(Math.PI / 2);
+            // cube.modelParent.add(trigo);
+
+            var axesHelper = new THREE.AxesHelper(1);
+            this.cubes[i].modelParent.add(axesHelper);
+        }
 
         this.speed = 0.02;
+
+        // var cube2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 2), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
+        // cube2.position.set(0, 0, 0);
+        // this.add(cube2);
+
+        this.updateCubes();
     }
 
     update() {
         var distance = this.playerMoveDiff ? this.playerMoveDiff.length() : 0;
         if (distance >= 0.5) {
             var moveVec = this.playerMoveDiff.clone().normalize().multiplyScalar(this.speed);
-            this.position.add(moveVec);
+
+            var targetPos = this.position.clone().add(moveVec);
+            targetPos.x = Math.max(g.border.minX, Math.min(g.border.maxX, targetPos.x));
+            targetPos.y = Math.max(g.border.minY, Math.min(g.border.maxY, targetPos.y));
+
+            moveVec = targetPos.clone().sub(this.position);
+            this.position.set(targetPos.x, targetPos.y, targetPos.z);
+
+            this.updateCubes();
         }
 
-        this.updateCubes();
     }
 
     updateCubes() {
-        if (!this.playerMoveDiff) {
-            return;
-        }
-        // 倒序遍历cubes，设置每个cube的位置和旋转为前一个cube的位置和旋转
-        for (var i = this.cubes.length - 1; i >= 0; i--) {
+        for (var i = 0; i < this.cubes.length; i++) {
             var cube = this.cubes[i];
 
-            if (Date.now() - cube.lastUpdateTime < 100) {
-                continue;
-            }
+            var targetPos = this.getCubeStandPos(i);
+            var moveVec = targetPos.clone().sub(cube.position);
+            cube.position.add(moveVec);
 
-            var targetPosition = i == 0 ? this.position : this.cubes[i - 1].position;
-            var targetRotation = i == 0 ? this.rotation : this.cubes[i - 1].modelParent.rotation;
-
-            cube.position.copy(targetPosition);
-            // cube.modelParent.rotation.copy(targetRotation);
-
-            cube.lastUpdateTime = Date.now();
+            var angle = Math.atan2(moveVec.y, moveVec.x);
+            cube.modelParent.rotation.z = angle;
         }
+    }
+
+    getCubeStandPos(index) {
+        var startPos = this.position.clone();
+        for (var i = 0; i < index; i++) {
+            var cube = this.cubes[i];
+
+            let frontVector = new THREE.Vector3(-1, 0, 0);
+            frontVector.applyMatrix4(cube.modelParent.matrixWorld);
+            frontVector.normalize().multiplyScalar(-1);
+
+            startPos.add(frontVector);
+        }
+        return startPos;
     }
 
     setMoveDiff(playerMoveDiff) {
@@ -95,18 +141,19 @@ function createCube(num) {
     var cube = new THREE.Group();
     cube.num = num;
 
+    var config = CubeConfigs[num];
+
     cube.modelParent = new THREE.Group();
     cube.add(cube.modelParent);
-    cube.modelParent.lookAt(new Vector3(1, 0, 0));
 
     cube.model = g.assets.cube.scene.clone();
     cube.modelParent.add(cube.model);
     cube.model.traverse((child) => {
         if (child.isMesh) {
-            child.material = new MeshStandardMaterial({ color: "#11999e" });
+            child.material = new MeshStandardMaterial({ color: config.color, transparent: true, opacity: 0.5 });
         }
     })
-    cube.model.rotateZ(Math.PI / 2);
+    cube.model.rotateX(Math.PI / 2);
 
     cube.text = new THREE.Mesh(new TextGeometry(num.toString(), {
         font: g.assets.font,
@@ -133,7 +180,18 @@ function createCube(num) {
     return cube;
 }
 
+g.lastUpdateTime = Date.now();
+g.needUpdate = true;
 function onRequestAnimationFrame() {
+    requestAnimationFrame(onRequestAnimationFrame);
+
+    // var now = Date.now();
+    // var delta = now - g.lastUpdateTime;
+    // if (delta < 1000) {
+    //     return;
+    // }
+    // g.lastUpdateTime = now;
+
     if (g.mouse) {
         if (g.mouse.buttons === 1 && g.rope) {
             g.rope.position.set(g.mouse.global.x, g.mouse.global.y);
@@ -147,7 +205,6 @@ function onRequestAnimationFrame() {
     // g.controls.update();
     g.renderer.render(g.scene, g.camera);
 
-    requestAnimationFrame(onRequestAnimationFrame);
 }
 
 function resetPlayerTarget() {
@@ -185,6 +242,7 @@ function onpointerup(e) {
     g.mouse = e;
     g.player.speed = 0.02;
     resetPlayerTarget();
+    g.player.update();
 }
 
 
@@ -222,8 +280,8 @@ function initThreeScene() {
     gridHelper.rotateX(Math.PI / 2);
     scene.add(gridHelper);
 
-    const axesHelper = new THREE.AxesHelper(2);
-    scene.add(axesHelper);
+    // const axesHelper = new THREE.AxesHelper(2);
+    // scene.add(axesHelper);
 
     g.raycaster = new THREE.Raycaster();
 
@@ -275,11 +333,13 @@ onUnmounted(() => {
 
     <div style="position: relative; width: 100%; height: 100vh;">
 
+        <div id="pixiDom" style=" position: absolute; top: 0; left: 0; width: 100%; height: 100%; ">
+        </div>
+
         <div id="threeDom" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
         </div>
 
-        <div id="pixiDom" style=" position: absolute; top: 0; left: 0; width: 100%; height: 100%; ">
-        </div>
+
 
     </div>
 </template>

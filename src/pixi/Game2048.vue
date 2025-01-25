@@ -6,73 +6,116 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-
-const pixiRef = shallowRef(null);
-
 var gltfLoader = new GLTFLoader();
-
-var g = {};
+var g = {
+    speed: 0.02,
+    border: { minX: -10, maxX: 10, minY: -10, maxY: 10 },
+};
 window.g = g;
 
 async function initGame() {
-    let rope = new Sprite(g.assets.rope1);
-    rope.anchor.set(0.5, 0.5);
-    rope.position.set(g.center.x, g.center.y);
-    g.app.stage.addChild(rope);
-    g.rope = rope;
+    // let rope = new Sprite(g.assets.rope1);
+    // rope.anchor.set(0.5, 0.5);
+    // rope.position.set(g.center.x, g.center.y);
+    // g.app.stage.addChild(rope);
+    // g.rope = rope;
+
+    g.player = new THREE.Group();
+    g.scene.add(g.player);
+
+    g.player.add(g.camera);
+
+    g.modelParent = new THREE.Group();
+    g.player.add(g.modelParent);
 
     // 从g.assets.cube创建一个模型
-    var model = g.assets.cube.scene.clone();
+    g.model = g.assets.cube.scene.clone();
     // 给模型设置材质
-    model.traverse((child) => {
+    g.model.traverse((child) => {
         if (child.isMesh) {
             child.material = new MeshStandardMaterial({ color: "#11999e" });
         }
     })
-    g.scene.add(model);
+    g.modelParent.add(g.model);
+    g.modelParent.lookAt(new Vector3(1, 0, 0));
+    g.model.rotateZ(Math.PI / 2);
+
+
+    // 显示player的xyz方向
+    // const axesHelper = new THREE.AxesHelper(2);
+    // g.modelParent.add(axesHelper);
+
+    // 打印g.player的欧拉角
+    // console.log("g.player.init", g.player.rotation.x, g.player.rotation.y, g.player.rotation.z);
 }
 
 function update() {
     if (g.mouse) {
-        if (g.mouse.buttons === 1) {
+        if (g.mouse.buttons === 1 && g.rope) {
             g.rope.position.set(g.mouse.global.x, g.mouse.global.y);
         }
     }
 
-    g.controls.update();
+    // 让g.player向g.playerTarget,以固定速度移动
+    if (g.playerTarget) {
+
+        // 计算g.player与g.playerTarget的方向和距离
+        var direction = g.playerTarget.clone().sub(g.player.position);
+        var distance = direction.length();
+        if (distance < 0.1) {
+            g.player.position.copy(g.playerTarget);
+        }
+        else {
+            var move = direction.normalize().multiplyScalar(g.speed);
+            g.player.position.add(move);
+            g.modelParent.lookAt(g.playerTarget);
+        }
+
+        // 限制g.player的位置在g.border内
+        g.player.position.x = Math.max(g.border.minX, Math.min(g.border.maxX, g.player.position.x));
+        g.player.position.y = Math.max(g.border.minY, Math.min(g.border.maxY, g.player.position.y));
+
+
+
+        // 打印g.player的欧拉角
+        // console.log("g.player.rotation", g.player.rotation.x, g.player.rotation.y, g.player.rotation.z);
+    }
+
+    // g.controls.update();
     g.renderer.render(g.scene, g.camera);
 }
 
 function resetPlayerTarget() {
-    return;
-    const raycaster = new Raycaster();
-    const mouse = new Vector2(g.mousex, g.mouse.y);
+    const mouse = new Vector2();
+    mouse.x = (g.mouse.x / g.renderer.domElement.clientWidth) * 2 - 1;
+    mouse.y = -(g.mouse.y / g.renderer.domElement.clientHeight) * 2 + 1;
 
-    raycaster.setFromCamera(mouse, Camera.main);
+    g.raycaster.setFromCamera(mouse, g.camera);
 
+    // 创建xy平面
     const xyPlane = new Plane(new Vector3(0, 0, 1), 0);
 
     const intersectPoint = new Vector3();
-    raycaster.ray.intersectPlane(xyPlane, intersectPoint);
+    g.raycaster.ray.intersectPlane(xyPlane, intersectPoint);
 
-    console.log(intersectPoint);
+    g.playerTarget = intersectPoint;
+    // console.log("g.model.position", g.model.position, intersectPoint);
 }
 
 function onpointerdown(e) {
     g.mouse = e;
-    g.controls.dispatchEvent(e.nativeEvent);
+    g.speed = 0.05;
     resetPlayerTarget();
 }
 
 function onpointermove(e) {
     g.mouse = e;
-    g.controls.dispatchEvent(e.nativeEvent);
     resetPlayerTarget();
 }
 
 function onpointerup(e) {
     g.mouse = e;
-    g.controls.dispatchEvent(e.nativeEvent);
+    g.speed = 0.02;
     resetPlayerTarget();
 }
 
@@ -86,29 +129,35 @@ function initThreeScene() {
 
     var camera = new PerspectiveCamera(75, threeDom.clientWidth / threeDom.clientHeight, 0.1, 1000);
     g.camera = camera;
-    camera.position.z = 5;
+    camera.position.set(0, 0, 5);
+    scene.add(camera)
 
-    var renderer = new WebGLRenderer();
+    var renderer = new WebGLRenderer({ antialias: true });
     g.renderer = renderer;
     renderer.setSize(threeDom.clientWidth, threeDom.clientHeight);
-    threeDom.appendChild(renderer.domElement);
     renderer.setClearColor(0xe0eee8, 1);
+    threeDom.appendChild(renderer.domElement);
 
     // 添加环境光
     var ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
     scene.add(ambientLight);
     // 添加方向光
     var directionalLight = new THREE.DirectionalLight(0xffffff, 5);
-    directionalLight.position.set(0, 1, -1);
+    directionalLight.position.set(0, 0, 1);
     scene.add(directionalLight);
 
     // 添加orbitControls
-    var controls = new OrbitControls(camera, renderer.domElement);
-    g.controls = controls;
+    // var controls = new OrbitControls(camera, renderer.domElement);
+    // g.controls = controls;
+
+    const gridHelper = new THREE.GridHelper(20, 20);
+    gridHelper.rotateX(Math.PI / 2);
+    scene.add(gridHelper);
 
     const axesHelper = new THREE.AxesHelper(2);
     scene.add(axesHelper);
 
+    g.raycaster = new THREE.Raycaster();
 }
 
 async function loadAssets() {
@@ -128,8 +177,9 @@ async function loadAssets() {
 }
 
 onMounted(async () => {
-    g.app = new Application({ resizeTo: pixiRef.value, transparent: true, backgroundAlpha: 0.0 });
-    pixiRef.value.appendChild(g.app.view);
+    var pixiDom = document.getElementById('pixiDom');
+    g.app = new Application({ resizeTo: pixiDom, transparent: true, backgroundAlpha: 0.0 });
+    pixiDom.appendChild(g.app.view);
     g.center = { x: g.app.screen.width / 2, y: g.app.screen.height / 2 };
 
     await loadAssets();
@@ -156,10 +206,10 @@ onUnmounted(() => {
 
     <div style="position: relative; width: 100%; height: 100vh;">
 
-        <div ref="pixiRef" style=" position: absolute; top: 0; left: 0; width: 100%; height: 100%; ">
+        <div id="threeDom" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
         </div>
 
-        <div id="threeDom" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+        <div id="pixiDom" style=" position: absolute; top: 0; left: 0; width: 100%; height: 100%; ">
         </div>
 
     </div>

@@ -8,7 +8,6 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 var gltfLoader = new GLTFLoader();
 var g = {
-    speed: 0.02,
     border: { minX: -10, maxX: 10, minY: -10, maxY: 10 },
 };
 window.g = g;
@@ -20,9 +19,9 @@ async function initGame() {
     // g.app.stage.addChild(rope);
     // g.rope = rope;
 
-    g.player = createCube(2);
+    g.player = new Snake([8, 4, 2])
     g.scene.add(g.player);
-    g.player.modelParent.lookAt(new Vector3(1, 0, 0));
+    // g.player.lookAt(new Vector3(1, 0, 0));
     g.player.add(g.camera);
 
     // 为g.player添加axis
@@ -30,15 +29,54 @@ async function initGame() {
     // g.player.add(axesHelper);
 }
 
-class Snake {
+class Snake extends THREE.Group {
     constructor(nums) {
+        super();
         this.cubes = [];
         for (var i = 0; i < nums.length; i++) {
             var cube = createCube(nums[i]);
-            cube.position.set(i * 2, 0, 0);
+            cube.position.set(i, 0, 0);
             this.cubes.push(cube);
             g.scene.add(cube);
         }
+
+        this.trigo = g.assets.trigo.scene.clone();
+        this.trigo.rotateZ(Math.PI / 2);
+        this.cubes[0].modelParent.add(this.trigo);
+
+        // 创建一个立方体
+        var cube = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 2), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
+        cube.position.set(0, 0, 0);
+        this.add(cube);
+
+        this.speed = 0.02;
+    }
+
+    update() {
+        var distance = this.playerMoveDiff ? this.playerMoveDiff.length() : 0;
+        if (distance >= 0.5) {
+            var moveVec = this.playerMoveDiff.clone().normalize().multiplyScalar(this.speed);
+            this.position.add(moveVec);
+        }
+
+        this.updateCubes();
+    }
+
+    updateCubes() {
+        if (!this.playerMoveDiff) {
+            return;
+        }
+        var playerTarget = this.position.clone().add(this.playerMoveDiff);
+        for (var i = 0; i < this.cubes.length; i++) {
+            var cube = this.cubes[i];
+            cube.position.set(this.position.x + i, this.position.y, this.position.z);
+            cube.modelParent.lookAt(playerTarget);
+        }
+    }
+
+    setMoveDiff(playerMoveDiff) {
+        this.playerMoveDiff = playerMoveDiff;
+        console.log("setMoveDiff", playerMoveDiff);
     }
 }
 
@@ -69,24 +107,8 @@ function onRequestAnimationFrame() {
         }
     }
 
-    if (g.playerMoveDiff) {
-
-        var distance = g.playerMoveDiff.length();
-        if (distance < 0.5) {
-        }
-        else {
-
-            var moveVec = g.playerMoveDiff.clone().normalize().multiplyScalar(g.speed);
-            g.player.position.add(moveVec);
-
-            var playerTarget = g.player.position.clone().add(g.playerMoveDiff);
-            g.player.modelParent.lookAt(playerTarget);
-        }
-
-        // 限制g.player的位置在g.border内
-        g.player.position.x = Math.max(g.border.minX, Math.min(g.border.maxX, g.player.position.x));
-        g.player.position.y = Math.max(g.border.minY, Math.min(g.border.maxY, g.player.position.y));
-
+    if (g.player) {
+        g.player.update();
     }
 
     // g.controls.update();
@@ -109,12 +131,15 @@ function resetPlayerTarget() {
     g.raycaster.ray.intersectPlane(xyPlane, intersectPoint);
 
     // 求g.player与intersectPoint的向量
-    g.playerMoveDiff = intersectPoint.clone().sub(g.player.position);
+    var playerMoveDiff = intersectPoint.clone().sub(g.player.position);
+    playerMoveDiff.z = 0;
+    g.player.setMoveDiff(playerMoveDiff);
+
 }
 
 function onpointerdown(e) {
     g.mouse = e;
-    g.speed = 0.05;
+    g.player.speed = 0.05;
     resetPlayerTarget();
 }
 
@@ -125,7 +150,7 @@ function onpointermove(e) {
 
 function onpointerup(e) {
     g.mouse = e;
-    g.speed = 0.02;
+    g.player.speed = 0.02;
     resetPlayerTarget();
 }
 
@@ -172,7 +197,7 @@ function initThreeScene() {
     onRequestAnimationFrame();
 }
 
-async function loadAssets() {
+async function initAssets() {
     Assets.addBundle('assets', {
         "rope1": "img/rope1.png",
     });
@@ -180,6 +205,7 @@ async function loadAssets() {
 
     var resources = [
         { name: 'cube', url: 'game2048/cube.glb' },
+        { name: 'trigo', url: 'game2048/trigo.glb' },
     ]
     for (var i = 0; i < resources.length; i++) {
         var item = resources[i];
@@ -194,7 +220,7 @@ onMounted(async () => {
     pixiDom.appendChild(g.app.view);
     g.center = { x: g.app.screen.width / 2, y: g.app.screen.height / 2 };
 
-    await loadAssets();
+    await initAssets();
     initThreeScene();
     initGame();
 

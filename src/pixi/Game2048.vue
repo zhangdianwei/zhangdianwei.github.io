@@ -20,33 +20,46 @@ async function initGame() {
     // g.app.stage.addChild(rope);
     // g.rope = rope;
 
-    g.player = new THREE.Group();
+    g.player = createCube(2);
     g.scene.add(g.player);
-
+    g.player.modelParent.lookAt(new Vector3(1, 0, 0));
     g.player.add(g.camera);
 
-    g.modelParent = new THREE.Group();
-    g.player.add(g.modelParent);
+    // 为g.player添加axis
+    // var axesHelper = new THREE.AxesHelper(2);
+    // g.player.add(axesHelper);
+}
 
-    // 从g.assets.cube创建一个模型
-    g.model = g.assets.cube.scene.clone();
-    // 给模型设置材质
-    g.model.traverse((child) => {
+class Snake {
+    constructor(nums) {
+        this.cubes = [];
+        for (var i = 0; i < nums.length; i++) {
+            var cube = createCube(nums[i]);
+            cube.position.set(i * 2, 0, 0);
+            this.cubes.push(cube);
+            g.scene.add(cube);
+        }
+    }
+}
+
+function createCube(num) {
+    var cube = new THREE.Group();
+    cube.num = num;
+
+    cube.modelParent = new THREE.Group();
+    cube.add(cube.modelParent);
+    cube.modelParent.lookAt(new Vector3(1, 0, 0));
+
+    cube.model = g.assets.cube.scene.clone();
+    cube.modelParent.add(cube.model);
+    cube.model.traverse((child) => {
         if (child.isMesh) {
             child.material = new MeshStandardMaterial({ color: "#11999e" });
         }
     })
-    g.modelParent.add(g.model);
-    g.modelParent.lookAt(new Vector3(1, 0, 0));
-    g.model.rotateZ(Math.PI / 2);
+    cube.model.rotateZ(Math.PI / 2);
 
-
-    // 显示player的xyz方向
-    // const axesHelper = new THREE.AxesHelper(2);
-    // g.modelParent.add(axesHelper);
-
-    // 打印g.player的欧拉角
-    // console.log("g.player.init", g.player.rotation.x, g.player.rotation.y, g.player.rotation.z);
+    return cube;
 }
 
 function onRequestAnimationFrame() {
@@ -59,25 +72,21 @@ function onRequestAnimationFrame() {
     if (g.playerMoveDiff) {
 
         var distance = g.playerMoveDiff.length();
-        if (distance < 0.1) {
-            g.player.position.add(g.playerMoveDiff);
+        if (distance < 0.5) {
         }
         else {
-            var moveVec = g.playerMoveDiff.normalize().multiplyScalar(g.speed);
+
+            var moveVec = g.playerMoveDiff.clone().normalize().multiplyScalar(g.speed);
             g.player.position.add(moveVec);
 
             var playerTarget = g.player.position.clone().add(g.playerMoveDiff);
-            g.modelParent.lookAt(playerTarget);
+            g.player.modelParent.lookAt(playerTarget);
         }
 
         // 限制g.player的位置在g.border内
         g.player.position.x = Math.max(g.border.minX, Math.min(g.border.maxX, g.player.position.x));
         g.player.position.y = Math.max(g.border.minY, Math.min(g.border.maxY, g.player.position.y));
 
-
-
-        // 打印g.player的欧拉角
-        // console.log("g.player.rotation", g.player.rotation.x, g.player.rotation.y, g.player.rotation.z);
     }
 
     // g.controls.update();

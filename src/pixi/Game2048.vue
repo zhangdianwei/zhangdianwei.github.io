@@ -49,26 +49,25 @@ async function initGame() {
     // console.log("g.player.init", g.player.rotation.x, g.player.rotation.y, g.player.rotation.z);
 }
 
-function update() {
+function onRequestAnimationFrame() {
     if (g.mouse) {
         if (g.mouse.buttons === 1 && g.rope) {
             g.rope.position.set(g.mouse.global.x, g.mouse.global.y);
         }
     }
 
-    // 让g.player向g.playerTarget,以固定速度移动
-    if (g.playerTarget) {
+    if (g.playerMoveDiff) {
 
-        // 计算g.player与g.playerTarget的方向和距离
-        var direction = g.playerTarget.clone().sub(g.player.position);
-        var distance = direction.length();
+        var distance = g.playerMoveDiff.length();
         if (distance < 0.1) {
-            g.player.position.copy(g.playerTarget);
+            g.player.position.add(g.playerMoveDiff);
         }
         else {
-            var move = direction.normalize().multiplyScalar(g.speed);
-            g.player.position.add(move);
-            g.modelParent.lookAt(g.playerTarget);
+            var moveVec = g.playerMoveDiff.normalize().multiplyScalar(g.speed);
+            g.player.position.add(moveVec);
+
+            var playerTarget = g.player.position.clone().add(g.playerMoveDiff);
+            g.modelParent.lookAt(playerTarget);
         }
 
         // 限制g.player的位置在g.border内
@@ -83,6 +82,8 @@ function update() {
 
     // g.controls.update();
     g.renderer.render(g.scene, g.camera);
+
+    requestAnimationFrame(onRequestAnimationFrame);
 }
 
 function resetPlayerTarget() {
@@ -98,8 +99,8 @@ function resetPlayerTarget() {
     const intersectPoint = new Vector3();
     g.raycaster.ray.intersectPlane(xyPlane, intersectPoint);
 
-    g.playerTarget = intersectPoint;
-    // console.log("g.model.position", g.model.position, intersectPoint);
+    // 求g.player与intersectPoint的向量
+    g.playerMoveDiff = intersectPoint.clone().sub(g.player.position);
 }
 
 function onpointerdown(e) {
@@ -129,7 +130,7 @@ function initThreeScene() {
 
     var camera = new PerspectiveCamera(75, threeDom.clientWidth / threeDom.clientHeight, 0.1, 1000);
     g.camera = camera;
-    camera.position.set(0, 0, 5);
+    camera.position.set(0, 0, 8);
     scene.add(camera)
 
     var renderer = new WebGLRenderer({ antialias: true });
@@ -158,6 +159,8 @@ function initThreeScene() {
     scene.add(axesHelper);
 
     g.raycaster = new THREE.Raycaster();
+
+    onRequestAnimationFrame();
 }
 
 async function loadAssets() {
@@ -184,16 +187,13 @@ onMounted(async () => {
 
     await loadAssets();
     initThreeScene();
-
-    g.app.stage.eventMode = "static";
-    g.app.stage.hitArea = g.app.screen;
-    g.app.stage.on("pointerdown", onpointerdown);
-    g.app.stage.on("pointermove", onpointermove);
-    g.app.stage.on("pointerup", onpointerup);
-
     initGame();
 
-    g.app.ticker.add(update);
+    // 在文档级别添加鼠标事件监听器
+    document.addEventListener('pointerdown', onpointerdown);
+    document.addEventListener('pointermove', onpointermove);
+    document.addEventListener('pointerup', onpointerup);
+
 })
 
 onUnmounted(() => {

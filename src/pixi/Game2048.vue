@@ -5,8 +5,12 @@ import { WebGLRenderer, MeshStandardMaterial, Raycaster, Plane, Vector2, Vector3
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 
 var gltfLoader = new GLTFLoader();
+var fontLoader = new FontLoader();
+
 var g = {
     border: { minX: -10, maxX: 10, minY: -10, maxY: 10 },
 };
@@ -38,16 +42,14 @@ class Snake extends THREE.Group {
             cube.position.set(i, 0, 0);
             this.cubes.push(cube);
             g.scene.add(cube);
+
+            cube.initPosition = cube.position.clone();
+            cube.lastUpdateTime = Date.now();
         }
 
         this.trigo = g.assets.trigo.scene.clone();
         this.trigo.rotateZ(Math.PI / 2);
         this.cubes[0].modelParent.add(this.trigo);
-
-        // 创建一个立方体
-        var cube = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 2), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
-        cube.position.set(0, 0, 0);
-        this.add(cube);
 
         this.speed = 0.02;
     }
@@ -66,17 +68,26 @@ class Snake extends THREE.Group {
         if (!this.playerMoveDiff) {
             return;
         }
-        var playerTarget = this.position.clone().add(this.playerMoveDiff);
-        for (var i = 0; i < this.cubes.length; i++) {
+        // 倒序遍历cubes，设置每个cube的位置和旋转为前一个cube的位置和旋转
+        for (var i = this.cubes.length - 1; i >= 0; i--) {
             var cube = this.cubes[i];
-            cube.position.set(this.position.x + i, this.position.y, this.position.z);
-            cube.modelParent.lookAt(playerTarget);
+
+            if (Date.now() - cube.lastUpdateTime < 100) {
+                continue;
+            }
+
+            var targetPosition = i == 0 ? this.position : this.cubes[i - 1].position;
+            var targetRotation = i == 0 ? this.rotation : this.cubes[i - 1].modelParent.rotation;
+
+            cube.position.copy(targetPosition);
+            // cube.modelParent.rotation.copy(targetRotation);
+
+            cube.lastUpdateTime = Date.now();
         }
     }
 
     setMoveDiff(playerMoveDiff) {
         this.playerMoveDiff = playerMoveDiff;
-        console.log("setMoveDiff", playerMoveDiff);
     }
 }
 
@@ -96,6 +107,28 @@ function createCube(num) {
         }
     })
     cube.model.rotateZ(Math.PI / 2);
+
+    cube.text = new THREE.Mesh(new TextGeometry(num.toString(), {
+        font: g.assets.font,
+        size: 0.6,
+        depth: 0.1,
+        curveSegments: 10,
+        bevelEnabled: true,
+        bevelThickness: 0.01,
+        bevelSize: 0.02,
+        bevelSegments: 3
+    }), new THREE.MeshBasicMaterial({ color: 0xbb0000 }));
+    cube.add(cube.text);
+
+    // 让cube.text居中
+    var box = new THREE.Box3().setFromObject(cube.text);
+    var size = box.getSize(new THREE.Vector3());
+    cube.text.position.set(-size.x / 2, -size.y / 2, 0.15);
+
+    // var cube2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 2), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
+    // cube2.position.set(0, 0, 0);
+    // cube.add(cube2);
+
 
     return cube;
 }
@@ -204,12 +237,13 @@ async function initAssets() {
     g.assets = await Assets.loadBundle('assets');
 
     var resources = [
-        { name: 'cube', url: 'game2048/cube.glb' },
-        { name: 'trigo', url: 'game2048/trigo.glb' },
+        { name: 'cube', url: 'game2048/cube.glb', loader: gltfLoader },
+        { name: 'trigo', url: 'game2048/trigo.glb', loader: gltfLoader },
+        { name: 'font', url: 'fonts/gentilis_regular.typeface.json', loader: fontLoader }
     ]
     for (var i = 0; i < resources.length; i++) {
         var item = resources[i];
-        var gltf = await gltfLoader.loadAsync(item.url);
+        var gltf = await item.loader.loadAsync(item.url);
         g.assets[item.name] = gltf;
     }
 }

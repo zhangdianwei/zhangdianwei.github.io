@@ -46,7 +46,7 @@ async function initGame() {
     // g.app.stage.addChild(rope);
     // g.rope = rope;
 
-    g.player = new Snake([8, 4, 2])
+    g.player = new Snake([2])
     g.scene.add(g.player);
     g.player.add(g.camera);
 
@@ -59,20 +59,14 @@ class Snake extends THREE.Group {
     constructor(nums) {
         super();
 
-        // this.moveDir = new THREE.Vector3(-1, 0, 0);
-
         this.cubes = [];
         for (var i = 0; i < nums.length; i++) {
-            var cube = createCube(nums[i]);
-            this.cubes.push(cube);
-            cube.position.copy(this.getCubeStandPos(i));
-            // cube.moveDir = new THREE.Vector3(-1, 0, 0);
-            g.scene.add(cube);
+            this.addCube(nums[i]);
         }
 
-        // this.trigo = g.assets.trigo.scene.clone();
-        // this.trigo.rotateZ(Math.PI / 2);
-        // this.cubes[0].modelParent.add(this.trigo);
+        this.trigo = g.assets.trigo.scene.clone();
+        this.trigo.rotateZ(Math.PI / 2);
+        this.cubes[0].modelParent.add(this.trigo);
 
         for (var i = 0; i < this.cubes.length; i++) {
             // var cube = this.cubes[i];
@@ -86,6 +80,8 @@ class Snake extends THREE.Group {
 
         this.speed = 0.01;
         this.frame = 0;
+        this.moveItems = [];
+        this.moveDir = null;
 
         var cube2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 2), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
         cube2.position.set(0, 0, 0);
@@ -113,44 +109,47 @@ class Snake extends THREE.Group {
         moveVec = targetPos.clone().sub(this.position);
         this.position.set(targetPos.x, targetPos.y, targetPos.z);
 
+        this.moveItems.push({ frame: this.frame, moveVec: moveVec, moveTarget: this.position.clone() });
+
         this.updateCubes();
 
         this.frame += 1;
 
-        console.log("update", `frame=${this.frame}`);
-        for (var i = 0; i < this.cubes.length; i++) {
-            var cube = this.cubes[i];
-            console.log("cube", i, JSON.stringify(cube.moveItems));
+        if (this.moveItems.length > 500) {
+            this.moveItems.shift();
         }
+
+        // console.log("update", `frame=${this.frame}`);
+        // for (var i = 0; i < this.cubes.length; i++) {
+        //     var cube = this.cubes[i];
+        //     console.log("cube", i, JSON.stringify(cube.moveItems));
+        // }
     }
 
     updateCubes() {
 
         for (var i = 0; i < this.cubes.length; i++) {
             var cube = this.cubes[i];
+            var frame = this.frame - i * (1 / this.speed);
 
-            var moveItems = cube.moveItems;
-            var moveItem = moveItems[0];
-            if (moveItem && moveItem.frame === this.frame) {
-                cube.moveItems.shift();
-                this.setCubeMoveDir(i, moveItem.moveDir);
-            }
-
-            if (!cube.moveDir) {
+            var moveItem = this.moveItems.find(item => item.frame === frame);
+            if (!moveItem)
                 continue;
-            }
 
-            var moveVec = cube.moveDir ? cube.moveDir.clone().normalize().multiplyScalar(this.speed) : new THREE.Vector3(0, 0, 0);
-            cube.position.add(moveVec);
+            var moveTarget = moveItem.moveTarget;
+            var moveDir = moveItem.moveVec.clone().normalize();
+            cube.position.set(moveTarget.x, moveTarget.y, moveTarget.z);
 
-            var angle = Math.atan2(moveVec.y, moveVec.x);
+            var angle = Math.atan2(moveDir.y, moveDir.x);
             cube.modelParent.rotation.z = angle;
         }
     }
 
-    setCubeMoveDir(index, moveDir) {
-        var cube = this.cubes[index];
-        cube.moveDir = moveDir;
+    addCube(num) {
+        var cube = createCube(num);
+        this.cubes.push(cube);
+        cube.position.copy(this.getCubeStandPos(this.cubes.length - 1));
+        g.scene.add(cube);
     }
 
     getCubeStandPos(index) {
@@ -158,28 +157,19 @@ class Snake extends THREE.Group {
         for (var i = 0; i < index; i++) {
             var cube = this.cubes[i];
 
-            let frontVector = new THREE.Vector3(-1, 0, 0);
+            let frontVector = new THREE.Vector3(1, 0, 0);
             frontVector.applyMatrix4(cube.modelParent.matrixWorld);
-            frontVector.normalize().multiplyScalar(-1);
+            frontVector.normalize().multiplyScalar(-2);
 
             startPos.add(frontVector);
+
+            console.log("frontVector", frontVector);
         }
         return startPos;
     }
 
     setMoveDir(moveDir) {
-        this.moveDir = moveDir.clone().normalize();
-        for (var i = 0; i < this.cubes.length; i++) {
-            var cube = this.cubes[i];
-            var cubeFrame = this.frame + i * 50;
-            var moveItem = cube.moveItems.find(item => item.frame === cubeFrame);
-            if (!moveItem) {
-                cube.moveItems.push({ frame: cubeFrame, moveDir: this.moveDir.clone() });
-            }
-            else {
-                moveItem.moveDir = this.moveDir.clone();
-            }
-        }
+        this.moveDir = moveDir.clone();
     }
 }
 
@@ -197,7 +187,7 @@ function createCube(num) {
     cube.modelParent.add(cube.model);
     cube.model.traverse((child) => {
         if (child.isMesh) {
-            child.material = new MeshStandardMaterial({ color: config.color, transparent: true, opacity: 0.5 });
+            child.material = new MeshStandardMaterial({ color: config.color, transparent: true, opacity: 1 });
         }
     })
     cube.model.rotateX(Math.PI / 2);
@@ -287,11 +277,19 @@ function onpointermove(e) {
 
 function onpointerup(e) {
     g.mouse = e;
-    g.player.speed = 0.02;
+    g.player.speed = 0.01;
     resetPlayerTarget();
-    g.player.update();
 }
 
+function onkeydown(e) {
+    g.keys[e.key] = true;
+    if (e.key === 'j') {
+        g.player.addCube(2);
+    }
+}
+function onkeyup(e) {
+    delete g.keys[e.key];
+}
 
 function initThreeScene() {
     var threeDom = document.getElementById('threeDom');
@@ -358,6 +356,7 @@ onMounted(async () => {
     g.app = new Application({ resizeTo: pixiDom, transparent: true, backgroundAlpha: 0.0 });
     pixiDom.appendChild(g.app.view);
     g.center = { x: g.app.screen.width / 2, y: g.app.screen.height / 2 };
+    g.keys = {};
 
     await initAssets();
     initThreeScene();
@@ -367,7 +366,8 @@ onMounted(async () => {
     document.addEventListener('pointerdown', onpointerdown);
     document.addEventListener('pointermove', onpointermove);
     document.addEventListener('pointerup', onpointerup);
-
+    document.addEventListener('keydown', onkeydown);
+    document.addEventListener('keyup', onkeyup);
 })
 
 onUnmounted(() => {

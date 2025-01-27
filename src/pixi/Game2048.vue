@@ -58,10 +58,15 @@ async function initGame() {
 class Snake extends THREE.Group {
     constructor(nums) {
         super();
+
+        // this.moveDir = new THREE.Vector3(-1, 0, 0);
+
         this.cubes = [];
         for (var i = 0; i < nums.length; i++) {
             var cube = createCube(nums[i]);
             this.cubes.push(cube);
+            cube.position.copy(this.getCubeStandPos(i));
+            // cube.moveDir = new THREE.Vector3(-1, 0, 0);
             g.scene.add(cube);
         }
 
@@ -79,43 +84,73 @@ class Snake extends THREE.Group {
             this.cubes[i].modelParent.add(axesHelper);
         }
 
-        this.speed = 0.02;
+        this.speed = 0.01;
+        this.frame = 0;
 
-        // var cube2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 2), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
-        // cube2.position.set(0, 0, 0);
-        // this.add(cube2);
+        var cube2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 2), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
+        cube2.position.set(0, 0, 0);
+        this.add(cube2);
 
-        this.updateCubes();
+        // this.updateCubes();
     }
 
     update() {
-        var distance = this.playerMoveDiff ? this.playerMoveDiff.length() : 0;
+        var distance = this.moveDir ? this.moveDir.length() : 0;
         if (distance >= 0.5) {
-            var moveVec = this.playerMoveDiff.clone().normalize().multiplyScalar(this.speed);
 
-            var targetPos = this.position.clone().add(moveVec);
-            targetPos.x = Math.max(g.border.minX, Math.min(g.border.maxX, targetPos.x));
-            targetPos.y = Math.max(g.border.minY, Math.min(g.border.maxY, targetPos.y));
-
-            moveVec = targetPos.clone().sub(this.position);
-            this.position.set(targetPos.x, targetPos.y, targetPos.z);
-
-            this.updateCubes();
         }
 
+        if (!this.moveDir) {
+            return;
+        }
+
+        var moveVec = this.moveDir.clone().normalize().multiplyScalar(this.speed);
+
+        var targetPos = this.position.clone().add(moveVec);
+        targetPos.x = Math.max(g.border.minX, Math.min(g.border.maxX, targetPos.x));
+        targetPos.y = Math.max(g.border.minY, Math.min(g.border.maxY, targetPos.y));
+
+        moveVec = targetPos.clone().sub(this.position);
+        this.position.set(targetPos.x, targetPos.y, targetPos.z);
+
+        this.updateCubes();
+
+        this.frame += 1;
+
+        console.log("update", `frame=${this.frame}`);
+        for (var i = 0; i < this.cubes.length; i++) {
+            var cube = this.cubes[i];
+            console.log("cube", i, JSON.stringify(cube.moveItems));
+        }
     }
 
     updateCubes() {
+
         for (var i = 0; i < this.cubes.length; i++) {
             var cube = this.cubes[i];
 
-            var targetPos = this.getCubeStandPos(i);
-            var moveVec = targetPos.clone().sub(cube.position);
+            var moveItems = cube.moveItems;
+            var moveItem = moveItems[0];
+            if (moveItem && moveItem.frame === this.frame) {
+                cube.moveItems.shift();
+                this.setCubeMoveDir(i, moveItem.moveDir);
+            }
+
+            if (!cube.moveDir) {
+                continue;
+            }
+
+            var moveVec = cube.moveDir ? cube.moveDir.clone().normalize().multiplyScalar(this.speed) : new THREE.Vector3(0, 0, 0);
             cube.position.add(moveVec);
 
             var angle = Math.atan2(moveVec.y, moveVec.x);
             cube.modelParent.rotation.z = angle;
         }
+    }
+
+    setCubeMoveDir(index, moveDir) {
+        var cube = this.cubes[index];
+        cube.moveDir = moveDir;
     }
 
     getCubeStandPos(index) {
@@ -132,14 +167,26 @@ class Snake extends THREE.Group {
         return startPos;
     }
 
-    setMoveDiff(playerMoveDiff) {
-        this.playerMoveDiff = playerMoveDiff;
+    setMoveDir(moveDir) {
+        this.moveDir = moveDir.clone().normalize();
+        for (var i = 0; i < this.cubes.length; i++) {
+            var cube = this.cubes[i];
+            var cubeFrame = this.frame + i * 50;
+            var moveItem = cube.moveItems.find(item => item.frame === cubeFrame);
+            if (!moveItem) {
+                cube.moveItems.push({ frame: cubeFrame, moveDir: this.moveDir.clone() });
+            }
+            else {
+                moveItem.moveDir = this.moveDir.clone();
+            }
+        }
     }
 }
 
 function createCube(num) {
     var cube = new THREE.Group();
     cube.num = num;
+    cube.moveItems = [];
 
     var config = CubeConfigs[num];
 
@@ -221,9 +268,9 @@ function resetPlayerTarget() {
     g.raycaster.ray.intersectPlane(xyPlane, intersectPoint);
 
     // 求g.player与intersectPoint的向量
-    var playerMoveDiff = intersectPoint.clone().sub(g.player.position);
-    playerMoveDiff.z = 0;
-    g.player.setMoveDiff(playerMoveDiff);
+    var moveDir = intersectPoint.clone().sub(g.player.position);
+    moveDir.z = 0;
+    g.player.setMoveDir(moveDir);
 
 }
 

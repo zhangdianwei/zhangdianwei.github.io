@@ -16,27 +16,23 @@ var g = {
 };
 window.g = g;
 
-var CubeConfigs = {
-    "2": {
-        scale: 1,
-        color: 0x364f6b,
-    },
-    "4": {
-        scale: 1.2,
-        color: 0x3fc1c9,
-    },
-    "8": {
-        scale: 1.4,
-        color: 0x40514e,
-    },
-    "16": {
-        scale: 1.6,
-        color: 0x3f72af,
-    },
-    "32": {
-        scale: 1.8,
-        color: 0x00b8a9,
-    },
+var CubeColors = ["#E0F7E6", "#B2E9C1", "#8CDBAA", "#66CC99", "#4CAF89", "#3F9E8C", "#348899", "#2979A5", "#1F5F9E", "#1A4976", "#6A5ACD", "#9575CD", "#AB47BC", "#D81B60", "#FF7043", "#FFB300", "#FFA000", "#E53935", "#C62828", "#8E0000"];
+
+function getTextColor(hex) {
+    const rgb = parseInt(hex.substring(1), 16);
+    const r = (rgb >> 16) & 0xff;
+    const g = (rgb >> 8) & 0xff;
+    const b = rgb & 0xff;
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 128 ? "#000000" : "#FFFFFF";
+}
+
+function getCubeSize(cube) {
+    var box = new THREE.Box3().setFromObject(cube);
+    return box.getSize(new THREE.Vector3());
+}
+g.test = function () {
+    console.log("test", getCubeSize(g.player.cubes[0]));
 }
 
 async function initGame() {
@@ -89,6 +85,54 @@ class Snake extends THREE.Group {
         this.speedCount = count;
     }
 
+    update() {
+        for (var i = 0; i < this.speedCount; i++) {
+            this.doMoveImpl();
+        }
+
+        if (this.needCheckMerge) {
+            var hasMerged = this.checkMerge();
+            if (!hasMerged) {
+                this.needCheckMerge = false;
+            }
+        }
+    }
+
+    checkMerge() {
+        var num2cubes = {};
+        for (var i = 0; i < this.cubes.length; i++) {
+            var cube = this.cubes[i];
+            var num = cube.num;
+            if (!num2cubes[num]) {
+                num2cubes[num] = [];
+            }
+            num2cubes[num].push(cube);
+        }
+
+        var mergeCubes = [];
+        for (var num in num2cubes) {
+            var cubes = num2cubes[num];
+            while (cubes.length >= 2) {
+                mergeCubes.push(cubes.splice(0, 2));
+            }
+        }
+
+        for (var i = 0; i < mergeCubes.length; i++) {
+            this.doMerge(mergeCubes[i]);
+        }
+
+        return mergeCubes.length > 0;
+    }
+
+    doMerge(cubes) {
+        var cube1 = cubes[0];
+        var cube2 = cubes[1];
+        this.removeCube(cube1);
+        this.removeCube(cube2);
+        var num = cube1.num + cube2.num;
+        this.addCube(num);
+    }
+
     doMoveImpl() {
         var distance = this.moveDir ? this.moveDir.length() : 0;
         if (distance >= 0.5) {
@@ -114,30 +158,17 @@ class Snake extends THREE.Group {
 
         this.frame += 1;
 
-        if (this.frame % 101 == 0 && this.cubes.length < 5) {
-            this.addCube(2);
-        }
+        // if (this.frame % 101 == 0 && this.cubes.length < 2) {
+        //     var num = Math.pow(2, this.cubes.length + 1);
+        //     this.addCube(2);
+        // }
 
-        if (this.moveItems.length > 1000) {
+        if (this.moveItems.length > 10000) {
             this.moveItems.shift();
         }
     }
 
-    update() {
-
-        for (var i = 0; i < this.speedCount; i++) {
-            this.doMoveImpl();
-        }
-
-        // console.log("update", `frame=${this.frame}`);
-        // for (var i = 0; i < this.cubes.length; i++) {
-        //     var cube = this.cubes[i];
-        //     console.log("cube", i, JSON.stringify(cube.moveItems));
-        // }
-    }
-
     updateCubes() {
-
         for (var i = 0; i < this.cubes.length; i++) {
             var cube = this.cubes[i];
             var frame = this.frame - i * (1 / 0.01);
@@ -146,10 +177,10 @@ class Snake extends THREE.Group {
             if (!moveItem)
                 continue;
 
-            var moveTarget = moveItem.moveTarget;
-            var moveDir = moveItem.moveVec.clone().normalize();
+            var moveTarget = moveItem.moveTarget.clone();
             cube.position.set(moveTarget.x, moveTarget.y, moveTarget.z);
 
+            var moveDir = moveItem.moveVec.clone().normalize();
             var angle = Math.atan2(moveDir.y, moveDir.x);
             cube.modelParent.rotation.z = angle;
         }
@@ -160,6 +191,15 @@ class Snake extends THREE.Group {
         this.cubes.push(cube);
         cube.position.copy(this.getCubeStandPos(this.cubes.length - 1));
         g.scene.add(cube);
+        this.needCheckMerge = true;
+    }
+
+    removeCube(cube) {
+        var index = this.cubes.indexOf(cube);
+        if (index >= 0) {
+            this.cubes.splice(index, 1);
+            g.scene.remove(cube);
+        }
     }
 
     getCubeStandPos(index) {
@@ -167,13 +207,13 @@ class Snake extends THREE.Group {
         for (var i = 0; i < index; i++) {
             var cube = this.cubes[i];
 
+            var cubeSize = getCubeSize(cube);
+
             let frontVector = new THREE.Vector3(1, 0, 0);
             frontVector.applyMatrix4(cube.modelParent.matrixWorld);
-            frontVector.normalize().multiplyScalar(-2);
+            frontVector.normalize().multiplyScalar(-cubeSize.x);
 
             startPos.add(frontVector);
-
-            console.log("frontVector", frontVector);
         }
         return startPos;
     }
@@ -186,9 +226,12 @@ class Snake extends THREE.Group {
 function createCube(num) {
     var cube = new THREE.Group();
     cube.num = num;
-    cube.moveItems = [];
 
-    var config = CubeConfigs[num];
+    var index = Math.log2(num) - 1;
+    var color = CubeColors[index];
+    var scale = 1 + index * 0.1;
+
+    // cube.scale.set(scale, scale, scale);
 
     cube.modelParent = new THREE.Group();
     cube.add(cube.modelParent);
@@ -197,7 +240,7 @@ function createCube(num) {
     cube.modelParent.add(cube.model);
     cube.model.traverse((child) => {
         if (child.isMesh) {
-            child.material = new MeshStandardMaterial({ color: config.color, transparent: true, opacity: 1 });
+            child.material = new MeshStandardMaterial({ color: color, transparent: true, opacity: 1 });
         }
     })
     cube.model.rotateX(Math.PI / 2);
@@ -213,11 +256,17 @@ function createCube(num) {
         bevelSegments: 3
     }), new THREE.MeshBasicMaterial({ color: 0xbb0000 }));
     cube.add(cube.text);
+    var textScale = 1 - index * 0.05;
+    cube.text.scale.set(textScale, textScale, textScale);
+    var textColor = getTextColor(color);
+    cube.text.material.color.set(textColor);
 
     // 让cube.text居中
-    var box = new THREE.Box3().setFromObject(cube.text);
-    var size = box.getSize(new THREE.Vector3());
-    cube.text.position.set(-size.x / 2, -size.y / 2, 0.15);
+    var textBox = new THREE.Box3().setFromObject(cube.text);
+    var textSize = textBox.getSize(new THREE.Vector3());
+    var cubeBox = new THREE.Box3().setFromObject(cube);
+    var cubeSize = cubeBox.getSize(new THREE.Vector3());
+    cube.text.position.set(-textSize.x / 2, -textSize.y / 2, cubeSize.z / 2);
 
     // var cube2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 2), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
     // cube2.position.set(0, 0, 0);
@@ -310,7 +359,7 @@ function initThreeScene() {
 
     var camera = new PerspectiveCamera(75, threeDom.clientWidth / threeDom.clientHeight, 0.1, 1000);
     g.camera = camera;
-    camera.position.set(0, 0, 8);
+    camera.position.set(0, -2, 8);
     scene.add(camera)
 
     var renderer = new WebGLRenderer({ antialias: true });

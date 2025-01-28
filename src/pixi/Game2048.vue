@@ -64,33 +64,32 @@ class Snake extends THREE.Group {
             this.addCube(nums[i]);
         }
 
-        this.trigo = g.assets.trigo.scene.clone();
-        this.trigo.rotateZ(Math.PI / 2);
-        this.cubes[0].modelParent.add(this.trigo);
+        // this.trigo = g.assets.trigo.scene.clone();
+        // this.trigo.rotateZ(Math.PI / 2);
+        // this.cubes[0].modelParent.add(this.trigo);
 
-        for (var i = 0; i < this.cubes.length; i++) {
-            // var cube = this.cubes[i];
-            // var trigo = g.assets.trigo.scene.clone();
-            // trigo.rotateZ(Math.PI / 2);
-            // cube.modelParent.add(trigo);
+        // for (var i = 0; i < this.cubes.length; i++) {
+        //     // var cube = this.cubes[i];
+        //     // var trigo = g.assets.trigo.scene.clone();
+        //     // trigo.rotateZ(Math.PI / 2);
+        //     // cube.modelParent.add(trigo);
 
-            var axesHelper = new THREE.AxesHelper(1);
-            this.cubes[i].modelParent.add(axesHelper);
-        }
+        //     var axesHelper = new THREE.AxesHelper(1);
+        //     this.cubes[i].modelParent.add(axesHelper);
+        // }
 
         this.speed = 0.01;
+        this.speedCount = 1;
         this.frame = 0;
         this.moveItems = [];
         this.moveDir = null;
-
-        var cube2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 2), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
-        cube2.position.set(0, 0, 0);
-        this.add(cube2);
-
-        // this.updateCubes();
     }
 
-    update() {
+    setSpeedCount(count) {
+        this.speedCount = count;
+    }
+
+    doMoveImpl() {
         var distance = this.moveDir ? this.moveDir.length() : 0;
         if (distance >= 0.5) {
 
@@ -109,14 +108,25 @@ class Snake extends THREE.Group {
         moveVec = targetPos.clone().sub(this.position);
         this.position.set(targetPos.x, targetPos.y, targetPos.z);
 
-        this.moveItems.push({ frame: this.frame, moveVec: moveVec, moveTarget: this.position.clone() });
+        this.moveItems.push({ frame: this.frame, moveVec: moveVec, moveTarget: this.position.clone(), speed: this.speed });
 
         this.updateCubes();
 
         this.frame += 1;
 
-        if (this.moveItems.length > 500) {
+        if (this.frame % 101 == 0 && this.cubes.length < 5) {
+            this.addCube(2);
+        }
+
+        if (this.moveItems.length > 1000) {
             this.moveItems.shift();
+        }
+    }
+
+    update() {
+
+        for (var i = 0; i < this.speedCount; i++) {
+            this.doMoveImpl();
         }
 
         // console.log("update", `frame=${this.frame}`);
@@ -130,7 +140,7 @@ class Snake extends THREE.Group {
 
         for (var i = 0; i < this.cubes.length; i++) {
             var cube = this.cubes[i];
-            var frame = this.frame - i * (1 / this.speed);
+            var frame = this.frame - i * (1 / 0.01);
 
             var moveItem = this.moveItems.find(item => item.frame === frame);
             if (!moveItem)
@@ -224,7 +234,7 @@ function onRequestAnimationFrame() {
 
     // var now = Date.now();
     // var delta = now - g.lastUpdateTime;
-    // if (delta < 1000) {
+    // if (delta < 200) {
     //     return;
     // }
     // g.lastUpdateTime = now;
@@ -266,7 +276,7 @@ function resetPlayerTarget() {
 
 function onpointerdown(e) {
     g.mouse = e;
-    g.player.speed = 0.05;
+    g.player.setSpeedCount(5);
     resetPlayerTarget();
 }
 
@@ -277,13 +287,13 @@ function onpointermove(e) {
 
 function onpointerup(e) {
     g.mouse = e;
-    g.player.speed = 0.01;
+    g.player.setSpeedCount(1);
     resetPlayerTarget();
 }
 
 function onkeydown(e) {
     g.keys[e.key] = true;
-    if (e.key === 'j') {
+    if (e.key === 'f') {
         g.player.addCube(2);
     }
 }

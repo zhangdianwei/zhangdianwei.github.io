@@ -42,7 +42,7 @@ async function initGame() {
     // g.app.stage.addChild(rope);
     // g.rope = rope;
 
-    g.player = new Snake([2])
+    g.player = new Snake([16])
     g.scene.add(g.player);
     g.player.add(g.camera);
 
@@ -90,18 +90,24 @@ class Snake extends THREE.Group {
             this.doMoveImpl();
         }
 
-        if (this.needCheckMerge) {
-            var hasMerged = this.checkMerge();
-            if (!hasMerged) {
-                this.needCheckMerge = false;
-            }
-        }
+        this.checkMerge();
+        // if (this.needCheckMerge) {
+        //     var hasMerged = this.checkMerge();
+        //     if (!hasMerged) {
+        //         this.needCheckMerge = false;
+        //     }
+        // }
     }
 
     checkMerge() {
+        var now = Date.now();
+
         var num2cubes = {};
         for (var i = 0; i < this.cubes.length; i++) {
             var cube = this.cubes[i];
+            if (now - cube.createTime < 700) {
+                continue;
+            }
             var num = cube.num;
             if (!num2cubes[num]) {
                 num2cubes[num] = [];
@@ -169,13 +175,15 @@ class Snake extends THREE.Group {
     }
 
     updateCubes() {
+        var frame = this.frame
         for (var i = 0; i < this.cubes.length; i++) {
             var cube = this.cubes[i];
-            var frame = this.frame - i * (1 / 0.01);
 
             var moveItem = this.moveItems.find(item => item.frame === frame);
-            if (!moveItem)
-                continue;
+            if (!moveItem) {
+                // cube.position.set(this.getCubeStandPos(i));
+                break;
+            }
 
             var moveTarget = moveItem.moveTarget.clone();
             cube.position.set(moveTarget.x, moveTarget.y, moveTarget.z);
@@ -183,6 +191,8 @@ class Snake extends THREE.Group {
             var moveDir = moveItem.moveVec.clone().normalize();
             var angle = Math.atan2(moveDir.y, moveDir.x);
             cube.modelParent.rotation.z = angle;
+
+            frame -= (1 / this.speed) + (cube.scale.x - 1) * 90;
         }
     }
 
@@ -190,7 +200,9 @@ class Snake extends THREE.Group {
         var cube = createCube(num);
         this.cubes.push(cube);
         cube.position.copy(this.getCubeStandPos(this.cubes.length - 1));
+        cube.createTime = Date.now();
         g.scene.add(cube);
+        this.doMoveImpl();
         this.needCheckMerge = true;
     }
 
@@ -231,7 +243,7 @@ function createCube(num) {
     var color = CubeColors[index];
     var scale = 1 + index * 0.1;
 
-    // cube.scale.set(scale, scale, scale);
+    cube.scale.set(scale, scale, scale);
 
     cube.modelParent = new THREE.Group();
     cube.add(cube.modelParent);
@@ -294,7 +306,7 @@ function onRequestAnimationFrame() {
         }
     }
 
-    if (g.player) {
+    if (g.player && !g.paused) {
         g.player.update();
     }
 
@@ -343,7 +355,18 @@ function onpointerup(e) {
 function onkeydown(e) {
     g.keys[e.key] = true;
     if (e.key === 'f') {
-        g.player.addCube(2);
+        var num = g.player.cubes[g.player.cubes.length - 1].num;
+        num /= 2;
+        if (num < 2) {
+            num = 2;
+        }
+        g.player.addCube(num);
+    }
+    else if (e.key === 'p') {
+        g.paused = !g.paused;
+    }
+    else if (e.key === 's') {
+        g.player.update();
     }
 }
 function onkeyup(e) {

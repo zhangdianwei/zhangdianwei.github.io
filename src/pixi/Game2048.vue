@@ -147,9 +147,10 @@ class Snake extends THREE.Group {
         var cube1 = this.mergingCubes[0];
         var cube2 = this.mergingCubes[1];
         var num = cube1.num + cube2.num;
+        var oldIndex = this.cubes.indexOf(cube2);
         this.removeCube(cube1);
         this.removeCube(cube2);
-        this.addCube(num);
+        this.addCube(num, oldIndex);
     }
 
     doMoveImpl() {
@@ -177,7 +178,7 @@ class Snake extends THREE.Group {
 
         this.frame += 1;
 
-        if (this.moveItems.length > 10000) {
+        if (this.moveItems.length > 100000) {
             this.moveItems.shift();
         }
     }
@@ -192,9 +193,9 @@ class Snake extends THREE.Group {
         }
 
         if (this.mergingIndex >= 0) {
+            var diff = frames[this.mergingIndex - 1] - frames[this.mergingIndex];
+            diff /= this.mergingStep;
             for (var i = this.mergingIndex; i < this.cubes.length; i++) {
-                var diff = frames[i - 1] - frames[i];
-                diff /= this.mergingStep;
                 frames[i] += diff;
             }
         }
@@ -218,14 +219,14 @@ class Snake extends THREE.Group {
         }
     }
 
-    addCube(num) {
+    addCube(num, index) {
+        index ??= this.cubes.length;
         var cube = createCube(num);
-        this.cubes.push(cube);
-        cube.position.copy(this.getCubeStandPos(this.cubes.length - 1));
+        this.cubes.splice(index, 0, cube);
+        cube.position.copy(this.getCubeStandPos(index));
         cube.createTime = Date.now();
         g.scene.add(cube);
         this.doMoveImpl();
-        this.needCheckMerge = true;
     }
 
     removeCube(cube) {
@@ -305,7 +306,6 @@ function createCube(num) {
     // var cube2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 2), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
     // cube2.position.set(0, 0, 0);
     // cube.add(cube2);
-
 
     return cube;
 }

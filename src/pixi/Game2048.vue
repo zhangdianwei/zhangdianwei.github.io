@@ -60,10 +60,6 @@ class Snake extends THREE.Group {
             this.addCube(nums[i]);
         }
 
-        // this.trigo = g.assets.trigo.scene.clone();
-        // this.trigo.rotateZ(Math.PI / 2);
-        // this.cubes[0].modelParent.add(this.trigo);
-
         // for (var i = 0; i < this.cubes.length; i++) {
         //     // var cube = this.cubes[i];
         //     // var trigo = g.assets.trigo.scene.clone();
@@ -163,11 +159,6 @@ class Snake extends THREE.Group {
             return;
         }
 
-        var distance = this.moveDir.length();
-        // if (distance <= 0.1) {
-        //     return;
-        // }
-
         var moveVec = this.moveDir.clone().normalize().multiplyScalar(this.speed);
 
         var targetPos = this.position.clone().add(moveVec);
@@ -175,6 +166,12 @@ class Snake extends THREE.Group {
         targetPos.y = Math.max(g.border.minY, Math.min(g.border.maxY, targetPos.y));
 
         moveVec = targetPos.clone().sub(this.position);
+
+        var distance = moveVec.length();
+        if (distance <= 0.005) {
+            return;
+        }
+
         this.position.set(targetPos.x, targetPos.y, targetPos.z);
 
         this.moveItems.push({ frame: this.frame, moveVec: moveVec, moveTarget: this.position.clone(), speed: this.speed });
@@ -230,7 +227,7 @@ class Snake extends THREE.Group {
 
     addCube(num, index) {
         index ??= this.cubes.length;
-        var cube = createCube(num);
+        var cube = createCube(num, index == 0);
         this.cubes.splice(index, 0, cube);
         this.doMoveImpl();
         cube.createTime = Date.now();
@@ -266,7 +263,7 @@ class Snake extends THREE.Group {
     }
 }
 
-function createCube(num) {
+function createCube(num, trigo) {
     var cube = new THREE.Group();
     cube.num = num;
 
@@ -310,6 +307,12 @@ function createCube(num) {
     var cubeBox = new THREE.Box3().setFromObject(cube);
     var cubeSize = cubeBox.getSize(new THREE.Vector3());
     cube.text.position.set(-textSize.x / 2, -textSize.y / 2, cubeSize.z / 2);
+
+    if (trigo) {
+        var trigo = g.assets.trigo.scene.clone();
+        cube.modelParent.add(trigo);
+        trigo.position.set(0.8, 0, 0);
+    }
 
     // var cube2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 2), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
     // cube2.position.set(0, 0, 0);

@@ -280,7 +280,7 @@ function createCube(num, trigo) {
     cube.modelParent.add(cube.model);
     cube.model.traverse((child) => {
         if (child.isMesh) {
-            child.material = new MeshStandardMaterial({ color: color, transparent: true, opacity: 0.5 });
+            child.material = new MeshStandardMaterial({ color: color, transparent: true, opacity: 1 });
         }
     })
     cube.model.rotateX(Math.PI / 2);
@@ -341,16 +341,43 @@ function onRequestAnimationFrame() {
         }
     }
 
-
+    checkFoodCube();
 
     if (g.player && !g.paused) {
         g.player.update();
     }
 
+    checkEatFood();
+
     g.preKeys = { ...g.keys };
     // g.controls.update();
     g.renderer.render(g.scene, g.camera);
 
+}
+
+function checkFoodCube() {
+    if (g.foodCube) {
+        return;
+    }
+
+    g.foodCube = createCube(2);
+    g.scene.add(g.foodCube);
+    g.foodCube.position.set(Math.random() * 20 - 10, Math.random() * 20 - 10, 0);
+}
+
+function checkEatFood() {
+    if (!g.foodCube || !g.player) {
+        return;
+    }
+
+    var foodPos = g.foodCube.position;
+    var playerPos = g.player.position;
+    var distance = playerPos.distanceTo(foodPos);
+    if (distance < 1) {
+        g.scene.remove(g.foodCube);
+        g.foodCube = null;
+        g.player.addCube(2);
+    }
 }
 
 function doUpdateKeys() {

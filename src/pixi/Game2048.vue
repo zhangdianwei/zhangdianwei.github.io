@@ -96,10 +96,11 @@ class Snake extends THREE.Group {
         }
 
         if (this.mergingCube && this.mergingStep <= 0) {
-            this.doMergeReplace();
-            this.mergingCube = null;
-            this.mergingIndex = -1;
             this.mergingStep = 0;
+            this.mergingIndex = -1;
+            this.mergingCube = null;
+            this.doMergeReplace();
+            this.mergingCubes = null;
         }
 
         if (this.mergingIndex < 0) {
@@ -111,7 +112,7 @@ class Snake extends THREE.Group {
         var now = Date.now();
 
         var num2cubes = {};
-        for (var i = this.cubes.length - 1; i >= 0; i--) {
+        for (var i = 0; i < this.cubes.length; i++) {
             var cube = this.cubes[i];
             if (now - cube.createTime < 700) {
                 continue;
@@ -135,7 +136,11 @@ class Snake extends THREE.Group {
             }
         }
 
-        this.mergingCube = mergeCubes[0];
+        if (mergeCubes.length == 0) {
+            return false;
+        }
+
+        this.mergingCube = mergeCubes[1];
         this.mergingCubes = mergeCubes;
         this.mergingIndex = this.cubes.indexOf(this.mergingCube);
         this.mergingStep = 10;
@@ -147,7 +152,7 @@ class Snake extends THREE.Group {
         var cube1 = this.mergingCubes[0];
         var cube2 = this.mergingCubes[1];
         var num = cube1.num + cube2.num;
-        var oldIndex = this.cubes.indexOf(cube2);
+        var oldIndex = this.cubes.indexOf(cube1);
         this.removeCube(cube1);
         this.removeCube(cube2);
         this.addCube(num, oldIndex);
@@ -195,10 +200,13 @@ class Snake extends THREE.Group {
         if (this.mergingIndex >= 0) {
             var diff = frames[this.mergingIndex - 1] - frames[this.mergingIndex];
             diff /= this.mergingStep;
+            diff = Math.floor(diff);
             for (var i = this.mergingIndex; i < this.cubes.length; i++) {
                 frames[i] += diff;
             }
         }
+
+        // console.log("frames", `frame=${this.frame}`, `mergingStep=${this.mergingStep}`, `frames=${frames}`);
 
         for (var i = 0; i < this.cubes.length; i++) {
             var cube = this.cubes[i];
@@ -207,7 +215,8 @@ class Snake extends THREE.Group {
 
             var moveItem = this.moveItems.find(item => item.frame === frame);
             if (!moveItem) {
-                break;
+                cube.position.copy(this.getCubeStandPos(i));
+                continue;
             }
 
             var moveTarget = moveItem.moveTarget.clone();
@@ -223,10 +232,9 @@ class Snake extends THREE.Group {
         index ??= this.cubes.length;
         var cube = createCube(num);
         this.cubes.splice(index, 0, cube);
-        cube.position.copy(this.getCubeStandPos(index));
+        this.doMoveImpl();
         cube.createTime = Date.now();
         g.scene.add(cube);
-        this.doMoveImpl();
     }
 
     removeCube(cube) {
@@ -239,18 +247,18 @@ class Snake extends THREE.Group {
 
     getCubeStandPos(index) {
         var startPos = this.position.clone();
-        for (var i = 0; i < index; i++) {
-            var cube = this.cubes[i];
-
+        if (index == 0) {
+            return startPos;
+        }
+        else {
+            var cube = this.cubes[index - 1];
             var cubeSize = getCubeSize(cube);
-
             let frontVector = new THREE.Vector3(1, 0, 0);
             frontVector.applyMatrix4(cube.modelParent.matrixWorld);
             frontVector.normalize().multiplyScalar(-cubeSize.x);
-
             startPos.add(frontVector);
+            return startPos;
         }
-        return startPos;
     }
 
     setMoveDir(moveDir) {
@@ -275,7 +283,7 @@ function createCube(num) {
     cube.modelParent.add(cube.model);
     cube.model.traverse((child) => {
         if (child.isMesh) {
-            child.material = new MeshStandardMaterial({ color: color, transparent: true, opacity: 1 });
+            child.material = new MeshStandardMaterial({ color: color, transparent: true, opacity: 0.5 });
         }
     })
     cube.model.rotateX(Math.PI / 2);
@@ -322,19 +330,50 @@ function onRequestAnimationFrame() {
     // }
     // g.lastUpdateTime = now;
 
+    doUpdateKeys();
+
     if (g.mouse) {
         if (g.mouse.buttons === 1 && g.rope) {
             g.rope.position.set(g.mouse.global.x, g.mouse.global.y);
         }
     }
 
+
+
     if (g.player && !g.paused) {
         g.player.update();
     }
 
+    g.preKeys = { ...g.keys };
     // g.controls.update();
     g.renderer.render(g.scene, g.camera);
 
+}
+
+function doUpdateKeys() {
+    for (var key in g.keys) {
+        if (g.keys[key] && !g.preKeys[key]) {
+            // onKeyFirstDown(key);
+        }
+    }
+}
+
+function onKeyFirstDown(key) {
+    if (key === 'f') {
+        var num = g.player.cubes[g.player.cubes.length - 1].num;
+        num /= 2;
+        if (num < 2) {
+            num = 2;
+        }
+        g.player.addCube(2);
+    }
+    else if (key === 'p') {
+        g.paused = !g.paused;
+    }
+    else if (key === 's') {
+        g.paused = true;
+        g.player.update();
+    }
 }
 
 function resetPlayerTarget() {
@@ -382,12 +421,13 @@ function onkeydown(e) {
         if (num < 2) {
             num = 2;
         }
-        g.player.addCube(num);
+        g.player.addCube(2);
     }
     else if (e.key === 'p') {
         g.paused = !g.paused;
     }
     else if (e.key === 's') {
+        g.paused = true;
         g.player.update();
     }
 }
@@ -461,6 +501,7 @@ onMounted(async () => {
     pixiDom.appendChild(g.app.view);
     g.center = { x: g.app.screen.width / 2, y: g.app.screen.height / 2 };
     g.keys = {};
+    g.preKeys = {};
 
     await initAssets();
     initThreeScene();

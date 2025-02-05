@@ -7,12 +7,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import * as CANNON from 'cannon-es';
 
 var gltfLoader = new GLTFLoader();
 var fontLoader = new FontLoader();
 
 var g = {
     border: { minX: -10, maxX: 10, minY: -10, maxY: 10 },
+    world: new CANNON.World(),
 };
 window.g = g;
 
@@ -212,12 +214,12 @@ class Snake extends THREE.Group {
 
             var moveItem = this.moveItems.find(item => item.frame === frame);
             if (!moveItem) {
-                cube.position.copy(this.getCubeStandPos(i));
+                cube.body.position.copy(this.getCubeStandPos(i));
                 continue;
             }
 
             var moveTarget = moveItem.moveTarget.clone();
-            cube.position.set(moveTarget.x, moveTarget.y, moveTarget.z);
+            cube.body.position.set(moveTarget.x, moveTarget.y, moveTarget.z);
 
             var moveDir = moveItem.moveVec.clone().normalize();
             var angle = Math.atan2(moveDir.y, moveDir.x);
@@ -260,6 +262,7 @@ class Snake extends THREE.Group {
 
     setMoveDir(moveDir) {
         this.moveDir = moveDir.clone();
+        // this.body.velocity.set(moveDir);
     }
 }
 
@@ -318,6 +321,19 @@ function createCube(num, trigo) {
     // cube2.position.set(0, 0, 0);
     // cube.add(cube2);
 
+    const shape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5)); // Cube的半边长
+    const body = new CANNON.Body({
+        mass: 1, // 质量
+        fixedRotation: true,
+        position: new CANNON.Vec3(0, 0, 0), // 初始位置
+        shape: shape
+    });
+
+    body.obj = cube;
+    cube.body = body;
+
+    g.world.addBody(body);
+
     return cube;
 }
 
@@ -333,7 +349,21 @@ function onRequestAnimationFrame() {
     // }
     // g.lastUpdateTime = now;
 
-    doUpdateKeys();
+    // doUpdateKeys();
+
+    {
+        g.world.step(1 / 60);
+
+        for (let i = 0; i < g.world.bodies.length; ++i) {
+            const body = g.world.bodies[i];
+            const obj = body.obj;
+            if (obj) {
+                obj.position.copy(body.position);
+                obj.quaternion.copy(body.quaternion);
+            }
+        }
+
+    } 
 
     if (g.mouse) {
         if (g.mouse.buttons === 1 && g.rope) {
@@ -344,13 +374,17 @@ function onRequestAnimationFrame() {
     checkFoodCube();
 
     if (g.player && !g.paused) {
-        g.player.update();
+        // g.player.update();
     }
 
     checkEatFood();
 
-    g.preKeys = { ...g.keys };
-    // g.controls.update();
+    // g.preKeys = { ...g.keys };
+
+    if (g.controls) {
+        g.controls.update();
+    }
+
     g.renderer.render(g.scene, g.camera);
 
 }
@@ -362,10 +396,11 @@ function checkFoodCube() {
 
     g.foodCube = createCube(2);
     g.scene.add(g.foodCube);
-    g.foodCube.position.set(Math.random() * 20 - 10, Math.random() * 20 - 10, 0);
+    g.foodCube.body.position.set(Math.random() * 20 - 10, Math.random() * 20 - 10, 0);
 }
 
 function checkEatFood() {
+    return;
     if (!g.foodCube || !g.player) {
         return;
     }
@@ -474,7 +509,8 @@ function initThreeScene() {
 
     var camera = new PerspectiveCamera(75, threeDom.clientWidth / threeDom.clientHeight, 0.1, 1000);
     g.camera = camera;
-    camera.position.set(0, -2, 8);
+    // camera.position.set(0, -2, 8);
+    camera.position.set(0, 0, 10);
     scene.add(camera)
 
     var renderer = new WebGLRenderer({ antialias: true });
@@ -487,17 +523,17 @@ function initThreeScene() {
     var ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
     scene.add(ambientLight);
     // 添加方向光
-    var directionalLight = new THREE.DirectionalLight(0xffffff, 5);
+    var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(0, 0, 1);
     scene.add(directionalLight);
 
     // 添加orbitControls
-    // var controls = new OrbitControls(camera, renderer.domElement);
-    // g.controls = controls;
+    var controls = new OrbitControls(camera, renderer.domElement);
+    g.controls = controls;
 
-    const gridHelper = new THREE.GridHelper(20, 20);
-    gridHelper.rotateX(Math.PI / 2);
-    scene.add(gridHelper);
+    // const gridHelper = new THREE.GridHelper(20, 20);
+    // gridHelper.rotateX(Math.PI / 2);
+    // scene.add(gridHelper);
 
     // const axesHelper = new THREE.AxesHelper(2);
     // scene.add(axesHelper);
@@ -505,6 +541,37 @@ function initThreeScene() {
     g.raycaster = new THREE.Raycaster();
 
     onRequestAnimationFrame();
+}
+
+function createWall(position, size, color) {
+    const wallShape = new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2));
+    const wallBody = new CANNON.Body({
+        mass: 0, // 墙体是静态的
+        position: position,
+        shape: wallShape
+    });
+    g.world.addBody(wallBody);
+
+    const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
+    const material = new THREE.MeshPhongMaterial({ color, transparent: true, opacity: 0.5 });
+    const mesh = new THREE.Mesh(geometry, material);
+    g.scene.add(mesh);
+
+    wallBody.obj = mesh
+    mesh.body = wallBody
+
+}
+
+function initWorld() {
+    g.world.gravity.set(-1, 0, 0);
+
+    createWall(new CANNON.Vec3(0, g.border.maxY + 0.5, -0.25), { x: g.border.maxX - g.border.minX, y: 1, z: 1 }, "#a5dee5");
+    createWall(new CANNON.Vec3(0, g.border.minY - 0.5, -0.25), { x: g.border.maxX - g.border.minX, y: 1, z: 1 }, "#e0f9b5");
+
+    createWall(new CANNON.Vec3(g.border.minX - 0.5, 0, -0.25), { x: 1, y: g.border.maxY - g.border.minY + 0, z: 1 }, "#fefdca");
+    createWall(new CANNON.Vec3(g.border.maxX + 0.5, 0, -0.25), { x: 1, y: g.border.maxY - g.border.minY + 0, z: 1 }, "#ffcfdf");
+
+    createWall(new CANNON.Vec3(0, 0, -0.5), { x: g.border.maxX - g.border.minX, y: g.border.maxY - g.border.minY + 2, z: 1 }, "#00b8a9");
 }
 
 async function initAssets() {
@@ -535,6 +602,7 @@ onMounted(async () => {
 
     await initAssets();
     initThreeScene();
+    initWorld();
     initGame();
 
     // 在文档级别添加鼠标事件监听器

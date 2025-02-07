@@ -294,7 +294,7 @@ function createCube(num, trigo) {
     cube.text = new THREE.Mesh(new TextGeometry(num.toString(), {
         font: g.assets.font,
         size: 0.6,
-        depth: 0.1,
+        depth: 0,
         curveSegments: 10,
         bevelEnabled: true,
         bevelThickness: 0.01,
@@ -340,19 +340,10 @@ function createCube(num, trigo) {
     return cube;
 }
 
-g.lastUpdateTime = Date.now();
-g.needUpdate = true;
 function onRequestAnimationFrame() {
     requestAnimationFrame(onRequestAnimationFrame);
 
-    // var now = Date.now();
-    // var delta = now - g.lastUpdateTime;
-    // if (delta < 200) {
-    //     return;
-    // }
-    // g.lastUpdateTime = now;
-
-
+    // 物理世界
     {
         g.world.step(1 / 60);
 
@@ -362,8 +353,8 @@ function onRequestAnimationFrame() {
             obj.position.copy(body.position);
             obj.quaternion.copy(body.quaternion);
         }
-
     } 
+
     checkFoodCube();
 
     if (g.mouse) {
@@ -372,22 +363,15 @@ function onRequestAnimationFrame() {
         }
     }
 
-    // checkFoodCube();
-
     if (g.player && !g.paused) {
         // g.player.update();
     }
-
-    checkEatFood();
-
-    // g.preKeys = { ...g.keys };
 
     if (g.controls) {
         g.controls.update();
     }
 
     g.renderer.render(g.scene, g.camera);
-
 }
 
 function checkFoodCube(force) {
@@ -403,7 +387,6 @@ function checkFoodCube(force) {
 }
 
 function checkEatFood() {
-    return;
     if (!g.foodCube || !g.player) {
         return;
     }
@@ -415,32 +398,6 @@ function checkEatFood() {
         g.scene.remove(g.foodCube);
         g.foodCube = null;
         g.player.addCube(2);
-    }
-}
-
-function doUpdateKeys() {
-    for (var key in g.keys) {
-        if (g.keys[key] && !g.preKeys[key]) {
-            // onKeyFirstDown(key);
-        }
-    }
-}
-
-function onKeyFirstDown(key) {
-    if (key === 'f') {
-        var num = g.player.cubes[g.player.cubes.length - 1].num;
-        num /= 2;
-        if (num < 2) {
-            num = 2;
-        }
-        g.player.addCube(2);
-    }
-    else if (key === 'p') {
-        g.paused = !g.paused;
-    }
-    else if (key === 's') {
-        g.paused = true;
-        g.player.update();
     }
 }
 

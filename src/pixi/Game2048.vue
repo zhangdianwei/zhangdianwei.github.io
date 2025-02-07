@@ -230,6 +230,7 @@ class Snake extends THREE.Group {
     addCube(num, index) {
         index ??= this.cubes.length;
         var cube = createCube(num, index == 0);
+        cube.body.material = g.snakeMaterial;
         this.cubes.splice(index, 0, cube);
         this.doMoveImpl();
         cube.createTime = Date.now();
@@ -280,10 +281,12 @@ function createCube(num, trigo) {
     cube.add(cube.modelParent);
 
     cube.model = g.assets.cube.scene.clone();
+    cube.model.castShadow = true
     cube.modelParent.add(cube.model);
     cube.model.traverse((child) => {
         if (child.isMesh) {
             child.material = new MeshStandardMaterial({ color: color, transparent: true, opacity: 1 });
+            child.castShadow = true;
         }
     })
     cube.model.rotateX(Math.PI / 2);
@@ -321,18 +324,18 @@ function createCube(num, trigo) {
     // cube2.position.set(0, 0, 0);
     // cube.add(cube2);
 
-    const shape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5)); // Cube的半边长
+    const shape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.25)); // Cube的半边长
     const body = new CANNON.Body({
-        mass: 1, // 质量
+        mass: 0.1, // 质量
         fixedRotation: true,
         position: new CANNON.Vec3(0, 0, 0), // 初始位置
-        shape: shape
+        shape: shape,
+        material: g.cubeMaterial
     });
+    g.world.addBody(body);
 
     body.obj = cube;
     cube.body = body;
-
-    g.world.addBody(body);
 
     return cube;
 }
@@ -349,7 +352,6 @@ function onRequestAnimationFrame() {
     // }
     // g.lastUpdateTime = now;
 
-    // doUpdateKeys();
 
     {
         g.world.step(1 / 60);
@@ -357,13 +359,12 @@ function onRequestAnimationFrame() {
         for (let i = 0; i < g.world.bodies.length; ++i) {
             const body = g.world.bodies[i];
             const obj = body.obj;
-            if (obj) {
-                obj.position.copy(body.position);
-                obj.quaternion.copy(body.quaternion);
-            }
+            obj.position.copy(body.position);
+            obj.quaternion.copy(body.quaternion);
         }
 
     } 
+    checkFoodCube();
 
     if (g.mouse) {
         if (g.mouse.buttons === 1 && g.rope) {
@@ -371,7 +372,7 @@ function onRequestAnimationFrame() {
         }
     }
 
-    checkFoodCube();
+    // checkFoodCube();
 
     if (g.player && !g.paused) {
         // g.player.update();
@@ -389,14 +390,16 @@ function onRequestAnimationFrame() {
 
 }
 
-function checkFoodCube() {
-    if (g.foodCube) {
+function checkFoodCube(force) {
+    if (g.foodCube && !force) {
         return;
     }
 
     g.foodCube = createCube(2);
     g.scene.add(g.foodCube);
-    g.foodCube.body.position.set(Math.random() * 20 - 10, Math.random() * 20 - 10, 0);
+    // g.foodCube.body.position.set(Math.random() * 20 - 10, Math.random() * 20 - 10, 0);
+    g.foodCube.body.position.set(0, -2, 0);
+    // g.foodCube.body.velocity.set(-6, 0, 0);
 }
 
 function checkEatFood() {
@@ -495,6 +498,9 @@ function onkeydown(e) {
         g.paused = true;
         g.player.update();
     }
+    else if (e.key === 'a') {
+        checkFoodCube(true);
+    }
 }
 function onkeyup(e) {
     delete g.keys[e.key];
@@ -509,7 +515,6 @@ function initThreeScene() {
 
     var camera = new PerspectiveCamera(75, threeDom.clientWidth / threeDom.clientHeight, 0.1, 1000);
     g.camera = camera;
-    // camera.position.set(0, -2, 8);
     camera.position.set(0, 0, 10);
     scene.add(camera)
 
@@ -517,14 +522,21 @@ function initThreeScene() {
     g.renderer = renderer;
     renderer.setSize(threeDom.clientWidth, threeDom.clientHeight);
     renderer.setClearColor(0xe0eee8, 1);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 可选的阴影类型
     threeDom.appendChild(renderer.domElement);
 
     // 添加环境光
     var ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
     scene.add(ambientLight);
     // 添加方向光
-    var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(0, 0, 1);
+    var directionalLight = new THREE.DirectionalLight(0xffffff, 3);
+    directionalLight.position.set(1, 1, 1);
+    directionalLight.castShadow = true; // 允许这个光源投射阴影
+    scene.add(directionalLight);
+    var directionalLight = new THREE.DirectionalLight(0xff0000, 1);
+    directionalLight.position.set(-1, -1, 1);
+    // directionalLight.castShadow = true; // 允许这个光源投射阴影
     scene.add(directionalLight);
 
     // 添加orbitControls
@@ -535,12 +547,10 @@ function initThreeScene() {
     // gridHelper.rotateX(Math.PI / 2);
     // scene.add(gridHelper);
 
-    // const axesHelper = new THREE.AxesHelper(2);
-    // scene.add(axesHelper);
+    const axesHelper = new THREE.AxesHelper(2);
+    scene.add(axesHelper);
 
     g.raycaster = new THREE.Raycaster();
-
-    onRequestAnimationFrame();
 }
 
 function createWall(position, size, color) {
@@ -548,13 +558,15 @@ function createWall(position, size, color) {
     const wallBody = new CANNON.Body({
         mass: 0, // 墙体是静态的
         position: position,
-        shape: wallShape
+        shape: wallShape,
+        material: g.groundMaterial
     });
     g.world.addBody(wallBody);
 
     const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
-    const material = new THREE.MeshPhongMaterial({ color, transparent: true, opacity: 0.5 });
+    const material = new THREE.MeshPhongMaterial({ color });
     const mesh = new THREE.Mesh(geometry, material);
+    mesh.receiveShadow = true;
     g.scene.add(mesh);
 
     wallBody.obj = mesh
@@ -563,15 +575,19 @@ function createWall(position, size, color) {
 }
 
 function initWorld() {
-    g.world.gravity.set(-1, 0, 0);
+    g.world.gravity.set(0, 0, -10);
 
-    createWall(new CANNON.Vec3(0, g.border.maxY + 0.5, -0.25), { x: g.border.maxX - g.border.minX, y: 1, z: 1 }, "#a5dee5");
-    createWall(new CANNON.Vec3(0, g.border.minY - 0.5, -0.25), { x: g.border.maxX - g.border.minX, y: 1, z: 1 }, "#e0f9b5");
+    g.groundMaterial = new CANNON.Material({ friction: 0.06, restitution: 0.2 });
+    g.snakeMaterial = new CANNON.Material({ friction: 0.00, restitution: 0.2 });
+    g.cubeMaterial = new CANNON.Material({ friction: 0.06, restitution: 0.2 });
 
-    createWall(new CANNON.Vec3(g.border.minX - 0.5, 0, -0.25), { x: 1, y: g.border.maxY - g.border.minY + 0, z: 1 }, "#fefdca");
-    createWall(new CANNON.Vec3(g.border.maxX + 0.5, 0, -0.25), { x: 1, y: g.border.maxY - g.border.minY + 0, z: 1 }, "#ffcfdf");
+    createWall(new CANNON.Vec3(0, g.border.maxY + 0.5, -0.25), { x: g.border.maxX - g.border.minX, y: 1, z: 1 }, "#3f72af");
+    createWall(new CANNON.Vec3(0, g.border.minY - 0.5, -0.25), { x: g.border.maxX - g.border.minX, y: 1, z: 1 }, "#3f72af");
 
-    createWall(new CANNON.Vec3(0, 0, -0.5), { x: g.border.maxX - g.border.minX, y: g.border.maxY - g.border.minY + 2, z: 1 }, "#00b8a9");
+    createWall(new CANNON.Vec3(g.border.minX - 0.5, 0, -0.25), { x: 1, y: g.border.maxY - g.border.minY + 2, z: 1 }, "#3f72af");
+    createWall(new CANNON.Vec3(g.border.maxX + 0.5, 0, -0.25), { x: 1, y: g.border.maxY - g.border.minY + 2, z: 1 }, "#3f72af");
+
+    createWall(new CANNON.Vec3(0, 0, -0.75), { x: g.border.maxX - g.border.minX, y: g.border.maxY - g.border.minY + 2, z: 1 }, "#00b8a9");
 }
 
 async function initAssets() {
@@ -604,6 +620,7 @@ onMounted(async () => {
     initThreeScene();
     initWorld();
     initGame();
+    onRequestAnimationFrame();
 
     // 在文档级别添加鼠标事件监听器
     document.addEventListener('pointerdown', onpointerdown);

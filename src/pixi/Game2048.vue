@@ -72,22 +72,39 @@ class Snake extends THREE.Group {
         //     this.cubes[i].modelParent.add(axesHelper);
         // }
 
-        this.speed = 0.01;
-        this.speedCount = 1;
+        this.speed = 1;
         this.frame = 0;
         this.moveItems = [];
         this.moveDir = null;
         this.mergingIndex = -1;
     }
 
-    setSpeedCount(count) {
-        this.speedCount = count;
+    setSpeed(speed) {
+        this.speed = speed;
     }
 
-    update() {
-        for (var i = 0; i < this.speedCount; i++) {
-            this.doMoveImpl();
+    updatePre() {
+        if (!this.moveDir) {
+            return;
         }
+
+        var velocity = this.moveDir.clone().multiplyScalar(this.speed);
+
+        var cube = this.cubes[0];
+        cube.body.velocity.set(velocity.x, velocity.y, 0);
+        cube.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), Math.atan2(this.moveDir.y, this.moveDir.x));
+    }
+
+    updateAfter() {
+        var cube = this.cubes[0];
+        this.position.copy(cube.body.position);
+
+        var cube = this.cubes[0];
+        this.moveItems.push({ frame: this.frame, moveVec: cube.body.velocity.clone() });
+        if (this.moveItems.length > 100000) {
+            this.moveItems.shift();
+        }
+        return;
 
         if (this.mergingStep > 0) {
             this.mergingStep -= 1;
@@ -156,37 +173,6 @@ class Snake extends THREE.Group {
         this.addCube(num, oldIndex);
     }
 
-    doMoveImpl() {
-        if (!this.moveDir) {
-            return;
-        }
-
-        var moveVec = this.moveDir.clone().normalize().multiplyScalar(this.speed);
-
-        var targetPos = this.position.clone().add(moveVec);
-        targetPos.x = Math.max(g.border.minX, Math.min(g.border.maxX, targetPos.x));
-        targetPos.y = Math.max(g.border.minY, Math.min(g.border.maxY, targetPos.y));
-
-        moveVec = targetPos.clone().sub(this.position);
-
-        var distance = moveVec.length();
-        if (distance <= 0.005) {
-            return;
-        }
-
-        this.position.set(targetPos.x, targetPos.y, targetPos.z);
-
-        this.moveItems.push({ frame: this.frame, moveVec: moveVec, moveTarget: this.position.clone(), speed: this.speed });
-
-        this.updateCubes();
-
-        this.frame += 1;
-
-        if (this.moveItems.length > 100000) {
-            this.moveItems.shift();
-        }
-    }
-
     updateCubes() {
         var frame = this.frame;
         var frames = [];
@@ -232,7 +218,6 @@ class Snake extends THREE.Group {
         var cube = createCube(num, index == 0);
         cube.body.material = g.snakeMaterial;
         this.cubes.splice(index, 0, cube);
-        this.doMoveImpl();
         cube.createTime = Date.now();
         g.scene.add(cube);
     }
@@ -262,8 +247,7 @@ class Snake extends THREE.Group {
     }
 
     setMoveDir(moveDir) {
-        this.moveDir = moveDir.clone();
-        // this.body.velocity.set(moveDir);
+        this.moveDir = moveDir.clone().normalize();
     }
 }
 
@@ -343,6 +327,10 @@ function createCube(num, trigo) {
 function onRequestAnimationFrame() {
     requestAnimationFrame(onRequestAnimationFrame);
 
+    if (g.player && !g.paused) {
+        g.player.updatePre();
+    }
+
     // 物理世界
     {
         g.world.step(1 / 60);
@@ -353,7 +341,11 @@ function onRequestAnimationFrame() {
             obj.position.copy(body.position);
             obj.quaternion.copy(body.quaternion);
         }
-    } 
+    }
+
+    if (g.player && !g.paused) {
+        g.player.updateAfter();
+    }
 
     checkFoodCube();
 
@@ -361,10 +353,6 @@ function onRequestAnimationFrame() {
         if (g.mouse.buttons === 1 && g.rope) {
             g.rope.position.set(g.mouse.global.x, g.mouse.global.y);
         }
-    }
-
-    if (g.player && !g.paused) {
-        // g.player.update();
     }
 
     if (g.controls) {
@@ -423,7 +411,7 @@ function resetPlayerTarget() {
 
 function onpointerdown(e) {
     g.mouse = e;
-    g.player.setSpeedCount(5);
+    g.player.setSpeed(5);
     resetPlayerTarget();
 }
 
@@ -434,7 +422,7 @@ function onpointermove(e) {
 
 function onpointerup(e) {
     g.mouse = e;
-    g.player.setSpeedCount(1);
+    g.player.setSpeed(1);
     resetPlayerTarget();
 }
 
@@ -491,21 +479,20 @@ function initThreeScene() {
     directionalLight.position.set(1, 1, 1);
     directionalLight.castShadow = true; // 允许这个光源投射阴影
     scene.add(directionalLight);
-    var directionalLight = new THREE.DirectionalLight(0xff0000, 1);
-    directionalLight.position.set(-1, -1, 1);
-    // directionalLight.castShadow = true; // 允许这个光源投射阴影
-    scene.add(directionalLight);
+    // var directionalLight = new THREE.DirectionalLight(0xff0000, 1);
+    // directionalLight.position.set(-1, -1, 1);
+    // scene.add(directionalLight);
 
     // 添加orbitControls
-    var controls = new OrbitControls(camera, renderer.domElement);
-    g.controls = controls;
+    // var controls = new OrbitControls(camera, renderer.domElement);
+    // g.controls = controls;
 
     // const gridHelper = new THREE.GridHelper(20, 20);
     // gridHelper.rotateX(Math.PI / 2);
     // scene.add(gridHelper);
 
-    const axesHelper = new THREE.AxesHelper(2);
-    scene.add(axesHelper);
+    // const axesHelper = new THREE.AxesHelper(2);
+    // scene.add(axesHelper);
 
     g.raycaster = new THREE.Raycaster();
 }

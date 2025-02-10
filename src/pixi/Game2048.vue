@@ -88,11 +88,35 @@ class Snake extends THREE.Group {
             return;
         }
 
-        var velocity = this.moveDir.clone().multiplyScalar(this.speed);
+        var frame = this.frame;
+        var frames = [];
+        for (var i = 0; i < this.cubes.length; i++) {
+            var cube = this.cubes[i];
+            frames.push(frame);
+            frame -= 60;
+        }
 
-        var cube = this.cubes[0];
-        cube.body.velocity.set(velocity.x, velocity.y, 0);
-        cube.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), Math.atan2(this.moveDir.y, this.moveDir.x));
+        for (var i = 0; i < this.cubes.length; i++) {
+            var cube = this.cubes[i];
+
+            var frame = frames[i];
+
+            var velocity = null;
+            if (i == 0) {
+                var velocity = this.moveDir.clone().multiplyScalar(this.speed);
+                cube.body.velocity.set(velocity.x, velocity.y, 0);
+                cube.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), Math.atan2(velocity.y, velocity.x));
+            }
+            else {
+                var moveItem = this.moveItems.find(item => item.frame === frame);
+                if (!moveItem) {
+                    cube.body.position.copy(this.getCubeStandPos(i));
+                    continue;
+                }
+                cube.body.position.copy(moveItem.position);
+                cube.body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), Math.atan2(moveItem.moveDir.y, moveItem.moveDir.x));
+            }
+        }
     }
 
     updateAfter() {
@@ -100,10 +124,12 @@ class Snake extends THREE.Group {
         this.position.copy(cube.body.position);
 
         var cube = this.cubes[0];
-        this.moveItems.push({ frame: this.frame, moveVec: cube.body.velocity.clone() });
+        this.moveItems.push({ frame: this.frame, moveDir: this.moveDir, velocity: cube.body.velocity.clone(), position: this.position.clone() });
         if (this.moveItems.length > 100000) {
             this.moveItems.shift();
         }
+
+        this.frame += 1;
         return;
 
         if (this.mergingStep > 0) {
@@ -173,50 +199,55 @@ class Snake extends THREE.Group {
         this.addCube(num, oldIndex);
     }
 
-    updateCubes() {
-        var frame = this.frame;
-        var frames = [];
-        for (var i = 0; i < this.cubes.length; i++) {
-            var cube = this.cubes[i];
-            frames.push(frame);
-            frame -= (1 / this.speed) + (cube.scale.x - 1) * 90;
-        }
+    // updateCubes() {
+    //     var frame = this.frame;
+    //     var frames = [];
+    //     for (var i = 0; i < this.cubes.length; i++) {
+    //         var cube = this.cubes[i];
+    //         frames.push(frame);
+    //         frame -= (1 / this.speed) + (cube.scale.x - 1) * 90;
+    //     }
 
-        if (this.mergingIndex >= 0) {
-            var diff = frames[this.mergingIndex - 1] - frames[this.mergingIndex];
-            diff /= this.mergingStep;
-            diff = Math.floor(diff);
-            for (var i = this.mergingIndex; i < this.cubes.length; i++) {
-                frames[i] += diff;
-            }
-        }
+    //     if (this.mergingIndex >= 0) {
+    //         var diff = frames[this.mergingIndex - 1] - frames[this.mergingIndex];
+    //         diff /= this.mergingStep;
+    //         diff = Math.floor(diff);
+    //         for (var i = this.mergingIndex; i < this.cubes.length; i++) {
+    //             frames[i] += diff;
+    //         }
+    //     }
 
-        // console.log("frames", `frame=${this.frame}`, `mergingStep=${this.mergingStep}`, `frames=${frames}`);
+    //     // console.log("frames", `frame=${this.frame}`, `mergingStep=${this.mergingStep}`, `frames=${frames}`);
 
-        for (var i = 0; i < this.cubes.length; i++) {
-            var cube = this.cubes[i];
+    //     for (var i = 0; i < this.cubes.length; i++) {
+    //         var cube = this.cubes[i];
 
-            var frame = frames[i];
+    //         var frame = frames[i];
 
-            var moveItem = this.moveItems.find(item => item.frame === frame);
-            if (!moveItem) {
-                cube.body.position.copy(this.getCubeStandPos(i));
-                continue;
-            }
+    //         var moveItem = this.moveItems.find(item => item.frame === frame);
+    //         if (!moveItem) {
+    //             cube.body.position.copy(this.getCubeStandPos(i));
+    //             continue;
+    //         }
 
-            var moveTarget = moveItem.moveTarget.clone();
-            cube.body.position.set(moveTarget.x, moveTarget.y, moveTarget.z);
+    //         var moveTarget = moveItem.moveTarget.clone();
+    //         cube.body.position.set(moveTarget.x, moveTarget.y, moveTarget.z);
 
-            var moveDir = moveItem.moveVec.clone().normalize();
-            var angle = Math.atan2(moveDir.y, moveDir.x);
-            cube.modelParent.rotation.z = angle;
-        }
-    }
+    //         var moveDir = moveItem.moveVec.clone().normalize();
+    //         var angle = Math.atan2(moveDir.y, moveDir.x);
+    //         cube.modelParent.rotation.z = angle;
+    //     }
+    // }
 
     addCube(num, index) {
         index ??= this.cubes.length;
         var cube = createCube(num, index == 0);
+        if (index != 0) {
+            cube.body.isTrigger = true;
+            cube.body.type = CANNON.Body.KINEMATIC;
+        }
         cube.body.material = g.snakeMaterial;
+        cube.body.position.copy(this.getCubeStandPos(index));
         this.cubes.splice(index, 0, cube);
         cube.createTime = Date.now();
         g.scene.add(cube);

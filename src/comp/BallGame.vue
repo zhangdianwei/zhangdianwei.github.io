@@ -4,6 +4,7 @@
     <audio src="ballgame/ball_collect.mp3" id="ball_collect"></audio>
     <audio src="ballgame/ball_click.mp3" id="ball_click"></audio>
     <canvas ref="canvasRef" type="2d"></canvas>
+    <div class="watermark-tip">躲避黑色，收集红色<br>点击屏幕改变小球方向</div>
 </template>
 
 <style scoped>
@@ -19,6 +20,23 @@ canvas {
     top: 0px;
     left: 0px;
 }
+
+.watermark-tip {
+    position: absolute;
+    /* 分数大约在 bound.yMax * 0.6 + 130，水印应略高于此 */
+    top: 27%;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    pointer-events: none;
+    user-select: none;
+    z-index: 10;
+    text-align: center;
+}
+
 </style>
 
 <script setup>
@@ -48,6 +66,7 @@ let ball_bgm = null;
 let ball_bomb = null;
 let ball_click = null;
 let useEvent = null;
+let particles = [];
 
 // 判断圆形和方形是否相交
 function isIntersect(circle, square) {
@@ -497,6 +516,8 @@ function checkCollision() {
         if (square.boxType === BoxType.Red) {
             score += 1;
             squareSpeedScale += 0.3;
+            // 生成粒子特效
+            emitParticles(square.x + square.width/2, square.y + square.height/2, '#f6416c');
             removeSquare(square);
 
             ball_collect.play();
@@ -522,7 +543,7 @@ function drawStrokedText(ctx, text, x, y, options = {}) {
     ctx.save();
 
     // 设置文字样式
-    ctx.font = options.font || '40px Courier New';
+    ctx.font = options.font || '30px Courier New';
     ctx.textAlign = options.align || 'center';
     ctx.textBaseline = options.baseline || 'center';
 
@@ -582,6 +603,9 @@ const onFrameTick = () => {
     let textDiff = 130
     drawStrokedText(ctx, `当前得分:${score}`, bound.centerX, bound.yMax * 0.6 + textDiff)
     drawStrokedText(ctx, `最高得分:${maxScore}`, bound.centerX, bound.yMax * 0.6 + textDiff + 50)
+
+    // 绘制粒子特效
+    updateAndDrawParticles(ctx);
 
     requestAnimationFrame(onFrameTick)
 }
@@ -652,6 +676,50 @@ function initData() {
     totalTime = 0;
     emitIndex = 0;
     squareSpeedScale = 1;
+}
+
+// 粒子特效生成
+function emitParticles(x, y, color) {
+    for (let i = 0; i < 18; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2 + Math.random() * 3;
+        particles.push({
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            alpha: 1,
+            radius: 6 + Math.random() * 4,
+            color,
+            life: 24 + Math.random() * 10
+        });
+    }
+}
+
+// 粒子更新与绘制
+function updateAndDrawParticles(ctx) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.92;
+        p.vy *= 0.92;
+        p.alpha -= 0.035;
+        p.life--;
+        if (p.life < 0 || p.alpha <= 0) {
+            particles.splice(i, 1);
+            continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.restore();
+    }
 }
 
 onMounted(() => {
@@ -765,5 +833,3 @@ onUnmounted(() => {
     ball_bgm.pause();
 })
 </script>
-
-

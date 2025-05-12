@@ -2,10 +2,17 @@
     <div class="split-image-container">
         <h1>智能图片拆分</h1>
         <p>将丢失plist的png大图智能拆分成png小图</p>
-        <div style="margin-bottom: 16px;">
-            <input type="file" accept="image/*" @change="onSelectFile" :disabled="!opencvReady" />
-            <button @click="onExportFile" :disabled="!opencvReady">导出小图</button>
-        </div>
+        <Row>
+            <Col>
+            <Upload :before-upload="beforeUpload" :show-upload-list="false" :disabled="!opencvReady" accept="image/*"
+                action="">
+                <i-button type="primary" :disabled="!opencvReady">选择大图</i-button>
+            </Upload>
+            <Button type="success" @click="onExportFile" :disabled="!opencvReady">
+                导出小图
+            </Button>
+            </Col>
+        </Row>
         <p>{{ log }}</p>
         <div>
             <p v-if="!opencvReady">正在加载环境...(大约20秒钟)</p>
@@ -15,7 +22,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
+import { Upload as IUpload, Button as IButton } from 'view-ui-plus';
 let opencvReady = ref(false);
 let imageMat = null;
 let log = '';
@@ -86,6 +94,13 @@ function mergeRects(allrects) {
 
 function doSrcFile(eleSrc) {
     clean();
+    // 兼容 naturalWidth/naturalHeight，并加调试日志
+    if (canvas && eleSrc) {
+        canvas.width = eleSrc.width;
+        canvas.height = eleSrc.height;
+    } else {
+        console.warn('canvas 或 eleSrc 未定义');
+    }
     const src = cv.imread(eleSrc);
     imageMat = src.clone();
 
@@ -123,8 +138,7 @@ function doSrcFile(eleSrc) {
     hierarchy.delete();
 }
 
-function onSelectFile(e) {
-    const file = e.target.files[0];
+function onSelectFile(file) {
     if (!file) return;
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -137,6 +151,13 @@ function onSelectFile(e) {
     };
 }
 
+// i-upload 的 before-upload 钩子
+function beforeUpload(file) {
+    onSelectFile(file);
+    // 阻止自动上传
+    return false;
+}
+
 function onExportFile() {
     if (!imageMat || !rects.length) return;
     const zip = new JSZip();
@@ -144,7 +165,7 @@ function onExportFile() {
     let finished = 0;
     for (let i = 0; i < rects.length; ++i) {
         const rc = rects[i];
-        const roiRect = {x: rc.x, y: rc.y, width: rc.width, height: rc.height};
+        const roiRect = { x: rc.x, y: rc.y, width: rc.width, height: rc.height };
         const smallMat = imageMat.roi(roiRect);
         const imageName = `image${i + 1}`;
         const d = document.createElement('canvas');
@@ -172,6 +193,9 @@ function onExportFile() {
 onMounted(async () => {
     await loadScripts();
 
+    // 获取 canvas 元素
+    canvas = document.getElementById('mycanvas');
+
     // OpenCV.js 加载完成后
     if (window.cv && window.cv['onRuntimeInitialized']) {
         window.cv['onRuntimeInitialized'] = () => {
@@ -182,7 +206,7 @@ onMounted(async () => {
         // 有些CDN版本不需要 onRuntimeInitialized
         opencvReady.value = true;
     }
-    // 设置canvas尺寸
+    // 默认 canvas 尺寸（可选）
     if (canvas) {
         canvas.width = 512;
         canvas.height = 512;
@@ -197,8 +221,25 @@ onMounted(async () => {
     text-align: center;
 }
 
+.split-image-container>div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.split-btn-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
 canvas {
+    display: block;
+    margin: 8px auto 0 auto;
     border: 1px solid #aaa;
-    margin-top: 8px;
+    box-shadow: 0 2px 8px #eee;
+    max-width: 100%;
 }
 </style>

@@ -2,6 +2,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import * as PIXI from 'pixi.js';
 import BgCircle from './BgCircle.js';
+import Player from './Player.js';
 
 const pixiContainer = ref(null);
 let app = {
@@ -9,18 +10,26 @@ let app = {
     root: null,
     bg: null,
     radius: 0,
-    diameter: 0
+    diameter: 0,
+    mouse: { x: 0, y: 0 },
+    keys: { w: false, a: false, s: false, d: false }
 };
 
 function resizeApp() {}
 
 function initGame(){
     initBG();
+    initPlayer();
 }
 function initBG(){
     app.bg = new BgCircle();
     app.root.addChild(app.bg);
     app.bg.init(app);
+}
+function initPlayer() {
+    app.player = new Player();
+    app.root.addChild(app.player);
+    app.player.init(app);
 }
 
 onMounted(() => {
@@ -43,7 +52,34 @@ onMounted(() => {
     app.root.y = height / 2;
     app.pixi.stage.addChild(app.root);
     window.addEventListener('resize', resizeApp);
+    // 鼠标监听
+    app.pixi.view.addEventListener('mousemove', (e) => {
+        // 转换为以画布中心为原点的坐标
+        const rect = app.pixi.view.getBoundingClientRect();
+        app.mouse.x = e.clientX - rect.left - rect.width / 2;
+        app.mouse.y = e.clientY - rect.top - rect.height / 2;
+    });
+    // 键盘监听
+    window.addEventListener('keydown', (e) => {
+        if (['w','a','s','d'].includes(e.key.toLowerCase())) {
+            app.keys[e.key.toLowerCase()] = true;
+        }
+    });
+    window.addEventListener('keyup', (e) => {
+        if (['w','a','s','d'].includes(e.key.toLowerCase())) {
+            app.keys[e.key.toLowerCase()] = false;
+        }
+    });
     initGame();
+    // 动画循环
+    app.pixi.ticker.add(() => {
+        if (app.player) {
+            // 鼠标控制旋转
+            app.player.lookAt(app.mouse.x, app.mouse.y);
+            // WSAD控制移动
+            app.player.moveByKeys(app.keys, app.radius);
+        }
+    });
 });
 
 onBeforeUnmount(() => {

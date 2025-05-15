@@ -19,6 +19,7 @@ import CurveRopePixi from "../comp/CurveRopePixi.vue"
 import PixiHello from "../pixi/PixiHello.vue"
 import Game2048 from "../pixi/Game2048.vue"
 import SplitImage from "../comp/SplitImage.vue"
+import Shooter from "../shooter/Shooter.vue"
 
 const routesArray = [
   { id: "TankMain", title: "坦克大战", comp: TankMain },
@@ -45,6 +46,7 @@ const routesArray = [
   { id: "ThreeHello", title: "ThreeHello", comp: ThreeHello },
   { id: "Game2048", title: "Game2048", comp: Game2048 },
   { id: "SplitImage", title: "SplitImage", comp: SplitImage },
+  { id: "Shooter", title: "Shooter", comp: Shooter },
 ];
 
 const curPath = ref(window.location.hash.slice(1))

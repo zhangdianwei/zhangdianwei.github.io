@@ -3,6 +3,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
 import * as PIXI from 'pixi.js';
 import BgCircle from './BgCircle.js';
 import Player from './Player.js';
+import GameObjectManager from './GameObjectManager.js';
 
 const pixiContainer = ref(null);
 let app = {
@@ -12,14 +13,21 @@ let app = {
     radius: 0,
     diameter: 0,
     mouse: { x: 0, y: 0 },
-    keys: { w: false, a: false, s: false, d: false }
+    keys: { w: false, a: false, s: false, d: false },
+    gameObjectManager: null,
+    shooting: false
 };
 
 function resizeApp() {}
 
 function initGame(){
+    initGameObjectManager();
     initBG();
     initPlayer();
+}
+function initGameObjectManager(){
+    app.gameObjectManager = new GameObjectManager(app);
+    app.root.addChild(app.gameObjectManager);
 }
 function initBG(){
     app.bg = new BgCircle();
@@ -59,6 +67,16 @@ onMounted(() => {
         app.mouse.x = e.clientX - rect.left - rect.width / 2;
         app.mouse.y = e.clientY - rect.top - rect.height / 2;
     });
+    app.pixi.view.addEventListener('mousedown', (e) => {
+        if (e.button === 0) {
+            app.shooting = true;
+        }
+    });
+    app.pixi.view.addEventListener('mouseup', (e) => {
+        if (e.button === 0) {
+            app.shooting = false;
+        }
+    });
     // 键盘监听
     window.addEventListener('keydown', (e) => {
         if (['w','a','s','d'].includes(e.key.toLowerCase())) {
@@ -78,6 +96,16 @@ onMounted(() => {
             app.player.lookAt(app.mouse.x, app.mouse.y);
             // WSAD控制移动
             app.player.moveByKeys(app.keys, app.radius);
+            // 武器冷却
+            app.player.updateWeapon(app.radius);
+            // 持续射击
+            if (app.shooting && app.player.weapon) {
+                app.player.weapon.shoot();
+            }
+        }
+        // 统一 update 所有 gameObjects
+        if (app.gameObjectManager) {
+            app.gameObjectManager.updateAll();
         }
     });
 });

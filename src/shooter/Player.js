@@ -1,5 +1,7 @@
 import * as PIXI from 'pixi.js';
 
+import Weapon from './Weapon.js';
+
 export default class Player extends PIXI.Container {
     constructor() {
         super();
@@ -8,6 +10,7 @@ export default class Player extends PIXI.Container {
         this.turnSpeed = 0.15; // 每帧最大转向弧度
         this.angle = 0; // 当前朝向
         this.radius = 0; // 活动范围
+        this.weapon = null;
     }
 
     async init(app) {
@@ -18,7 +21,14 @@ export default class Player extends PIXI.Container {
         this.x = 0;
         this.y = 0;
         this.angle = 0;
+        this.weapon = new Weapon(this, app);
+        this.addChild(this.weapon);
     }
+
+    updateWeapon(radius) {
+        if (this.weapon) this.weapon.update(radius);
+    }
+
 
     lookAt(x, y) {
         // 只控制朝向，不移动

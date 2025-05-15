@@ -3,62 +3,43 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
 import * as PIXI from 'pixi.js';
 
 const pixiContainer = ref(null);
-let app = null;
-let container = null;
-let bg = null;
-let size = 0;
+let app = {
+    pixi: null,
+    root: null,
+    bg: null,
+    radius: 0,
+    diameter: 0
+};
 
-function resizeApp() {
-    return;
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    size = Math.min(width, height);
-    if (pixiContainer.value) {
-        pixiContainer.value.style.width = width + 'px';
-        pixiContainer.value.style.height = height + 'px';
-    }
-    if (app) {
-        app.renderer.resize(width, height);
-        // container始终居中
-        if (container) {
-            container.x = width / 2;
-            container.y = height / 2;
-        }
-        // 圆半径自适应
-        if (bg) {
-            bg.clear();
-            bg.beginFill(0xffffff);
-            bg.drawCircle(0, 0, size); // 半径自适应
-            bg.endFill();
-        }
-    }
-}
+function resizeApp() {}
 
 onMounted(() => {
     const width = window.innerWidth;
     const height = window.innerHeight;
-    size = Math.min(width, height);
-    app = new PIXI.Application({
+    app.diameter = Math.min(width, height)*0.9;
+    app.radius = app.diameter / 2;
+    app.pixi = new PIXI.Application({
         width,
         height,
-        backgroundAlpha: 0 // 透明背景
+        backgroundAlpha: 0, // 透明背景
+        antialias: true, // 开启抗锯齿
     });
     if (pixiContainer.value) {
-        pixiContainer.value.appendChild(app.view);
+        pixiContainer.value.appendChild(app.pixi.view);
     }
     // 创建一个container，使其中心在画布中心
-    container = new PIXI.Container();
-    container.x = width / 2;
-    container.y = height / 2;
-    app.stage.addChild(container);
+    app.root = new PIXI.Container();
+    app.root.x = width / 2;
+    app.root.y = height / 2;
+    app.pixi.stage.addChild(app.root);
     // 画一个圆，圆心在(0,0)，即container中心
-    bg = new PIXI.Graphics();
-    bg.beginFill(0xffffff); // 白色圆
-    bg.drawCircle(0, 0, size/2); // 半径自适应
-    bg.endFill();
-    bg.x = 0;
-    bg.y = 0;
-    container.addChild(bg);
+    app.bg = new PIXI.Graphics();
+    app.bg.lineStyle(5, 0xcccccc); // 5px浅灰色描边
+    // 不填充
+    app.bg.drawCircle(0, 0, app.radius); // 半径自适应
+    app.bg.x = 0;
+    app.bg.y = 0;
+    app.root.addChild(app.bg);
     window.addEventListener('resize', resizeApp);
 });
 

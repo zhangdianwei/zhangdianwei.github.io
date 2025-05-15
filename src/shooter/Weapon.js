@@ -5,8 +5,8 @@ export default class Weapon extends PIXI.Container {
     constructor(player) {
         super();
         this.player = player;
-        this.cooldown = 0; // 帧
-        this.fireInterval = 5; // 最小间隔（帧）
+        this.fireInterval = 0.01; // 最小间隔（秒）
+        this.cooldown = 0; // 秒
         // Debug: 添加一个小红色方块
         // const debugBox = new PIXI.Graphics();
         // debugBox.beginFill(0xff0000);
@@ -25,8 +25,11 @@ export default class Weapon extends PIXI.Container {
         if (app && app.gameObjectManager) app.gameObjectManager.add(bullet);
         this.cooldown = this.fireInterval;
     }
-    update() {
-        if (this.cooldown > 0) this.cooldown--;
-        // 子弹的update由全局统一管理
+    update(deltaTime) {
+        console.log(deltaTime)
+        if (this.cooldown > 0) {
+            this.cooldown -= deltaTime;
+            if (this.cooldown < 0) this.cooldown = 0;
+        }
     }
 }

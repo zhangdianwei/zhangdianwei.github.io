@@ -91,14 +91,17 @@ onMounted(() => {
     });
     initGame();
     // 动画循环
-    app.pixi.ticker.add(() => {
+    app.pixi.ticker.add((ticker) => {
+        const deltaTime = ticker/60 // 秒
         if (app.player) {
             // 每帧都持续插值旋转到鼠标
             app.player.lookAt(app.mouse.x, app.mouse.y);
             // WSAD控制移动
             app.player.moveByKeys(app.keys, app.radius);
             // 武器冷却
-            app.player.updateWeapon(app.radius);
+            if (app.player.weapon) {
+                app.player.weapon.update(deltaTime);
+            }
             // 持续射击
             if (app.shooting && app.player.weapon) {
                 app.player.weapon.shoot();

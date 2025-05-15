@@ -34,9 +34,20 @@ export default class Player extends PIXI.Container {
         const dx = x - this.x;
         const dy = y - this.y;
         const targetAngle = Math.atan2(dy, dx);
+
+        // 计算最短角度差，保持在[-π, π]
+        let delta = targetAngle - this.angle;
+        delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
+
+        // if (Math.abs(delta) <= this.turnSpeed) {
+        //     this.angle = targetAngle;
+        // } else {
+        //     this.angle += Math.sign(delta) * this.turnSpeed;
+        // }
         this.angle = targetAngle;
+
         if (this.sprite) {
-            this.sprite.rotation = targetAngle;
+            this.sprite.rotation = this.angle;
         }
     }
 

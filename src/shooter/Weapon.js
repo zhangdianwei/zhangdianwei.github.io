@@ -2,12 +2,17 @@ import Bullet from './Bullet.js';
 import * as PIXI from 'pixi.js';
 
 export default class Weapon extends PIXI.Container {
-    constructor(player, app) {
+    constructor(player) {
         super();
         this.player = player;
-        this.app = app;
         this.cooldown = 0; // 帧
-        this.fireInterval = 10; // 最小间隔（帧）
+        this.fireInterval = 5; // 最小间隔（帧）
+        // Debug: 添加一个小红色方块
+        // const debugBox = new PIXI.Graphics();
+        // debugBox.beginFill(0xff0000);
+        // debugBox.drawRect(-5, -5, 10, 10);
+        // debugBox.endFill();
+        // this.addChild(debugBox);
     }
     shoot() {
         if (this.cooldown > 0) return;
@@ -16,7 +21,8 @@ export default class Weapon extends PIXI.Container {
         const y = this.player.y + Math.sin(angle) * 40;
         const bullet = new Bullet(x, y, angle);
         if (this.parent) this.parent.addChild(bullet);
-        if (this.app && this.app.gameObjectManager) this.app.gameObjectManager.add(bullet);
+        const app = window.shooterApp;
+        if (app && app.gameObjectManager) app.gameObjectManager.add(bullet);
         this.cooldown = this.fireInterval;
     }
     update() {

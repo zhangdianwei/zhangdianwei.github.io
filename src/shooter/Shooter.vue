@@ -45,6 +45,7 @@ onMounted(() => {
     const height = window.innerHeight;
     app.diameter = Math.min(width, height)*0.9;
     app.radius = app.diameter / 2;
+    window.shooterApp = app;
     app.pixi = new PIXI.Application({
         width,
         height,
@@ -92,7 +93,7 @@ onMounted(() => {
     // 动画循环
     app.pixi.ticker.add(() => {
         if (app.player) {
-            // 鼠标控制旋转
+            // 每帧都持续插值旋转到鼠标
             app.player.lookAt(app.mouse.x, app.mouse.y);
             // WSAD控制移动
             app.player.moveByKeys(app.keys, app.radius);

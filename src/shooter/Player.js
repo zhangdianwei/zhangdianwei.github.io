@@ -21,7 +21,7 @@ export default class Player extends PIXI.Container {
         this.x = 0;
         this.y = 0;
         this.angle = 0;
-        this.weapon = new Weapon(this, app);
+        this.weapon = new Weapon(this);
         this.addChild(this.weapon);
     }
 
@@ -31,14 +31,13 @@ export default class Player extends PIXI.Container {
 
 
     lookAt(x, y) {
-        // 只控制朝向，不移动
-        let targetAngle = Math.atan2(y - this.y, x - this.x);
-        let da = targetAngle - this.angle;
-        while (da > Math.PI) da -= Math.PI * 2;
-        while (da < -Math.PI) da += Math.PI * 2;
-        da = Math.max(-this.turnSpeed, Math.min(this.turnSpeed, da));
-        this.angle += da;
-        this.sprite.rotation = this.angle;
+        const dx = x - this.x;
+        const dy = y - this.y;
+        const targetAngle = Math.atan2(dy, dx);
+        this.angle = targetAngle;
+        if (this.sprite) {
+            this.sprite.rotation = targetAngle;
+        }
     }
 
     moveByKeys(keys, limitRadius) {

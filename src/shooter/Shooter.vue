@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import * as PIXI from 'pixi.js';
+import BgCircle from './BgCircle.js';
 
 const pixiContainer = ref(null);
 let app = {
@@ -12,6 +13,15 @@ let app = {
 };
 
 function resizeApp() {}
+
+function initGame(){
+    initBG();
+}
+function initBG(){
+    app.bg = new BgCircle();
+    app.root.addChild(app.bg);
+    app.bg.init(app);
+}
 
 onMounted(() => {
     const width = window.innerWidth;
@@ -32,15 +42,8 @@ onMounted(() => {
     app.root.x = width / 2;
     app.root.y = height / 2;
     app.pixi.stage.addChild(app.root);
-    // 画一个圆，圆心在(0,0)，即container中心
-    app.bg = new PIXI.Graphics();
-    app.bg.lineStyle(5, 0xcccccc); // 5px浅灰色描边
-    // 不填充
-    app.bg.drawCircle(0, 0, app.radius); // 半径自适应
-    app.bg.x = 0;
-    app.bg.y = 0;
-    app.root.addChild(app.bg);
     window.addEventListener('resize', resizeApp);
+    initGame();
 });
 
 onBeforeUnmount(() => {

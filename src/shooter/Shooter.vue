@@ -67,51 +67,86 @@ onMounted(() => {
     app.root.y = height / 2;
     app.pixi.stage.addChild(app.root);
     window.addEventListener('resize', resizeApp);
-    // 鼠标监听
-    app.pixi.view.addEventListener('mousemove', (e) => {
-        // 转换为以画布中心为原点的坐标
-        const rect = app.pixi.view.getBoundingClientRect();
-        app.mouse.x = e.clientX - rect.left - rect.width / 2;
-        app.mouse.y = e.clientY - rect.top - rect.height / 2;
-    });
-    app.pixi.view.addEventListener('mousedown', (e) => {
-        if (e.button === 0 && app.player && app.player.weapon) {
-            app.player.weapon.shooting = true;
-        }
-    });
-    app.pixi.view.addEventListener('mouseup', (e) => {
-        if (e.button === 0 && app.player && app.player.weapon) {
-            app.player.weapon.shooting = false;
-        }
-    });
-    // 键盘监听
-    window.addEventListener('keydown', (e) => {
-        if (['w','a','s','d'].includes(e.key.toLowerCase())) {
-            app.keys[e.key.toLowerCase()] = true;
-        }
-    });
-    window.addEventListener('keyup', (e) => {
-        if (['w','a','s','d'].includes(e.key.toLowerCase())) {
-            app.keys[e.key.toLowerCase()] = false;
-        }
-    });
-    initGame();
-    // 动画循环
-    app.pixi.ticker.add((ticker) => {
-        const deltaTime = ticker*1000/60;
-        if (app.tickManager) {
-            app.tickManager.tick(deltaTime);
-        }
-        if (app.player) {
-            app.player.lookAt(app.mouse.x, app.mouse.y);
-            app.player.moveByKeys(app.keys, app.radius);
-            // 持续射击
-            if (app.player.weapon && app.player.weapon.shooting) {
-                app.player.weapon.shoot();
+    // 显示Loading文字
+    const loadingText = new PIXI.Text('Loading...', {fontSize: 36, fill: 0xffffff});
+    loadingText.anchor.set(0.5);
+    loadingText.x = width/2;
+    loadingText.y = height/2;
+    app.pixi.stage.addChild(loadingText);
+    // 加载所有图片资源（兼容pixi v6/v7）
+    let loadImages = [
+        'shooter/ship_E.png',
+        'shooter/enemy_B.png',
+        'shooter/player_blood_bg.png',
+        'shooter/player_blood_bar.png',
+        // 如有其它图片请在此补充
+    ];
+    if (PIXI.Loader && PIXI.Loader.shared) {
+        // pixi.js v6
+        const loader = PIXI.Loader.shared;
+        loadImages.forEach(img => loader.add(img));
+        loader.load(() => {
+            app.pixi.stage.removeChild(loadingText);
+            afterAssetsLoaded();
+        });
+    } else if (PIXI.Assets && PIXI.Assets.load) {
+        // pixi.js v7+
+        PIXI.Assets.load(loadImages).then(() => {
+            app.pixi.stage.removeChild(loadingText);
+            afterAssetsLoaded();
+        });
+    } else {
+        // fallback
+        app.pixi.stage.removeChild(loadingText);
+        afterAssetsLoaded();
+    }
+    function afterAssetsLoaded() {
+        // 鼠标监听
+        app.pixi.view.addEventListener('mousemove', (e) => {
+            const rect = app.pixi.view.getBoundingClientRect();
+            app.mouse.x = e.clientX - rect.left - rect.width / 2;
+            app.mouse.y = e.clientY - rect.top - rect.height / 2;
+        });
+        app.pixi.view.addEventListener('mousedown', (e) => {
+            if (e.button === 0 && app.player && app.player.weapon) {
+                app.player.weapon.shooting = true;
             }
-        }
-        app.gameObjectManager.updateAll();
-    });
+        });
+        app.pixi.view.addEventListener('mouseup', (e) => {
+            if (e.button === 0 && app.player && app.player.weapon) {
+                app.player.weapon.shooting = false;
+            }
+        });
+        // 键盘监听
+        window.addEventListener('keydown', (e) => {
+            if (['w','a','s','d'].includes(e.key.toLowerCase())) {
+                app.keys[e.key.toLowerCase()] = true;
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (['w','a','s','d'].includes(e.key.toLowerCase())) {
+                app.keys[e.key.toLowerCase()] = false;
+            }
+        });
+        initGame();
+        // 动画循环
+        app.pixi.ticker.add((ticker) => {
+            const deltaTime = ticker*1000/60;
+            if (app.tickManager) {
+                app.tickManager.tick(deltaTime);
+            }
+            if (app.player) {
+                app.player.lookAt(app.mouse.x, app.mouse.y);
+                app.player.moveByKeys(app.keys, app.radius);
+                // 持续射击
+                if (app.player.weapon && app.player.weapon.shooting) {
+                    app.player.weapon.shoot();
+                }
+            }
+            app.gameObjectManager.updateAll();
+        });
+    }
+
 });
 
 onBeforeUnmount(() => {

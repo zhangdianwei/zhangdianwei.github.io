@@ -14,6 +14,13 @@ export default class Player extends ShooterObjBase {
         this.radius = 0; // 活动范围
         this.weapon = null;
         this.ShowLayer = ShowLayer.PLAYER;
+        // 血量属性
+        this.hp = 100;
+        this.maxHp = 100;
+        // 血条容器和精灵
+        this.bloodBarContainer = null;
+        this.bloodBarBg = null;
+        this.bloodBar = null;
     }
 
     get collisionLayer() {
@@ -39,15 +46,34 @@ export default class Player extends ShooterObjBase {
         this.sprite = PIXI.Sprite.from('shooter/ship_E.png');
         this.sprite.anchor.set(0.5);
         this.addChild(this.sprite);
+        // 创建血条容器和精灵
+        this.bloodBarContainer = new PIXI.Container();
+        this.bloodBarBg = PIXI.Sprite.from('shooter/player_blood_bg.png');
+        this.bloodBar = PIXI.Sprite.from('shooter/player_blood_bar.png');
+        this.bloodBarBg.anchor.set(0, 1.0);
+        this.bloodBar.anchor.set(0, 1.0);
+        this.bloodBarContainer.addChild(this.bloodBarBg);
+        this.bloodBarContainer.addChild(this.bloodBar);
+        this.bloodBarContainer.x = -this.sprite.width/2-5;
+        this.bloodBarContainer.y = -this.bloodBar.width/2;
+        this.bloodBarContainer.rotation = Math.PI/2;
+        this.sprite.addChild(this.bloodBarContainer);
         this.x = 0;
         this.y = 0;
         this.angle = 0;
         this.weapon = new WeaponRifle(this);
         this.addChild(this.weapon);
+        this.updateBloodBar();
     }
 
     updateWeapon(radius) {
         if (this.weapon) this.weapon.update(radius);
+    }
+
+    updateBloodBar() {
+        if (!this.bloodBar) return;
+        let percent = Math.max(0, Math.min(1, this.hp / this.maxHp));
+        this.bloodBar.scale.x = percent;
     }
 
 
@@ -73,6 +99,8 @@ export default class Player extends ShooterObjBase {
     }
 
     moveByKeys(keys, limitRadius) {
+        // 血条实时刷新
+        this.updateBloodBar();
         let dx = 0, dy = 0;
         if (keys.w) dy -= 1;
         if (keys.s) dy += 1;

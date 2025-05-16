@@ -45,6 +45,12 @@ export default class Enermy extends ShooterObjBase {
 
     onCollide(other){
         if(other.collisionLayer == CollisionLayer.PLAYER || other.collisionLayer == CollisionLayer.PLAYER_BULLET){
+            // 玩家被碰撞时掉血
+            if(other.collisionLayer == CollisionLayer.PLAYER && other.hp !== undefined){
+                other.hp -= 20;
+                if(other.hp < 0) other.hp = 0;
+                if(other.updateBloodBar) other.updateBloodBar();
+            }
             window.shooterApp.gameObjectManager.remove(this);
         }
     }

@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import * as SAT from "sat"
 
 import { ShowLayer } from './ShooterObjBase.js';
 
@@ -46,8 +47,39 @@ export default class GameObjectManager extends PIXI.Container {
                 this.remove(obj);
             }
         }
+
+        // 检测碰撞
+        let collisions = this.getCollisions();
+        for (const [a,b] of collisions) {
+            if (typeof a.onCollide === 'function') a.onCollide(b);
+            if (typeof b.onCollide === 'function') b.onCollide(a);
+        }
     }
-    getAll() {
-        return this.objects;
+
+    // 检查所有对象的两两碰撞，返回碰撞对数组，并调用 onCollide
+    getCollisions() {
+        const collisions = [];
+        const objs = this.objects;
+        for (let i = 0; i < objs.length; i++) {
+            for (let j = i + 1; j < objs.length; j++) {
+                const a = objs[i];
+                const b = objs[j];
+                // SAT.js 碰撞检测（默认圆形，可扩展）
+                const colliderA = a.getCollider && a.getCollider();
+                const colliderB = b.getCollider && b.getCollider();
+                let collided = false;
+                if (colliderA && colliderB && colliderA.constructor && colliderB.constructor) {
+                    if (colliderA.constructor.name === 'Circle' && colliderB.constructor.name === 'Circle') {
+                        collided = SAT.testCircleCircle(colliderA, colliderB);
+                    }
+                    // 可扩展多边形等
+                }
+                if (collided) {
+                    collisions.push([a, b]);
+                }
+            }
+        }
+        return collisions;
     }
 }
+

@@ -7,6 +7,7 @@ export const CollisionLayer = Object.freeze({
     PLAYER_BULLET: 2,
     ENEMY: 3,
     ENEMY_BULLET: 4,
+    BGCIRCLE: 5,
 });
 
 export const ShowLayer = Object.freeze({
@@ -48,7 +49,7 @@ export default class ShooterObjBase extends PIXI.Container {
 
     // 碰撞回调，子类可重写
     onCollide(other) {
-        console.log("onCollide", this, other)
+        // console.log("onCollide", this, other)
     }
 
     // 显示层

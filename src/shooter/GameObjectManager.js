@@ -5,12 +5,13 @@ import { ShowLayer, CollisionLayer } from './ShooterObjBase.js';
 
 // 碰撞矩阵：collisionMatrix[A][B]为true时才检测A、B碰撞
 export const collisionMatrix = [
-    // ALL, PLAYER, PLAYER_BULLET, ENEMY, ENEMY_BULLET
-    /*ALL*/          [true, true,  true,  true,  true],
-    /*PLAYER*/       [true, false, false, true,  true ],
-    /*PLAYER_BULLET*/[true, false, false, true,  false],
-    /*ENEMY*/        [true, true,  true,  false, false],
-    /*ENEMY_BULLET*/ [true, true,  false, false, false]
+    // ALL, PLAYER, PLAYER_BULLET, ENEMY, ENEMY_BULLET, BGCIRCLE
+    /*ALL*/          [true, true,  true,  true,  true,  true],
+    /*PLAYER*/       [true, false, false, true,  true,  true ],
+    /*PLAYER_BULLET*/[true, false, false, true,  false, true ],
+    /*ENEMY*/        [true, true,  true,  false, false, true ],
+    /*ENEMY_BULLET*/ [true, true,  false, false, false, false],
+    /*BGCIRCLE*/     [true, true, true, true, false, false]
 ];
 
 export default class GameObjectManager extends PIXI.Container {
@@ -55,6 +56,7 @@ export default class GameObjectManager extends PIXI.Container {
             const obj = this.objects[i];
             if (obj.isOutOfCircle(window.shooterApp.radius)) {
                 window.shooterApp.bg.onCollide(obj);
+                obj.onCollide(window.shooterApp.bg);
                 this.remove(obj);
             }
         }

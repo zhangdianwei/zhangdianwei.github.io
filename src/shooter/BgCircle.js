@@ -11,6 +11,10 @@ export default class BgCircle extends ShooterObjBase {
         this.stars = [];
     }
 
+    get collisionLayer(){
+        return CollisionLayer.BGCIRCLE;
+    }
+
     onCollide(obj){
         // 如果碰撞对象是玩家子弹，则shake
         if (obj.collisionLayer === CollisionLayer.PLAYER_BULLET) {

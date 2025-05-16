@@ -26,6 +26,10 @@ export default class Player extends ShooterObjBase {
             let r = this.sprite.width / 4;
             this.colObj = new SAT.Circle(new SAT.Vector(this.x, this.y), r);
         }
+        if (this.colObj) {
+            this.colObj.pos.x = this.x;
+            this.colObj.pos.y = this.y;
+        }
         return this.colObj;
     }
 

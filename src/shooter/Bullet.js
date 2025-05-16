@@ -40,8 +40,9 @@ export default class Bullet extends ShooterObjBase {
         const burst = new StarBurst(this.x, this.y);
         window.shooterApp.gameObjectManager.add(burst);
 
-        // 只有碰撞到BgCircle时才移除子弹
-        if (other && other.collisionLayer === CollisionLayer.BGCIRCLE) {
+        // 只有碰撞到指定layer才移除子弹
+        const removeOnLayers = [CollisionLayer.BGCIRCLE, CollisionLayer.ENERMY];
+        if (other && removeOnLayers.includes(other.collisionLayer)) {
             window.shooterApp.gameObjectManager.remove(this);
         }
     }

@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import ShooterObjBase, { ShowLayer } from './ShooterObjBase.js';
-import RifleWeapon from './RifleWeapon.js';
+import WeaponRifle from './WeaponRifle.js';
 
 export default class Player extends ShooterObjBase {
     constructor() {
@@ -23,7 +23,7 @@ export default class Player extends ShooterObjBase {
         this.x = 0;
         this.y = 0;
         this.angle = 0;
-        this.weapon = new RifleWeapon(this);
+        this.weapon = new WeaponRifle(this);
         this.addChild(this.weapon);
     }
 

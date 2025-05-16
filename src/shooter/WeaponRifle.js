@@ -2,14 +2,14 @@ import Bullet from './Bullet.js';
 import * as PIXI from 'pixi.js';
 import ShooterObjBase, { ShowLayer } from './ShooterObjBase.js';
 
-export default class RifleWeapon extends ShooterObjBase {
+export default class WeaponRifle extends ShooterObjBase {
     constructor(player) {
         super();
         this.shooting = false;
         this.player = player;
         this._tickManager = window.shooterApp.tickManager;
         this._tickManager.register(this.update.bind(this), this);
-        this.fireInterval = 1000; // 最小间隔（毫秒）
+        this.fireInterval = 100; // 最小间隔（毫秒）
         this.cooldown = 0; // 毫秒
         // Debug: 可选调试内容
         // const debugBox = new PIXI.Graphics();

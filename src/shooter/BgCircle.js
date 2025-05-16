@@ -46,8 +46,6 @@ export default class BgCircle extends ShooterObjBase {
         const y = Math.random() * height - height/2;
         const scale = Math.random() * 0.4 + 0.2;
         const baseAlpha = Math.random() * 0.25 + 0.05; // 0.05~0.3，整体更暗
-        const phase = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 0.1 + 0.08;
         const star = PIXI.Sprite.from('shooter/star_small.png');
         star.x = x;
         star.y = y;
@@ -68,7 +66,7 @@ export default class BgCircle extends ShooterObjBase {
     }
 
     update(delta) {
-        this._updateStars(delta);
+        // this._updateStars(delta);
         this._updateShake(delta);
     }
 

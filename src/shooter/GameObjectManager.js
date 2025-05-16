@@ -57,7 +57,6 @@ export default class GameObjectManager extends PIXI.Container {
             if (obj.isOutOfCircle(window.shooterApp.radius)) {
                 window.shooterApp.bg.onCollide(obj);
                 obj.onCollide(window.shooterApp.bg);
-                this.remove(obj);
             }
         }
 

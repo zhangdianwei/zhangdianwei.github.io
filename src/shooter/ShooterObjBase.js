@@ -24,6 +24,7 @@ export default class ShooterObjBase extends PIXI.Container {
         super();
 
         this.ShowLayer = ShowLayer.BG; // 默认背景层，子类应重写
+        this.circleAutoRemove = true;
 
         this.on('added', this.onAdd.bind(this));
         this.on('removed', this.onRemoved.bind(this));

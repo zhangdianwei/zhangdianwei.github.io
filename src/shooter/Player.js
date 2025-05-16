@@ -1,8 +1,8 @@
 import * as PIXI from 'pixi.js';
-
+import ShooterObjBase, { ShowLayer } from './ShooterObjBase.js';
 import RifleWeapon from './RifleWeapon.js';
 
-export default class Player extends PIXI.Container {
+export default class Player extends ShooterObjBase {
     constructor() {
         super();
         this.sprite = null;
@@ -11,10 +11,12 @@ export default class Player extends PIXI.Container {
         this.angle = 0; // 当前朝向
         this.radius = 0; // 活动范围
         this.weapon = null;
+        this.ShowLayer = ShowLayer.PLAYER;
     }
 
-    async init(app) {
-        this.radius = app.radius;
+    async init() {
+        this.radius = window.shooterApp.radius;
+        this._tickManager = window.shooterApp.tickManager;
         this.sprite = PIXI.Sprite.from('shooter/ship_E.png');
         this.sprite.anchor.set(0.5);
         this.addChild(this.sprite);
@@ -23,6 +25,15 @@ export default class Player extends PIXI.Container {
         this.angle = 0;
         this.weapon = new RifleWeapon(this);
         this.addChild(this.weapon);
+    }
+
+    onDestroy(options) {
+        if (this.weapon && typeof this.weapon.onDestroy === 'function') {
+            this.weapon.onDestroy(options);
+        }
+        if (super.onDestroy) {
+            super.onDestroy(options);
+        }
     }
 
     updateWeapon(radius) {

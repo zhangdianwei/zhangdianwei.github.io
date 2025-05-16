@@ -4,10 +4,12 @@ import * as PIXI from 'pixi.js';
 import BgCircle from './BgCircle.js';
 import Player from './Player.js';
 import GameObjectManager from './GameObjectManager.js';
+import TickManager from './TickManager.js';
 
 const pixiContainer = ref(null);
 let app = {
     pixi: null,
+    tickManager: null,
     root: null,
     bg: null,
     radius: 0,
@@ -21,23 +23,24 @@ let app = {
 function resizeApp() {}
 
 function initGame(){
+    app.tickManager = new TickManager();
     initGameObjectManager();
     initBG();
     initPlayer();
 }
 function initGameObjectManager(){
-    app.gameObjectManager = new GameObjectManager(app);
+    app.gameObjectManager = new GameObjectManager();
     app.root.addChild(app.gameObjectManager);
 }
 function initBG(){
     app.bg = new BgCircle();
     app.root.addChild(app.bg);
-    app.bg.init(app);
+    app.bg.init();
 }
 function initPlayer() {
     app.player = new Player();
     app.root.addChild(app.player);
-    app.player.init(app);
+    app.player.init();
 }
 
 onMounted(() => {
@@ -69,13 +72,13 @@ onMounted(() => {
         app.mouse.y = e.clientY - rect.top - rect.height / 2;
     });
     app.pixi.view.addEventListener('mousedown', (e) => {
-        if (e.button === 0) {
-            app.shooting = true;
+        if (e.button === 0 && app.player && app.player.weapon) {
+            app.player.weapon.shooting = true;
         }
     });
     app.pixi.view.addEventListener('mouseup', (e) => {
-        if (e.button === 0) {
-            app.shooting = false;
+        if (e.button === 0 && app.player && app.player.weapon) {
+            app.player.weapon.shooting = false;
         }
     });
     // 键盘监听
@@ -92,32 +95,26 @@ onMounted(() => {
     initGame();
     // 动画循环
     app.pixi.ticker.add((ticker) => {
-        const deltaTime = ticker*1000/60
+        const deltaTime = ticker*1000/60;
+        if (app.tickManager) {
+            app.tickManager.tick(deltaTime);
+        }
         if (app.player) {
-            // 每帧都持续插值旋转到鼠标
             app.player.lookAt(app.mouse.x, app.mouse.y);
-            // WSAD控制移动
             app.player.moveByKeys(app.keys, app.radius);
-            // 武器冷却
-            if (app.player.weapon) {
-                app.player.weapon.update(deltaTime);
-            }
             // 持续射击
-            if (app.shooting && app.player.weapon) {
+            if (app.player.weapon && app.player.weapon.shooting) {
                 app.player.weapon.shoot();
             }
         }
-        // 统一 update 所有 gameObjects
-        if (app.gameObjectManager) {
-            app.gameObjectManager.updateAll();
-        }
+        app.gameObjectManager.updateAll();
     });
 });
 
 onBeforeUnmount(() => {
     window.removeEventListener('resize', resizeApp);
     if (app) {
-        app.destroy(true, { children: true });
+        app.pixi.destroy(true, { children: true });
         app = null;
     }
 });

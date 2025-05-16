@@ -1,12 +1,10 @@
 import * as PIXI from 'pixi.js';
+import ShooterObjBase, { ShowLayer } from './ShooterObjBase.js';
 
-export default class Bullet extends PIXI.Graphics {
+export default class Bullet extends ShooterObjBase {
     constructor(x, y, angle, speed = 10) {
         super();
-        this.beginFill(0xffe066);
-        this.lineStyle(2, 0xffa500);
-        this.drawCircle(0, 0, 7);
-        this.endFill();
+        this.ShowLayer = ShowLayer.BULLET;
         this.x = x;
         this.y = y;
         this.angle = angle;
@@ -14,12 +12,18 @@ export default class Bullet extends PIXI.Graphics {
         this.vx = Math.cos(angle) * speed;
         this.vy = Math.sin(angle) * speed;
         this.alive = true;
+        this.sprite = PIXI.Sprite.from('shooter/bullet1.png');
+        this.sprite.anchor.set(0.5);
+        this.addChild(this.sprite);
+        this._tickManager = window.shooterApp.tickManager;
+        if (this._tickManager) {
+            this._tickUpdate = this.update.bind(this);
+            this._tickManager.register(this._tickUpdate);
+        }
     }
     update() {
         this.x += this.vx;
         this.y += this.vy;
     }
-    isOutOfCircle(radius) {
-        return (this.x * this.x + this.y * this.y) > radius * radius;
-    }
+
 }

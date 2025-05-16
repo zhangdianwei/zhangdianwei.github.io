@@ -7,8 +7,8 @@ export default class BgCircle extends PIXI.Container {
         this.addChild(this.graphics);
     }
 
-    init(app) {
-        this.radius = app.radius;
+    init() {
+        this.radius = window.shooterApp.radius;
         this.lineWidth = 5;
         this.lineColor = 0xcccccc;
         this.graphics.clear();

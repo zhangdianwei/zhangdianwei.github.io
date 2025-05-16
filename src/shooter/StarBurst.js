@@ -22,10 +22,10 @@ export default class StarBurst extends ShooterObjBase {
         this.x = x;
         this.y = y;
         this.ShowLayer = ShowLayer.EFFECT;
-        const numParticles = options.numParticles || 18;
-        const fade = options.fade || 0.018;
-        // 随机亮色，确保不超过0xFFFFFF
-        const color = options.color || ((0xffff99 + Math.floor(Math.random()*0x100)) & 0xFFFFFF);
+        const numParticles = options.numParticles || 2;
+        const fade = options.fade || 0.05;
+        // 统一亮黄色
+        const color = options.color || 0xffff99;
         const spikes = options.spikes || 5;
         // 放大星星尺寸
         const outerRadius = options.outerRadius || (4 + Math.random()*3);
@@ -60,6 +60,7 @@ export default class StarBurst extends ShooterObjBase {
     }
 
     _onTick(delta) {
+        delta /= 10;
         // 统一更新所有粒子
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
@@ -77,7 +78,4 @@ export default class StarBurst extends ShooterObjBase {
         }
     }
 
-    // isOutOfCircle(radius) {
-    //     return false;
-    // }
 }

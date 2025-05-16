@@ -37,11 +37,11 @@ export default class Bullet extends ShooterObjBase {
 
     // 被碰撞时生成星星粒子
     onCollide(other) {
-        const burst = new StarBurst(this.x, this.y, { numParticles: 8, fade: 0.03 });
+        const burst = new StarBurst(this.x, this.y);
         window.shooterApp.gameObjectManager.add(burst);
 
         // 只有碰撞到BgCircle时才移除子弹
-        if (other && other.constructor && other.constructor.name === 'BgCircle') {
+        if (other && other.collisionLayer === CollisionLayer.BGCIRCLE) {
             window.shooterApp.gameObjectManager.remove(this);
         }
     }

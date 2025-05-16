@@ -13,12 +13,15 @@ export default class ShooterObjBase extends PIXI.Container {
     constructor() {
         super();
         this.ShowLayer = ShowLayer.BG; // 默认背景层，子类应重写
+
+        this.on('added', this.onAdd.bind(this));
+        this.on('removed', this.onRemoved.bind(this));
     }
 
     onAdd(){
-
     }
-    onDestroy(){
+    onRemoved(oldParent){
+        window.shooterApp.tickManager.unregisterByObj(this);
     }
 
     // 显示层

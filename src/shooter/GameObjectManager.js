@@ -25,7 +25,6 @@ export default class GameObjectManager extends PIXI.Container {
             } else if (obj instanceof PIXI.DisplayObject && obj.parent !== this) {
                 this.addChild(obj);
             }
-            obj.onAdd();
         }
     }
     remove(obj) {
@@ -37,7 +36,6 @@ export default class GameObjectManager extends PIXI.Container {
                 if (obj.parent === layer) layer.removeChild(obj);
             }
             if (obj.parent === this) this.removeChild(obj);
-            obj.onDestroy();
         }
     }
     updateAll() {

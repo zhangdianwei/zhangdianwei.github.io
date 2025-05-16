@@ -1,14 +1,15 @@
 import Bullet from './Bullet.js';
 import * as PIXI from 'pixi.js';
+import ShooterObjBase, { ShowLayer } from './ShooterObjBase.js';
 
-export default class RifleWeapon extends PIXI.Container {
+export default class RifleWeapon extends ShooterObjBase {
     constructor(player) {
         super();
         this.shooting = false;
         this.player = player;
         this._tickManager = window.shooterApp.tickManager;
-        this._tickManager.register(this.update.bind(this));
-        this.fireInterval = 100; // 最小间隔（毫秒）
+        this._tickManager.register(this.update.bind(this), this);
+        this.fireInterval = 1000; // 最小间隔（毫秒）
         this.cooldown = 0; // 毫秒
         // Debug: 可选调试内容
         // const debugBox = new PIXI.Graphics();
@@ -23,7 +24,6 @@ export default class RifleWeapon extends PIXI.Container {
         const x = this.player.x + Math.cos(angle) * 40;
         const y = this.player.y + Math.sin(angle) * 40;
         const bullet = new Bullet(x, y, angle);
-        if (this.parent) this.parent.addChild(bullet);
         window.shooterApp.gameObjectManager.add(bullet);
         this.cooldown = this.fireInterval;
     }

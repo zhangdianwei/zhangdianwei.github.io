@@ -27,15 +27,6 @@ export default class Player extends ShooterObjBase {
         this.addChild(this.weapon);
     }
 
-    onDestroy(options) {
-        if (this.weapon && typeof this.weapon.onDestroy === 'function') {
-            this.weapon.onDestroy(options);
-        }
-        if (super.onDestroy) {
-            super.onDestroy(options);
-        }
-    }
-
     updateWeapon(radius) {
         if (this.weapon) this.weapon.update(radius);
     }

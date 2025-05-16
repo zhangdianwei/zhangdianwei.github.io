@@ -18,7 +18,7 @@ export default class Bullet extends ShooterObjBase {
         this._tickManager = window.shooterApp.tickManager;
         if (this._tickManager) {
             this._tickUpdate = this.update.bind(this);
-            this._tickManager.register(this._tickUpdate);
+            this._tickManager.register(this._tickUpdate, this);
         }
     }
     update() {

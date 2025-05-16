@@ -7,8 +7,6 @@ export default class WeaponRifle extends ShooterObjBase {
         super();
         this.shooting = false;
         this.player = player;
-        this._tickManager = window.shooterApp.tickManager;
-        this._tickManager.register(this.update.bind(this), this);
         this.fireInterval = 100; // 最小间隔（毫秒）
         this.cooldown = 0; // 毫秒
         // Debug: 可选调试内容

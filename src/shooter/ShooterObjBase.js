@@ -19,9 +19,14 @@ export default class ShooterObjBase extends PIXI.Container {
     }
 
     onAdd(){
+        window.shooterApp.tickManager.register(this.update.bind(this), this);
     }
     onRemoved(oldParent){
         window.shooterApp.tickManager.unregisterByObj(this);
+    }
+
+    update(){
+
     }
 
     // 显示层

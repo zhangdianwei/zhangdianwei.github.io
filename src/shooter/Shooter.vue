@@ -34,12 +34,12 @@ function initGameObjectManager(){
 }
 function initBG(){
     app.bg = new BgCircle();
-    app.root.addChild(app.bg);
+    app.gameObjectManager.add(app.bg);
     app.bg.init();
 }
 function initPlayer() {
     app.player = new Player();
-    app.root.addChild(app.player);
+    app.gameObjectManager.add(app.player);
     app.player.init();
 }
 

@@ -15,11 +15,6 @@ export default class Bullet extends ShooterObjBase {
         this.sprite = PIXI.Sprite.from('shooter/bullet1.png');
         this.sprite.anchor.set(0.5);
         this.addChild(this.sprite);
-        this._tickManager = window.shooterApp.tickManager;
-        if (this._tickManager) {
-            this._tickUpdate = this.update.bind(this);
-            this._tickManager.register(this._tickUpdate, this);
-        }
     }
     update() {
         this.x += this.vx;

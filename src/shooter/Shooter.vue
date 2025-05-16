@@ -92,7 +92,7 @@ onMounted(() => {
     initGame();
     // 动画循环
     app.pixi.ticker.add((ticker) => {
-        const deltaTime = ticker/60 // 秒
+        const deltaTime = ticker*1000/60
         if (app.player) {
             // 每帧都持续插值旋转到鼠标
             app.player.lookAt(app.mouse.x, app.mouse.y);

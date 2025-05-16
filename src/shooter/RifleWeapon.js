@@ -1,11 +1,11 @@
 import Bullet from './Bullet.js';
 import * as PIXI from 'pixi.js';
 
-export default class Weapon extends PIXI.Container {
+export default class RifleWeapon extends PIXI.Container {
     constructor(player) {
         super();
         this.player = player;
-        this.fireInterval = 0.01; // 最小间隔（秒）
+        this.fireInterval = 100; // 最小间隔（毫秒）
         this.cooldown = 0; // 秒
         // Debug: 添加一个小红色方块
         // const debugBox = new PIXI.Graphics();
@@ -26,7 +26,6 @@ export default class Weapon extends PIXI.Container {
         this.cooldown = this.fireInterval;
     }
     update(deltaTime) {
-        console.log(deltaTime)
         if (this.cooldown > 0) {
             this.cooldown -= deltaTime;
             if (this.cooldown < 0) this.cooldown = 0;

@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 
-import Weapon from './Weapon.js';
+import RifleWeapon from './RifleWeapon.js';
 
 export default class Player extends PIXI.Container {
     constructor() {
@@ -21,7 +21,7 @@ export default class Player extends PIXI.Container {
         this.x = 0;
         this.y = 0;
         this.angle = 0;
-        this.weapon = new Weapon(this);
+        this.weapon = new RifleWeapon(this);
         this.addChild(this.weapon);
     }
 

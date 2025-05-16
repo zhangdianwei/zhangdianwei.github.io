@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 
 export default class Bullet extends PIXI.Graphics {
-    constructor(x, y, angle, speed = 14) {
+    constructor(x, y, angle, speed = 10) {
         super();
         this.beginFill(0xffe066);
         this.lineStyle(2, 0xffa500);

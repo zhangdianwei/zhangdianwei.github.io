@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
 import ShooterObjBase, { ShowLayer } from './ShooterObjBase.js';
+import * as SAT from "sat"
 
 import { CollisionLayer } from './ShooterObjBase.js';
 

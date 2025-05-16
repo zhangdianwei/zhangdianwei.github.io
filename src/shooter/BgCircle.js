@@ -11,19 +11,11 @@ export default class BgCircle extends ShooterObjBase {
         this.stars = [];
     }
 
-    get collisionLayer() {
-        return CollisionLayer.NONE;
-    }
-
-    // 圆环碰撞体：返回{center, rInner, rOuter}
-    getCollider() {
-        // rOuter = this.radius, rInner = this.radius - this.lineWidth
-        return {
-            type: 'annulus',
-            center: { x: this.x, y: this.y },
-            rInner: Math.max(0, (this.radius || 100) - (this.lineWidth || 5)),
-            rOuter: this.radius || 100
-        };
+    onCollide(obj){
+        // 如果碰撞对象是玩家子弹，则shake
+        if (obj.collisionLayer === CollisionLayer.PLAYER_BULLET) {
+            this.shake();
+        }
     }
 
     init() {

@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import ShooterObjBase, { ShowLayer } from './ShooterObjBase.js';
 import WeaponRifle from './WeaponRifle.js';
-
+import * as SAT from "sat"
 import { CollisionLayer } from './ShooterObjBase.js';
 
 export default class Player extends ShooterObjBase {

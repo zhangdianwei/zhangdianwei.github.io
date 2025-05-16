@@ -22,8 +22,11 @@ export default class Player extends ShooterObjBase {
 
     // 默认以自身中心和半径为碰撞体
     getCollider() {
-        const r = this.sprite ? (this.sprite.width / 2) : (this.radius || 20);
-        return new SAT.Circle(new SAT.Vector(this.x, this.y), r);
+        if(!this.colObj){
+            let r = this.sprite.width / 4;
+            this.colObj = new SAT.Circle(new SAT.Vector(this.x, this.y), r);
+        }
+        return this.colObj;
     }
 
     async init() {

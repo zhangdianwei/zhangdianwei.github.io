@@ -5,6 +5,7 @@ import BgCircle from './BgCircle.js';
 import Player from './Player.js';
 import GameObjectManager from './GameObjectManager.js';
 import TickManager from './TickManager.js';
+import EnermyManager from './EnermyManager.js';
 
 const pixiContainer = ref(null);
 let app = {
@@ -27,6 +28,8 @@ function initGame(){
     initGameObjectManager();
     initBG();
     initPlayer();
+    // 集成EnermyManager
+    app.enermyManager = new EnermyManager(app.player, app.gameObjectManager);
 }
 function initGameObjectManager(){
     app.gameObjectManager = new GameObjectManager();
@@ -113,6 +116,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     window.removeEventListener('resize', resizeApp);
+    if (app && app.enermyManager) {
+        app.enermyManager.destroy();
+    }
     if (app) {
         app.pixi.destroy(true, { children: true });
         app = null;

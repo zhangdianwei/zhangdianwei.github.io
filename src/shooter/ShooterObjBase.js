@@ -5,14 +5,14 @@ export const CollisionLayer = Object.freeze({
     ALL: 0,
     PLAYER: 1,
     PLAYER_BULLET: 2,
-    ENEMY: 3,
-    ENEMY_BULLET: 4,
+    ENERMY: 3,
+    ENERMY_BULLET: 4,
     BGCIRCLE: 5,
 });
 
 export const ShowLayer = Object.freeze({
     BG: 0,
-    ENEMY: 1,
+    ENERMY: 1,
     PLAYER: 2,
     BULLET: 3,
     EFFECT: 4,

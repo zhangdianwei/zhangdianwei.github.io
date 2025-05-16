@@ -21,7 +21,7 @@ export default class Bullet extends ShooterObjBase {
     }
 
     get collisionLayer() {
-        // 可根据实际类型返回 PLAYER_BULLET 或 ENEMY_BULLET
+        // 可根据实际类型返回 PLAYER_BULLET 或 ENERMY_BULLET
         return CollisionLayer.PLAYER_BULLET;
     }
 

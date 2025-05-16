@@ -1,12 +1,29 @@
 import * as PIXI from 'pixi.js';
 import ShooterObjBase from './ShooterObjBase.js';
 
+import { CollisionLayer } from './ShooterObjBase.js';
+
 export default class BgCircle extends ShooterObjBase {
     constructor() {
         super();
         this.graphics = new PIXI.Graphics();
         this.addChild(this.graphics);
         this.stars = [];
+    }
+
+    get collisionLayer() {
+        return CollisionLayer.NONE;
+    }
+
+    // 圆环碰撞体：返回{center, rInner, rOuter}
+    getCollider() {
+        // rOuter = this.radius, rInner = this.radius - this.lineWidth
+        return {
+            type: 'annulus',
+            center: { x: this.x, y: this.y },
+            rInner: Math.max(0, (this.radius || 100) - (this.lineWidth || 5)),
+            rOuter: this.radius || 100
+        };
     }
 
     init() {

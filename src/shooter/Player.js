@@ -2,6 +2,8 @@ import * as PIXI from 'pixi.js';
 import ShooterObjBase, { ShowLayer } from './ShooterObjBase.js';
 import WeaponRifle from './WeaponRifle.js';
 
+import { CollisionLayer } from './ShooterObjBase.js';
+
 export default class Player extends ShooterObjBase {
     constructor() {
         super();
@@ -12,6 +14,16 @@ export default class Player extends ShooterObjBase {
         this.radius = 0; // 活动范围
         this.weapon = null;
         this.ShowLayer = ShowLayer.PLAYER;
+    }
+
+    get collisionLayer() {
+        return CollisionLayer.PLAYER;
+    }
+
+    // 默认以自身中心和半径为碰撞体
+    getCollider() {
+        const r = this.sprite ? (this.sprite.width / 2) : (this.radius || 20);
+        return new SAT.Circle(new SAT.Vector(this.x, this.y), r);
     }
 
     async init() {

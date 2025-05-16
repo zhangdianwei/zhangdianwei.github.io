@@ -1,7 +1,17 @@
 import * as PIXI from 'pixi.js';
 import * as SAT from "sat"
 
-import { ShowLayer } from './ShooterObjBase.js';
+import { ShowLayer, CollisionLayer } from './ShooterObjBase.js';
+
+// 碰撞矩阵：collisionMatrix[A][B]为true时才检测A、B碰撞
+export const collisionMatrix = [
+    // ALL, PLAYER, PLAYER_BULLET, ENEMY, ENEMY_BULLET
+    /*ALL*/          [true, true,  true,  true,  true],
+    /*PLAYER*/       [true, false, false, true,  true ],
+    /*PLAYER_BULLET*/[true, false, false, true,  false],
+    /*ENEMY*/        [true, true,  true,  false, false],
+    /*ENEMY_BULLET*/ [true, true,  false, false, false]
+];
 
 export default class GameObjectManager extends PIXI.Container {
     constructor() {
@@ -64,6 +74,8 @@ export default class GameObjectManager extends PIXI.Container {
             for (let j = i + 1; j < objs.length; j++) {
                 const a = objs[i];
                 const b = objs[j];
+                // 只检测配置允许的层对
+                if (!collisionMatrix[a.collisionLayer]?.[b.collisionLayer]) continue;
                 // SAT.js 碰撞检测（默认圆形，可扩展）
                 const colliderA = a.getCollider && a.getCollider();
                 const colliderB = b.getCollider && b.getCollider();

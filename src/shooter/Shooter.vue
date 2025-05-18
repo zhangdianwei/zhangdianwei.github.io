@@ -47,6 +47,15 @@ function initPlayer() {
 }
 
 onMounted(() => {
+    // 提供全局UI刷新方法
+    window.shooterApp = app;
+    window.shooterApp.updatePlayerStatusUI = function(level, exp, expToLevel) {
+      const elLevel = document.getElementById('player-level');
+      const elExp = document.getElementById('player-exp');
+      if (elLevel) elLevel.textContent = `Lv.${level}`;
+      if (elExp) elExp.textContent = `EXP: ${exp}/${expToLevel}`;
+    }
+
     const width = window.innerWidth;
     const height = window.innerHeight;
     app.diameter = Math.min(width, height)*0.9;
@@ -163,6 +172,10 @@ onBeforeUnmount(() => {
 
 <template>
     <div ref="pixiContainer" class="pixi-full"></div>
+    <div id="player-status-ui" style="position:fixed;top:16px;right:24px;z-index:10;color:#fff;font-size:18px;font-family:monospace;text-align:right;text-shadow:0 1px 4px #222;pointer-events:none;">
+      <div id="player-level">Lv.1</div>
+      <div id="player-exp">EXP: 0/100</div>
+    </div>
 </template>
 
 <style scoped>

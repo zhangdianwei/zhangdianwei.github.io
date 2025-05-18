@@ -1,10 +1,16 @@
 import * as PIXI from 'pixi.js';
 import ShooterObjBase, { ShowLayer } from './ShooterObjBase.js';
+import PlayerLevelData from './PlayerLevelData.js';
 import WeaponRifle from './WeaponRifle.js';
 import * as SAT from "sat"
 import { CollisionLayer } from './ShooterObjBase.js';
 
 export default class Player extends ShooterObjBase {
+    // 经验与等级相关属性
+    exp = 0;
+    level = 1;
+    expToLevel = 100;
+
     constructor() {
         super();
         this.sprite = null;
@@ -14,9 +20,14 @@ export default class Player extends ShooterObjBase {
         this.radius = 0; // 活动范围
         this.weapon = null;
         this.ShowLayer = ShowLayer.PLAYER;
-        // 血量属性
-        this.hp = 100;
-        this.maxHp = 100;
+        // 经验和等级初始化
+        this.level = 1;
+        this.exp = 0;
+        // 属性从数据类获取
+        const levelData = PlayerLevelData.getLevelData(this.level);
+        this.maxHp = levelData.maxHp;
+        this.hp = this.maxHp;
+        this.expToLevel = levelData.expToLevel;
         // 血条容器和精灵
         this.bloodBarContainer = null;
         this.bloodBarBg = null;
@@ -41,6 +52,14 @@ export default class Player extends ShooterObjBase {
     }
 
     async init() {
+        // 经验和属性初始化
+        this.level = 1;
+        this.exp = 0;
+        const levelData = PlayerLevelData.getLevelData(this.level);
+        this.maxHp = levelData.maxHp;
+        this.hp = this.maxHp;
+        this.expToLevel = levelData.expToLevel;
+
         this.radius = window.shooterApp.radius;
         this._tickManager = window.shooterApp.tickManager;
         this.sprite = PIXI.Sprite.from('shooter/ship_E.png');
@@ -58,12 +77,45 @@ export default class Player extends ShooterObjBase {
         this.bloodBarContainer.y = -this.bloodBar.width/2;
         this.bloodBarContainer.rotation = Math.PI/2;
         this.sprite.addChild(this.bloodBarContainer);
+
         this.x = 0;
         this.y = 0;
         this.angle = 0;
         this.weapon = new WeaponRifle(this);
         this.addChild(this.weapon);
         this.updateBloodBar();
+
+    }
+
+    // 增加经验，满则升级
+    addExp(amount) {
+        this.exp += amount;
+        while (this.exp >= this.expToLevel) {
+            this.exp -= this.expToLevel;
+            this.levelUp();
+        }
+
+        if (window.shooterApp && window.shooterApp.updatePlayerStatusUI) {
+            window.shooterApp.updatePlayerStatusUI(this.level, this.exp, this.expToLevel);
+        }
+    }
+
+    // 升级后提升血量和武器威力
+    levelUp() {
+        this.level += 1;
+        // 属性全部从数据类获取
+        const levelData = PlayerLevelData.getLevelData(this.level);
+        this.maxHp = levelData.maxHp;
+        this.hp = this.maxHp;
+        this.expToLevel = levelData.expToLevel;
+        if (this.weapon && typeof this.weapon.levelUp === 'function') {
+            this.weapon.levelUp(levelData);
+        }
+        // 可加特效/提示
+
+        if (window.shooterApp && window.shooterApp.updatePlayerStatusUI) {
+            window.shooterApp.updatePlayerStatusUI(this.level, this.exp, this.expToLevel);
+        }
     }
 
     updateWeapon(radius) {
@@ -76,7 +128,6 @@ export default class Player extends ShooterObjBase {
         this.bloodBar.scale.x = percent;
     }
 
-
     lookAt(x, y) {
         const dx = x - this.x;
         const dy = y - this.y;
@@ -86,7 +137,6 @@ export default class Player extends ShooterObjBase {
         let delta = targetAngle - this.angle;
         delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
 
-        // if (Math.abs(delta) <= this.turnSpeed) {
         //     this.angle = targetAngle;
         // } else {
         //     this.angle += Math.sign(delta) * this.turnSpeed;

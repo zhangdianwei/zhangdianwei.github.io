@@ -3,11 +3,15 @@ import * as PIXI from 'pixi.js';
 import ShooterObjBase, { ShowLayer } from './ShooterObjBase.js';
 
 export default class WeaponRifle extends ShooterObjBase {
+    level = 1;
+
     constructor(player) {
         super();
+        this.level = 1;
         this.shooting = false;
         this.player = player;
         this.fireInterval = 100; // 最小间隔（毫秒）
+
         this.cooldown = 0; // 毫秒
         // Debug: 可选调试内容
         // const debugBox = new PIXI.Graphics();
@@ -16,6 +20,14 @@ export default class WeaponRifle extends ShooterObjBase {
         // debugBox.endFill();
         // this.addChild(debugBox);
     }
+
+    // 升级武器，提升射速
+    levelUp() {
+        this.level += 1;
+        this.fireInterval = Math.max(30, Math.floor(this.fireInterval * 0.85)); // 射速提升，最小间隔不低于30ms
+        // 可加其它升级特效
+    }
+
     shoot() {
         if (this.cooldown > 0) return;
         const angle = this.player.angle;

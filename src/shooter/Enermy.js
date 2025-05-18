@@ -7,7 +7,7 @@ export default class Enermy extends ShooterObjBase {
     constructor() {
         super();
         this.sprite = null;
-        this.speed = 4; // 敌人速度可自定义
+        this.speed = 2; // 敌人速度可自定义，已减慢
         this.angle = 0;
         this.radius = 0;
         this.ShowLayer = ShowLayer.ENERMY;
@@ -50,6 +50,10 @@ export default class Enermy extends ShooterObjBase {
                 other.hp -= 20;
                 if(other.hp < 0) other.hp = 0;
                 if(other.updateBloodBar) other.updateBloodBar();
+            }
+            // 增加经验：只有被玩家子弹击败时
+            if(other.collisionLayer == CollisionLayer.PLAYER_BULLET && window.shooterApp.player && typeof window.shooterApp.player.addExp === 'function'){
+                window.shooterApp.player.addExp(10); // 每击落一架敌机加10点经验
             }
             window.shooterApp.gameObjectManager.remove(this);
         }

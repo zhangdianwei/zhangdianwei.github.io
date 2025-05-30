@@ -62,6 +62,9 @@ export default class GameObjectManager extends PIXI.Container {
 
         // 检测碰撞
         let collisions = this.getCollisions();
+        if (collisions.length > 0) {
+            console.log('collisions', collisions);
+        }
         for (const [a,b] of collisions) {
             if (typeof a.onCollide === 'function') a.onCollide(b);
             if (typeof b.onCollide === 'function') b.onCollide(a);

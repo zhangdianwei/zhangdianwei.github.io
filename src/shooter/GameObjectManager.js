@@ -62,9 +62,7 @@ export default class GameObjectManager extends PIXI.Container {
 
         // 检测碰撞
         let collisions = this.getCollisions();
-        if (collisions.length > 0) {
-            console.log('collisions', collisions);
-        }
+        console.log('collisions', collisions);
         for (const [a,b] of collisions) {
             if (typeof a.onCollide === 'function') a.onCollide(b);
             if (typeof b.onCollide === 'function') b.onCollide(a);
@@ -84,13 +82,16 @@ export default class GameObjectManager extends PIXI.Container {
                 // SAT.js 碰撞检测（默认圆形，可扩展）
                 const colliderA = a.getCollider && a.getCollider();
                 const colliderB = b.getCollider && b.getCollider();
-                let collided = false;
+                let collided = null;
+                
                 if (colliderA && colliderB && colliderA.constructor && colliderB.constructor) {
                     if (colliderA.constructor.name === 'Circle' && colliderB.constructor.name === 'Circle') {
                         collided = SAT.testCircleCircle(colliderA, colliderB);
                     }
                     // 可扩展多边形等
                 }
+                console.log('collider', a, b, colliderA, colliderB, collided);
+
                 if (collided) {
                     collisions.push([a, b]);
                 }

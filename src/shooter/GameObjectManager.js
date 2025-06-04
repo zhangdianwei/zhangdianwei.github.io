@@ -84,13 +84,13 @@ export default class GameObjectManager extends PIXI.Container {
                 const colliderB = b.getCollider && b.getCollider();
                 let collided = null;
                 
-                if (colliderA && colliderB && colliderA.constructor && colliderB.constructor) {
-                    if (colliderA.constructor.name === 'Circle' && colliderB.constructor.name === 'Circle') {
+                if (colliderA && colliderB) {
+                    if (colliderA instanceof SAT.Circle && colliderB instanceof SAT.Circle) {
                         collided = SAT.testCircleCircle(colliderA, colliderB);
                     }
                     // 可扩展多边形等
                 }
-                console.log('collider', a, b, colliderA, colliderB, collided);
+                console.log('collider', colliderA instanceof SAT.Circle, collided);
 
                 if (collided) {
                     collisions.push([a, b]);

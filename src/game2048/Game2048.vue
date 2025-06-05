@@ -7,15 +7,22 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import * as PIXI from 'pixi.js';
 import BgCircle from './BgCircle.js';
 import { GameApp } from './GameApp.js';
-import Player from './Player.js'; // Import the Player class
+import PlayerSnake from './PlayerSnake.js'; // Import the PlayerSnake class
 
 const pixiContainer = ref(null);
 let app;
 let bgCircleInstance = null;
 let rootContainer;
-let playerInstance = null; // Declare playerInstance
+let playerSnakeInstance = null; // Declare playerSnakeInstance
 const gameApp = GameApp.instance;
 
+const handleKeyDown = (event) => {
+    if (event.code === 'Space') {
+        if (playerSnakeInstance && typeof playerSnakeInstance.grow === 'function') {
+            playerSnakeInstance.grow(); // Default value for new cube is 2
+        }
+    }
+};
 
 
 const handleResize = () => {
@@ -67,33 +74,42 @@ onMounted(() => {
         gameApp.bgCircle = bgCircleInstance;
 
         // Create Player instance
-        playerInstance = new Player();
-        rootContainer.addChild(playerInstance);
+        playerSnakeInstance = new PlayerSnake(); // Uses default initialValue=2, segmentLength=30
+        rootContainer.addChild(playerSnakeInstance);
 
         // Add update functions to PIXI ticker
         if (bgCircleInstance && typeof bgCircleInstance.update === 'function') {
             app.ticker.add(bgCircleInstance.update, bgCircleInstance);
         }
-        if (playerInstance && typeof playerInstance.update === 'function') {
-            app.ticker.add(playerInstance.update, playerInstance);
+        if (playerSnakeInstance && typeof playerSnakeInstance.update === 'function') {
+            app.ticker.add(playerSnakeInstance.update, playerSnakeInstance);
         }
 
         window.addEventListener('resize', handleResize);
         handleResize();
+
+        // Add keyboard listener for snake growth
+        window.addEventListener('keydown', handleKeyDown);
     }
 });
 
 onUnmounted(() => {
     window.removeEventListener('resize', handleResize);
+    window.removeEventListener('keydown', handleKeyDown);
 
     // Remove update functions from PIXI ticker
     if (app && app.ticker) {
         if (bgCircleInstance && typeof bgCircleInstance.update === 'function') {
             app.ticker.remove(bgCircleInstance.update, bgCircleInstance);
         }
-        if (playerInstance && typeof playerInstance.update === 'function') {
-            app.ticker.remove(playerInstance.update, playerInstance);
+        if (playerSnakeInstance && typeof playerSnakeInstance.update === 'function') {
+            app.ticker.remove(playerSnakeInstance.update, playerSnakeInstance);
         }
+    }
+
+    if (playerSnakeInstance) {
+        playerSnakeInstance.destroy({ children: true }); // Ensure internal snake and cubes are destroyed
+        playerSnakeInstance = null;
     }
     
     gameApp.destroyGlobalResources(); 

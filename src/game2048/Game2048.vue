@@ -7,11 +7,13 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import * as PIXI from 'pixi.js';
 import BgCircle from './BgCircle.js';
 import { GameApp } from './GameApp.js';
+import Player from './Player.js'; // Import the Player class
 
 const pixiContainer = ref(null);
 let app;
 let bgCircleInstance = null;
 let rootContainer;
+let playerInstance = null; // Declare playerInstance
 const gameApp = GameApp.instance;
 
 
@@ -64,6 +66,18 @@ onMounted(() => {
         gameApp.rootContainer = rootContainer;
         gameApp.bgCircle = bgCircleInstance;
 
+        // Create Player instance
+        playerInstance = new Player();
+        rootContainer.addChild(playerInstance);
+
+        // Add update functions to PIXI ticker
+        if (bgCircleInstance && typeof bgCircleInstance.update === 'function') {
+            app.ticker.add(bgCircleInstance.update, bgCircleInstance);
+        }
+        if (playerInstance && typeof playerInstance.update === 'function') {
+            app.ticker.add(playerInstance.update, playerInstance);
+        }
+
         window.addEventListener('resize', handleResize);
         handleResize();
     }
@@ -71,6 +85,16 @@ onMounted(() => {
 
 onUnmounted(() => {
     window.removeEventListener('resize', handleResize);
+
+    // Remove update functions from PIXI ticker
+    if (app && app.ticker) {
+        if (bgCircleInstance && typeof bgCircleInstance.update === 'function') {
+            app.ticker.remove(bgCircleInstance.update, bgCircleInstance);
+        }
+        if (playerInstance && typeof playerInstance.update === 'function') {
+            app.ticker.remove(playerInstance.update, playerInstance);
+        }
+    }
     
     gameApp.destroyGlobalResources(); 
 

@@ -5,7 +5,6 @@ export class GameApp {
 
     pixi = null;
     radius = 0;
-    tickers = new Set();
     rootContainer = null;
     bgCircle = null;
 
@@ -22,44 +21,15 @@ export class GameApp {
 
     initApp(app) {
         this.pixi = app;
-        if (this.pixi) {
-            this.pixi.ticker.add(this.updateTickManager, this);
-        }
+        // Timer-related ticker logic removed
     }
 
     setRadius(r) {
         this.radius = r;
     }
 
-    registerTick(updateFn, context) {
-        this.tickers.add({ updateFn, context });
-    }
-
-    unregisterTickByObj(objContext) {
-        this.tickers.forEach(ticker => {
-            if (ticker.context === objContext) {
-                this.tickers.delete(ticker);
-            }
-        });
-    }
-
-    updateTickManager() {
-        if (!this.pixi || !this.pixi.ticker) return;
-        const deltaMs = this.pixi.ticker.deltaMS;
-        this.tickers.forEach((ticker) => {
-            try {
-                ticker.updateFn.call(ticker.context, deltaMs);
-            } catch (error) {
-                console.error("Error in ticker update:", error, "context:", ticker.context);
-            }
-        });
-    }
-
     destroyGlobalResources() {
-        if (this.pixi && this.pixi.ticker) {
-            this.pixi.ticker.remove(this.updateTickManager, this);
-        }
-        this.tickers.clear();
+        // Timer-related ticker logic removed
         this.pixi = null;
         this.rootContainer = null;
         this.bgCircle = null; 

@@ -16,6 +16,41 @@ let rootContainer;
 let playerSnakeInstance = null; // Declare playerSnakeInstance
 const gameApp = GameApp.instance;
 
+let cameraLerpFactor = 0.1; // Smoothing factor for camera movement (0.0 to 1.0)
+
+const updateCamera = () => {
+    if (!app || !rootContainer || !playerSnakeInstance || !playerSnakeInstance.head) {
+        return;
+    }
+
+    const screenCenterX = app.screen.width / 2;
+    const screenCenterY = app.screen.height / 2;
+
+    const headGlobalPosition = playerSnakeInstance.head.getGlobalPosition(new PIXI.Point(), false);
+    const headPositionInRootSpace = rootContainer.toLocal(headGlobalPosition, undefined, undefined, true);
+
+    let idealTargetRootX = screenCenterX - headPositionInRootSpace.x;
+    let idealTargetRootY = screenCenterY - headPositionInRootSpace.y;
+
+    const maxVisibleOverflow = Math.min(app.screen.width, app.screen.height) * 0.5; 
+
+    // Calculate the bounds for rootContainer's position
+    // This ensures the snake head, when at the game world's edge, is still visible within maxVisibleOverflow from screen edge.
+    const minClampedRootX = (app.screen.width - maxVisibleOverflow) - gameApp.radius; // rootContainer.x when head at right world edge is shown at right screen edge 
+    const maxClampedRootX = maxVisibleOverflow + gameApp.radius;                    // rootContainer.x when head at left world edge is shown at left screen edge
+    
+    const minClampedRootY = (app.screen.height - maxVisibleOverflow) - gameApp.radius;
+    const maxClampedRootY = maxVisibleOverflow + gameApp.radius;
+
+    // Clamp the ideal target position
+    // Note: The min/max might seem swapped here, but it's correct because idealTargetRootX moves inversely to headPositionInRootSpace.x
+    const clampedTargetRootX = Math.max(minClampedRootX, Math.min(maxClampedRootX, idealTargetRootX));
+    const clampedTargetRootY = Math.max(minClampedRootY, Math.min(maxClampedRootY, idealTargetRootY));
+
+    rootContainer.x += (clampedTargetRootX - rootContainer.x) * cameraLerpFactor;
+    rootContainer.y += (clampedTargetRootY - rootContainer.y) * cameraLerpFactor;
+};
+
 const handleKeyDown = (event) => {
     if (event.code === 'Space') {
         if (playerSnakeInstance && typeof playerSnakeInstance.grow === 'function') {
@@ -31,11 +66,17 @@ const handleResize = () => {
         const newHeight = window.innerHeight;
         app.renderer.resize(newWidth, newHeight);
         
-        gameApp.setRadius(Math.min(newWidth, newHeight) / 2 - 50);
+        gameApp.setRadius(Math.min(newWidth, newHeight));
 
+        // With camera follow, rootContainer's initial position might not need to be screen center,
+        // as it will be updated by updateCamera. However, setting it initially can prevent a jump.
+        // Or, we can let updateCamera handle it from the start.
+        // For now, let's keep this to avoid an initial jump if player starts at (0,0) in world.
         if (rootContainer) {
-            rootContainer.x = newWidth / 2;
-            rootContainer.y = newHeight / 2;
+             // This initial centering is less critical now but doesn't harm.
+            // The updateCamera function will adjust it based on player position.
+            // rootContainer.x = newWidth / 2;
+            // rootContainer.y = newHeight / 2;
         }
         if (bgCircleInstance) {
             bgCircleInstance.init();
@@ -85,6 +126,9 @@ onMounted(() => {
             app.ticker.add(playerSnakeInstance.update, playerSnakeInstance);
         }
 
+        // Add camera follow logic to the ticker
+        app.ticker.add(updateCamera);
+
         window.addEventListener('resize', handleResize);
         handleResize();
 
@@ -105,6 +149,7 @@ onUnmounted(() => {
         if (playerSnakeInstance && typeof playerSnakeInstance.update === 'function') {
             app.ticker.remove(playerSnakeInstance.update, playerSnakeInstance);
         }
+        app.ticker.remove(updateCamera);
     }
 
     if (playerSnakeInstance) {

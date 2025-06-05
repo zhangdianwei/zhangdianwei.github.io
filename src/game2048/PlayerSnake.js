@@ -24,41 +24,30 @@ function normalizeAnglePi(angle) {
 
 export default class PlayerSnake extends Snake {
     /**
-     * @param {number} initialValue - 蛇头Cube的初始数值
-     * @param {number} segmentLength - 蛇段之间的期望长度
+     * 玩家蛇构造函数。参数全部固定为默认值。
+     * 初始值2，长度2，段长30，速度5。
      */
-    constructor(initialValue = 2, segmentLength = 30, playerSpeed = 5, initialLength = 10) {
+    constructor() {
+        const initialValue = 2;
+        const initialLength = 2;
+        const segmentLength = 30;
+        const playerSpeed = 5;
         const initialCubesData = [];
         for (let i = 0; i < initialLength; i++) {
-            // For simplicity, all initial cubes will have the same 'initialValue'.
-            // The Snake.addCube logic will position them correctly relative to each other.
-            // We only need to provide a value for each. The x, y can be 0 as addCube handles placement.
             initialCubesData.push({ value: initialValue, x: 0, y: 0 });
         }
-
-        // Call Snake constructor: initialCubesData, segmentLength, speed
         super(initialCubesData, segmentLength, playerSpeed);
-
         this.gameApp = GameApp.instance;
-        this.baseSpeed = playerSpeed; // Store the base speed
-        this.lastAppliedSpeed = playerSpeed; // Track the last speed applied to all cubes
-
-        // Initial target direction (e.g., moving to the right)
-        // This will be updated as soon as the mouse moves for the first time.
+        this.baseSpeed = playerSpeed;
+        this.lastAppliedSpeed = playerSpeed;
         this.targetDirectionX = 1;
         this.targetDirectionY = 0;
-        this.lastMouseX = -1; // Used to detect mouse movement
+        this.lastMouseX = -1;
         this.lastMouseY = -1;
-
-        // Ensure all initially created cubes have their speed set correctly by the Snake constructor
-        // (Snake constructor already sets newCube.speed = this.speed, which is playerSpeed here)
         if (!this.gameApp) {
             console.error('GameApp instance is not available for PlayerSnake.');
-            // Consider throwing an error or handling this more robustly
         }
-        // this.speed is now inherited from Snake and set by playerSpeed
-        // this.playerSpeed variable is no longer strictly needed if speed is managed by Snake class
-        // However, we might keep it if player-specific speed logic (like boosts) directly modifies this.speed
+        this.pendingMerge = null; // 合成动画状态
     }
 
     /**
@@ -75,12 +64,19 @@ export default class PlayerSnake extends Snake {
      * @param {PIXI.Ticker} delta - Ticker对象，用于获取deltaTime
      */
     update(delta) {
+        // --- 合成动画处理 ---
+        if (this.pendingMerge) {
+            this.updateMergeAnimation(delta);
+        } else {
+            // --- 合成逻辑：检测相邻Cube数值相同则合成 ---
+            this.mergeCubesIfPossible();
+        }
+        // 无论是否有pendingMerge，蛇头和身体都要继续update
         if (!this.gameApp.pixi || !this.gameApp.rootContainer || !this.head) {
             return;
         }
 
         const headCube = this.head;
-        if (!headCube) return;
         const deltaTime = delta.deltaTime || 1;
 
         // Determine current frame's target speed (base or boosted)
@@ -164,6 +160,91 @@ export default class PlayerSnake extends Snake {
 
         // 7. 更新蛇身体部分的跟随逻辑 (调用 Snake.js 中的方法)
         this.updateSnakeLogic(deltaTime);
+    }
+
+    /**
+     * 检查cubes数组中是否有相邻Cube数值相同，如果有则合成为一个2倍Cube
+     * 合成后Cube位置取靠前的Cube，被合成的Cube会被移除
+     */
+    mergeCubesIfPossible() {
+        if (this.pendingMerge) return; // 动画期间不检测新合成
+        if (this.cubes.length < 2) return;
+        for (let i = 0; i < this.cubes.length - 1; i++) {
+            const cubeA = this.cubes[i];
+            const cubeB = this.cubes[i + 1];
+            if (cubeA.currentValue === cubeB.currentValue) {
+                // 分阶段动画：phase 1 吸附，phase 2 弹跳，phase 3 合成
+                this.pendingMerge = {
+                    i,
+                    cubeA,
+                    cubeB,
+                    animTime: 0,
+                    phase: 1, // 1:吸附, 2:弹跳, 3:收尾, 4:冷却
+                    phase1Duration: 300, // 吸附300ms
+                    phase2Duration: 200, // 弹跳200ms
+                    cooldownDuration: 150, // 冷却150ms
+                    startPosB: { x: cubeB.x, y: cubeB.y },
+                    targetPos: { x: cubeA.x, y: cubeA.y },
+                    startScaleA: cubeA.scale.x,
+                    startScaleB: cubeB.scale.x,
+                    startAlphaB: cubeB.alpha
+                };
+                break;
+            }
+        }
+    }
+
+    updateMergeAnimation(delta) {
+        const pm = this.pendingMerge;
+        if (!pm) return;
+        const dt = delta && delta.deltaMS ? delta.deltaMS : 16;
+        pm.animTime += dt;
+        if (pm.phase === 1) {
+            // 吸附阶段：cubeB快速靠近cubeA，透明度渐隐
+            const t = Math.min(pm.animTime / pm.phase1Duration, 1);
+            const easeT = t * t;
+            pm.cubeB.x = pm.startPosB.x + (pm.targetPos.x - pm.startPosB.x) * easeT;
+            pm.cubeB.y = pm.startPosB.y + (pm.targetPos.y - pm.startPosB.y) * easeT;
+            pm.cubeB.alpha = pm.startAlphaB * (1 - t);
+            pm.cubeA.scale.set(1);
+            if (t >= 1) {
+                pm.phase = 2;
+                pm.animTime = 0;
+                pm.cubeB.x = pm.targetPos.x;
+                pm.cubeB.y = pm.targetPos.y;
+                pm.cubeB.alpha = 0;
+            }
+        } else if (pm.phase === 2) {
+            // 弹跳阶段：cubeA scale 1->1.8->1
+            const t = Math.min(pm.animTime / pm.phase2Duration, 1);
+            let scale;
+            if (t < 0.5) {
+                scale = 1 + 0.8 * (t * 2); // 1→1.8
+            } else {
+                scale = 1.8 - 0.8 * ((t - 0.5) * 2); // 1.8→1
+            }
+            pm.cubeA.scale.set(scale);
+            if (t >= 1) {
+                pm.phase = 3;
+                pm.animTime = 0;
+            }
+        } else if (pm.phase === 3) {
+            // 动画结束，真正合成
+            const newValue = pm.cubeA.currentValue * 2;
+            pm.cubeA.setValue(newValue);
+            pm.cubeA.scale.set(1);
+            pm.cubeB.scale.set(1);
+            pm.cubeB.alpha = 1;
+            this.removeChild(pm.cubeB);
+            this.cubes.splice(pm.i + 1, 1);
+            pm.phase = 4;
+            pm.animTime = 0;
+        } else if (pm.phase === 4) {
+            // 冷却阶段，等待一段时间后才允许下次合成
+            if (pm.animTime >= pm.cooldownDuration) {
+                this.pendingMerge = null;
+            }
+        }
     }
 
     /**

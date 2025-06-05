@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import {GameApp} from './GameApp.js';
+import { GameApp } from './GameApp.js';
 import Snake from './Snake.js';
 
 // Helper function to find the shortest angle between two angles (in radians)
@@ -64,102 +64,81 @@ export default class PlayerSnake extends Snake {
      * @param {PIXI.Ticker} delta - Ticker对象，用于获取deltaTime
      */
     update(delta) {
-        // --- 合成动画处理 ---
+        // 1. 常规运动（抽出为独立函数）
+        this.updateNormalMovement(delta);
+        // 2. 合成动画叠加（只对pendingMerge的cubeA/cubeB做动画修饰）
         if (this.pendingMerge) {
             this.updateMergeAnimation(delta);
         } else {
-            // --- 合成逻辑：检测相邻Cube数值相同则合成 ---
             this.mergeCubesIfPossible();
         }
-        // 无论是否有pendingMerge，蛇头和身体都要继续update
+    }
+
+    /**
+     * 常规运动部分：速度调整、头部方向与旋转、边界限制、头部位置、身体跟随
+     */
+    updateNormalMovement(delta) {
         if (!this.gameApp.pixi || !this.gameApp.rootContainer || !this.head) {
             return;
         }
-
         const headCube = this.head;
         const deltaTime = delta.deltaTime || 1;
-
-        // Determine current frame's target speed (base or boosted)
+        // 速度调整
         const pointerState = this.gameApp.pixi.renderer.events.pointer;
         let currentFrameTargetSpeed = this.baseSpeed;
-        if ((pointerState.buttons & 1) !== 0) { // Left mouse button pressed
+        if ((pointerState.buttons & 1) !== 0) {
             currentFrameTargetSpeed = this.baseSpeed * 2;
         }
-
-        // If the target speed for this frame is different from the last applied speed,
-        // update all cubes' speed and the PlayerSnake's main speed property.
         if (currentFrameTargetSpeed !== this.lastAppliedSpeed) {
-            this.speed = currentFrameTargetSpeed; // Update PlayerSnake's own speed property
+            this.speed = currentFrameTargetSpeed;
+            this.lastAppliedSpeed = currentFrameTargetSpeed;
             for (const cube of this.cubes) {
                 cube.speed = currentFrameTargetSpeed;
             }
-            this.lastAppliedSpeed = currentFrameTargetSpeed;
         }
-
-
-        // --- 头部Cube的逻辑 (改编自原Player.js) ---
-
-        // 1. 获取鼠标在rootContainer坐标系中的位置
+        // --- 头部Cube运动逻辑 ---
         const globalMousePosition = this.gameApp.pixi.renderer.events.pointer.global;
         const localMouseInRoot = this.gameApp.rootContainer.toLocal(globalMousePosition);
-
-        // 2. 获取头部Cube在rootContainer坐标系中的当前位置
-        // headCube.parent is PlayerSnake (this). rootContainer is parent of PlayerSnake.
-        const headPositionInRoot = this.gameApp.rootContainer.toLocal(headCube.getGlobalPosition(new PIXI.Point(), false)); 
-
-        // 3. 更新目标方向 (如果鼠标移动了)
-        const mouseMovedThreshold = 1; // Pixels mouse needs to move to be considered 'moved'
-        if (Math.abs(localMouseInRoot.x - this.lastMouseX) > mouseMovedThreshold || 
+        const headPositionInRoot = this.gameApp.rootContainer.toLocal(headCube.getGlobalPosition(new PIXI.Point(), false));
+        const mouseMovedThreshold = 1;
+        if (Math.abs(localMouseInRoot.x - this.lastMouseX) > mouseMovedThreshold ||
             Math.abs(localMouseInRoot.y - this.lastMouseY) > mouseMovedThreshold ||
-            this.lastMouseX === -1) { // Update on first frame too
-            
-            const dirX = localMouseInRoot.x - headPositionInRoot.x;
-            const dirY = localMouseInRoot.y - headPositionInRoot.y;
-            const length = Math.sqrt(dirX * dirX + dirY * dirY);
-
-            if (length > 0.01) { // Avoid division by zero if mouse is exactly on head
-                this.targetDirectionX = dirX / length;
-                this.targetDirectionY = dirY / length;
+            this.lastMouseX === -1) {
+            const dx = localMouseInRoot.x - headPositionInRoot.x;
+            const dy = localMouseInRoot.y - headPositionInRoot.y;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            if (len > 0.01) {
+                this.targetDirectionX = dx / len;
+                this.targetDirectionY = dy / len;
             }
             this.lastMouseX = localMouseInRoot.x;
             this.lastMouseY = localMouseInRoot.y;
         }
-
-        // 4. 蛇头始终沿 this.targetDirectionX, this.targetDirectionY 移动
         const currentSpeed = headCube.speed;
         let nextHeadXInRoot = headPositionInRoot.x + this.targetDirectionX * currentSpeed * deltaTime;
         let nextHeadYInRoot = headPositionInRoot.y + this.targetDirectionY * currentSpeed * deltaTime;
-
-        // 5. 旋转蛇头以匹配其移动方向 (this.targetDirectionX, this.targetDirectionY)
         const targetAngle = Math.atan2(this.targetDirectionY, this.targetDirectionX);
         const currentRotation = normalizeAnglePi(headCube.rotation);
         const angleDifference = shortestAngleDist(currentRotation, targetAngle);
-        const rotationLerpFactor = 0.15; // Adjust for smoothness
+        const rotationLerpFactor = 0.15;
         headCube.rotation += angleDifference * rotationLerpFactor;
         headCube.rotation = normalizeAnglePi(headCube.rotation);
-
-        // 5. 限制头部Cube的意图位置在圆形边界内 (在rootContainer坐标系中)
-        const maxRadius = this.gameApp.radius; 
+        // 限制头部在圆形边界内
+        const maxRadius = this.gameApp.radius;
         const distanceFromNextPosToCenter = Math.sqrt(nextHeadXInRoot * nextHeadXInRoot + nextHeadYInRoot * nextHeadYInRoot);
-
         let finalHeadXInRoot = nextHeadXInRoot;
         let finalHeadYInRoot = nextHeadYInRoot;
-
         if (distanceFromNextPosToCenter > maxRadius) {
             const angleToNextPos = Math.atan2(nextHeadYInRoot, nextHeadXInRoot);
             finalHeadXInRoot = Math.cos(angleToNextPos) * maxRadius;
             finalHeadYInRoot = Math.sin(angleToNextPos) * maxRadius;
         }
-
-        // 6. 将计算出的最终头部位置 (在rootContainer坐标系中) 转换回headCube的父容器(PlayerSnake, i.e., this)的本地坐标系，并应用
         const finalHeadPosInPlayerSnakeLocal = this.toLocal(new PIXI.Point(finalHeadXInRoot, finalHeadYInRoot), this.gameApp.rootContainer);
         headCube.x = finalHeadPosInPlayerSnakeLocal.x;
         headCube.y = finalHeadPosInPlayerSnakeLocal.y;
-        
-        // --- 头部Cube逻辑结束 ---
-
-        // 7. 更新蛇身体部分的跟随逻辑 (调用 Snake.js 中的方法)
+        // --- 身体Cube跟随 ---
         this.updateSnakeLogic(deltaTime);
+
     }
 
     /**
@@ -173,18 +152,18 @@ export default class PlayerSnake extends Snake {
             const cubeA = this.cubes[i];
             const cubeB = this.cubes[i + 1];
             if (cubeA.currentValue === cubeB.currentValue) {
-                // 分阶段动画：phase 1 吸附，phase 2 弹跳，phase 3 合成
+                // 分阶段动画：phase 1 追逐，phase 2 弹跳，phase 3 收尾，phase 4 冷却
                 this.pendingMerge = {
                     i,
                     cubeA,
                     cubeB,
                     animTime: 0,
-                    phase: 1, // 1:吸附, 2:弹跳, 3:收尾, 4:冷却
-                    phase1Duration: 300, // 吸附300ms
-                    phase2Duration: 200, // 弹跳200ms
-                    cooldownDuration: 150, // 冷却150ms
+                    phase: 1, // 1:追逐, 2:弹跳, 3:收尾, 4:冷却
+                    phase1Duration: 4000, // 追逐400ms
+                    phase2Duration: 250, // 弹跳250ms
+                    cooldownDuration: 200, // 冷却200ms
                     startPosB: { x: cubeB.x, y: cubeB.y },
-                    targetPos: { x: cubeA.x, y: cubeA.y },
+                    mergeTargetPos: { x: cubeA.x, y: cubeA.y }, // 锁定合成目标点
                     startScaleA: cubeA.scale.x,
                     startScaleB: cubeB.scale.x,
                     startAlphaB: cubeB.alpha
@@ -200,19 +179,26 @@ export default class PlayerSnake extends Snake {
         const dt = delta && delta.deltaMS ? delta.deltaMS : 16;
         pm.animTime += dt;
         if (pm.phase === 1) {
-            // 吸附阶段：cubeB快速靠近cubeA，透明度渐隐
-            const t = Math.min(pm.animTime / pm.phase1Duration, 1);
-            const easeT = t * t;
-            pm.cubeB.x = pm.startPosB.x + (pm.targetPos.x - pm.startPosB.x) * easeT;
-            pm.cubeB.y = pm.startPosB.y + (pm.targetPos.y - pm.startPosB.y) * easeT;
-            pm.cubeB.alpha = pm.startAlphaB * (1 - t);
+            // 追逐阶段：cubeB追逐cubeA实时位置，缓动+动画时长保护
+            const targetX = pm.cubeA.x;
+            const targetY = pm.cubeA.y;
+            const lerpRatio = 0.35;
+            if (pm.animTime < (pm.phase1Duration || 4000)) {
+                pm.cubeB.x += (targetX - pm.cubeB.x) * lerpRatio;
+                pm.cubeB.y += (targetY - pm.cubeB.y) * lerpRatio;
+            }
+
+            // alpha渐变
+            const dist = Math.sqrt((targetX - pm.cubeB.x) ** 2 + (targetY - pm.cubeB.y) ** 2);
+            pm.cubeB.alpha = pm.startAlphaB * Math.max(0, Math.min(1, dist / 50));
             pm.cubeA.scale.set(1);
-            if (t >= 1) {
+            // 动画时长保护，或距离足够近直接进入下一阶段
+            if (pm.animTime > (pm.phase1Duration || 4000) || dist <= 2) {
+                pm.cubeB.x = targetX;
+                pm.cubeB.y = targetY;
+                pm.cubeB.alpha = 0;
                 pm.phase = 2;
                 pm.animTime = 0;
-                pm.cubeB.x = pm.targetPos.x;
-                pm.cubeB.y = pm.targetPos.y;
-                pm.cubeB.alpha = 0;
             }
         } else if (pm.phase === 2) {
             // 弹跳阶段：cubeA scale 1->1.8->1
@@ -235,8 +221,24 @@ export default class PlayerSnake extends Snake {
             pm.cubeA.scale.set(1);
             pm.cubeB.scale.set(1);
             pm.cubeB.alpha = 1;
-            this.removeChild(pm.cubeB);
-            this.cubes.splice(pm.i + 1, 1);
+            if (pm.cubeB.parent) {
+                this.removeChild(pm.cubeB);
+            }
+            const idx = this.cubes.indexOf(pm.cubeB);
+            if (idx !== -1) {
+                this.cubes.splice(idx, 1);
+            }
+            // --- 补位逻辑：让cubeA与前一个cube保持segmentLength距离，避免掉队 ---
+            if (pm.i > 0 && this.cubes.length > 1) {
+                const leader = this.cubes[pm.i - 1];
+                const dx = pm.cubeA.x - leader.x;
+                const dy = pm.cubeA.y - leader.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist !== this.segmentLength && dist > 0.01) {
+                    pm.cubeA.x = leader.x + (dx / dist) * this.segmentLength;
+                    pm.cubeA.y = leader.y + (dy / dist) * this.segmentLength;
+                }
+            }
             pm.phase = 4;
             pm.animTime = 0;
         } else if (pm.phase === 4) {
@@ -265,6 +267,6 @@ export default class PlayerSnake extends Snake {
         // Snake's destroy method (from PIXI.Container) will handle destroying children (cubes)
         // if options.children is true. We might not need to do anything special here unless
         // Snake class itself adds more complex cleanup.
-        super.destroy(options); 
+        super.destroy(options);
     }
 }

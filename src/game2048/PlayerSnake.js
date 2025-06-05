@@ -29,7 +29,7 @@ export default class PlayerSnake extends Snake {
      */
     constructor() {
         const initialValue = 2;
-        const initialLength = 2;
+        const initialLength = 1;
         const segmentLength = 30;
         const playerSpeed = 5;
         const initialCubesData = [];
@@ -159,7 +159,7 @@ export default class PlayerSnake extends Snake {
                     cubeB,
                     animTime: 0,
                     phase: 1, // 1:追逐, 2:弹跳, 3:收尾, 4:冷却
-                    phase1Duration: 4000, // 追逐400ms
+                    phase1Duration: 200, // 追逐400ms
                     phase2Duration: 250, // 弹跳250ms
                     cooldownDuration: 200, // 冷却200ms
                     startPosB: { x: cubeB.x, y: cubeB.y },
@@ -182,15 +182,27 @@ export default class PlayerSnake extends Snake {
             // 追逐阶段：cubeB追逐cubeA实时位置，缓动+动画时长保护
             const targetX = pm.cubeA.x;
             const targetY = pm.cubeA.y;
-            const lerpRatio = 0.35;
-            if (pm.animTime < (pm.phase1Duration || 4000)) {
-                pm.cubeB.x += (targetX - pm.cubeB.x) * lerpRatio;
-                pm.cubeB.y += (targetY - pm.cubeB.y) * lerpRatio;
+            // 动态分配追逐速度：保证cubeB在剩余动画时长内追上cubeA
+            const dx = targetX - pm.cubeB.x;
+            const dy = targetY - pm.cubeB.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const phase1Total = pm.phase1Duration || 2000;
+            const remainTime = Math.max(0.001, phase1Total - pm.animTime); // 防止除0
+            // 计算本帧需要移动的距离，确保剩余时间内追上
+            let move = dist / (remainTime / dt);
+            const maxMove = Math.min(move, dist); // 限制本帧最多只能追到目标点
+            // console.log(dist, remainTime)
+            if (dist > 10 && remainTime > 0) {
+                pm.cubeB.x += (dx / dist) * maxMove;
+                pm.cubeB.y += (dy / dist) * maxMove;
+            } else {
+                pm.cubeB.x = targetX;
+                pm.cubeB.y = targetY;
             }
-
             // alpha渐变
-            const dist = Math.sqrt((targetX - pm.cubeB.x) ** 2 + (targetY - pm.cubeB.y) ** 2);
-            pm.cubeB.alpha = pm.startAlphaB * Math.max(0, Math.min(1, dist / 50));
+            let distAlpha = Math.sqrt((targetX - pm.cubeB.x) ** 2 + (targetY - pm.cubeB.y) ** 2);
+            distAlpha = 50;
+            pm.cubeB.alpha = pm.startAlphaB * Math.max(0, Math.min(1, distAlpha / 50));
             pm.cubeA.scale.set(1);
             // 动画时长保护，或距离足够近直接进入下一阶段
             if (pm.animTime > (pm.phase1Duration || 4000) || dist <= 2) {
@@ -205,42 +217,42 @@ export default class PlayerSnake extends Snake {
             const t = Math.min(pm.animTime / pm.phase2Duration, 1);
             let scale;
             if (t < 0.5) {
-                scale = 1 + 0.8 * (t * 2); // 1→1.8
+                scale = 1 + 0.2 * (t * 2); // 1→1.2
+                // 在t==0.5时执行真正合成，只执行一次
+                if (!pm.hasMerged && Math.abs(t - 0.5) < dt / pm.phase2Duration) {
+                    const newValue = pm.cubeA.currentValue * 2;
+                    pm.cubeA.setValue(newValue);
+                    pm.cubeA.scale.set(1.2); // 保持视觉峰值
+                    pm.cubeB.scale.set(1);
+                    pm.cubeB.alpha = 1;
+                    if (pm.cubeB.parent) {
+                        this.removeChild(pm.cubeB);
+                    }
+                    const idx = this.cubes.indexOf(pm.cubeB);
+                    if (idx !== -1) {
+                        this.cubes.splice(idx, 1);
+                    }
+                    // --- 补位逻辑：让cubeA与前一个cube保持segmentLength距离，避免掉队 ---
+                    if (pm.i > 0 && this.cubes.length > 1) {
+                        const leader = this.cubes[pm.i - 1];
+                        const dx = pm.cubeA.x - leader.x;
+                        const dy = pm.cubeA.y - leader.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist !== this.segmentLength && dist > 0.01) {
+                            pm.cubeA.x = leader.x + (dx / dist) * this.segmentLength;
+                            pm.cubeA.y = leader.y + (dy / dist) * this.segmentLength;
+                        }
+                    }
+                    pm.hasMerged = true;
+                }
             } else {
-                scale = 1.8 - 0.8 * ((t - 0.5) * 2); // 1.8→1
+                scale = 1.2 - 0.2 * ((t - 0.5) * 2); // 1.2→1
             }
             pm.cubeA.scale.set(scale);
             if (t >= 1) {
-                pm.phase = 3;
+                pm.phase = 4;
                 pm.animTime = 0;
             }
-        } else if (pm.phase === 3) {
-            // 动画结束，真正合成
-            const newValue = pm.cubeA.currentValue * 2;
-            pm.cubeA.setValue(newValue);
-            pm.cubeA.scale.set(1);
-            pm.cubeB.scale.set(1);
-            pm.cubeB.alpha = 1;
-            if (pm.cubeB.parent) {
-                this.removeChild(pm.cubeB);
-            }
-            const idx = this.cubes.indexOf(pm.cubeB);
-            if (idx !== -1) {
-                this.cubes.splice(idx, 1);
-            }
-            // --- 补位逻辑：让cubeA与前一个cube保持segmentLength距离，避免掉队 ---
-            if (pm.i > 0 && this.cubes.length > 1) {
-                const leader = this.cubes[pm.i - 1];
-                const dx = pm.cubeA.x - leader.x;
-                const dy = pm.cubeA.y - leader.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist !== this.segmentLength && dist > 0.01) {
-                    pm.cubeA.x = leader.x + (dx / dist) * this.segmentLength;
-                    pm.cubeA.y = leader.y + (dy / dist) * this.segmentLength;
-                }
-            }
-            pm.phase = 4;
-            pm.animTime = 0;
         } else if (pm.phase === 4) {
             // 冷却阶段，等待一段时间后才允许下次合成
             if (pm.animTime >= pm.cooldownDuration) {

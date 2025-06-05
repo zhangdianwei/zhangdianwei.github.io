@@ -17,7 +17,7 @@ import ThreeHello from "../comp/ThreeHello.vue"
 import CurveRope from "../comp/CurveRope.vue"
 import CurveRopePixi from "../comp/CurveRopePixi.vue"
 import PixiHello from "../pixi/PixiHello.vue"
-import Game2048 from "../pixi/Game2048.vue"
+import Game2048 from "../game2048/Game2048.vue"
 import SplitImage from "../comp/SplitImage.vue"
 import Shooter from "../shooter/Shooter.vue"
 

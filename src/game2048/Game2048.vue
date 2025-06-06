@@ -53,7 +53,6 @@ function spawnLooseCube() {
     const value = randomCubeValue();
     const cube = new Cube(value, x, y);
     cube.rotation = Math.random() * Math.PI * 2;
-    cube.interactive = false;
     cube.buttonMode = false;
     looseCubes.push(cube);
     if (rootContainer) rootContainer.addChild(cube);

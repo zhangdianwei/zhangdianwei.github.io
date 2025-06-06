@@ -9,8 +9,8 @@ export default class Cube extends PIXI.Container {
         this.y = initialY;
         this.currentValue = value;
         this.speed = 3; // 基础移动速度，可以被Snake或Player覆盖/调整
-        this.targetAngle = 0; // 目标角度
-        this.currentAngle = 0; // 当前角度，用于平滑旋转
+        // this.targetAngle = 0; // 目标角度
+        // this.currentAngle = 0; // 当前角度，用于平滑旋转
 
         // 确保资源已加载
         const texture = PIXI.Texture.from('shooter/ship_E.png');

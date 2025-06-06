@@ -37,29 +37,58 @@ export default class Snake extends PIXI.Container {
         return this.cubes[0];
     }
 
+    computeIdealCubePose(leaderCube, currentCube) {
+        const currentSize = currentCube.getSize();
+        const leaderSize = leaderCube.getSize();
+        const idealGap = (leaderSize + currentSize) / 4;
+        // 先按leader方向推算目标点
+        const x = leaderCube.x - Math.cos(leaderCube.rotation) * idealGap;
+        const y = leaderCube.y - Math.sin(leaderCube.rotation) * idealGap;
+        // rotation应为leader到current的连线方向
+        const dx = x - leaderCube.x;
+        const dy = y - leaderCube.y;
+        let rotation = leaderCube.rotation;
+        if (dx !== 0 || dy !== 0) {
+            rotation = Math.atan2(dy, dx);
+        }
+        return { x, y, rotation };
+    }
+
     addCube(value) {
-        let x = 0, y = 0;
-        // 计算插入降序索引
+        let x = 0, y = 0, rotation = 0;
         let idx = 0;
         while (idx < this.cubes.length && this.cubes[idx].currentValue > value) {
             idx++;
         }
-        // 计算插入坐标
+        const newCube = new Cube(value, 0, 0);
         if (this.cubes.length > 0) {
-            let refCube;
-            if (idx === 1 && this.cubes.length > 1) {
-                refCube = this.cubes[0];
-            } else if (idx > 0) {
-                refCube = this.cubes[idx - 1];
-            } else {
-                refCube = this.cubes[this.cubes.length - 1];
+            let prev = idx > 0 ? this.cubes[idx - 1] : null;
+            let next = this.cubes[idx] || null;
+            if (prev && next) {
+                // 插入到中间，取前后cube连线方向
+                const angle = Math.atan2(next.y - prev.y, next.x - prev.x);
+                const gap = (prev.getSize() + newCube.getSize()) / 2;
+                x = prev.x + Math.cos(angle) * gap;
+                y = prev.y + Math.sin(angle) * gap;
+                rotation = angle;
+            } else if (prev) {
+                // 插入到队尾
+                rotation = prev.rotation;
+                const gap = (prev.getSize() + newCube.getSize()) / 2;
+                x = prev.x - Math.cos(rotation) * gap;
+                y = prev.y - Math.sin(rotation) * gap;
+            } else if (next) {
+                // 插入到队首
+                rotation = next.rotation;
+                const gap = (newCube.getSize() + next.getSize()) / 2;
+                x = next.x + Math.cos(rotation) * gap;
+                y = next.y + Math.sin(rotation) * gap;
             }
-            const dist = refCube.getSize();
-            x = refCube.x - Math.cos(refCube.rotation) * dist;
-            y = refCube.y - Math.sin(refCube.rotation) * dist;
         }
-        const newCube = new Cube(value, x, y);
-        newCube.speed = this.speed;
+        newCube.x = x;
+        newCube.y = y;
+        newCube.rotation = rotation;
+
         this.cubes.splice(idx, 0, newCube);
         this.addChild(newCube);
         this.updateCubeZOrder();
@@ -99,14 +128,6 @@ export default class Snake extends PIXI.Container {
 
         this.updateHeadDirectionStrategy(delta);
 
-        const finalSpeed = this.finalSpeed;
-        if (finalSpeed !== this.lastAppliedSpeed) {
-            this.lastAppliedSpeed = finalSpeed;
-            for (const cube of this.cubes) {
-                cube.speed = finalSpeed;
-            }
-        }
-
         const targetAngle = Math.atan2(this.targetDirectionY, this.targetDirectionX);
         const currentRotation = normalizeAnglePi(headCube.rotation);
         const angleDifference = shortestAngleDist(currentRotation, targetAngle);
@@ -114,8 +135,8 @@ export default class Snake extends PIXI.Container {
         headCube.rotation += angleDifference * rotationLerpFactor;
         headCube.rotation = normalizeAnglePi(headCube.rotation);
 
-        headCube.x += this.targetDirectionX * headCube.speed * deltaTime;
-        headCube.y += this.targetDirectionY * headCube.speed * deltaTime;
+        headCube.x += this.targetDirectionX * this.finalSpeed * deltaTime;
+        headCube.y += this.targetDirectionY * this.finalSpeed * deltaTime;
 
         // 不要超出圆形区域
         if (this.gameApp && typeof this.gameApp.radius === 'number') {
@@ -199,13 +220,13 @@ export default class Snake extends PIXI.Container {
             const dx = leaderCube.x - currentCube.x;
             const dy = leaderCube.y - currentCube.y;
             const distanceToLeader = Math.sqrt(dx * dx + dy * dy);
-            // 用cube真实大小动态计算理想间距
+            const pose = this.computeIdealCubePose(leaderCube, currentCube);
             const idealGap = (leaderCube.getSize() + currentCube.getSize()) / 4;
             if (distanceToLeader > 0.01) {
                 currentCube.rotation = Math.atan2(dy, dx);
             }
             if (distanceToLeader > idealGap) {
-                const moveCapacity = currentCube.speed * deltaTime;
+                const moveCapacity = this.finalSpeed * deltaTime;
                 const desiredGapReduction = distanceToLeader - idealGap;
                 const actualMoveDistance = Math.min(moveCapacity, desiredGapReduction);
                 if (distanceToLeader > 0.01) {
@@ -213,11 +234,11 @@ export default class Snake extends PIXI.Container {
                     currentCube.y += (dy / distanceToLeader) * actualMoveDistance;
                 }
             } else if (distanceToLeader < idealGap && distanceToLeader > 0.01) {
-                currentCube.x = leaderCube.x - (dx / distanceToLeader) * idealGap;
-                currentCube.y = leaderCube.y - (dy / distanceToLeader) * idealGap;
+                currentCube.x = pose.x;
+                currentCube.y = pose.y;
             } else if (distanceToLeader <= 0.01 && i > 0) {
-                currentCube.x = leaderCube.x - Math.cos(leaderCube.rotation) * idealGap;
-                currentCube.y = leaderCube.y - Math.sin(leaderCube.rotation) * idealGap;
+                currentCube.x = pose.x;
+                currentCube.y = pose.y;
             }
         }
     }

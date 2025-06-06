@@ -4,11 +4,11 @@ import Snake from './Snake.js';
 
 export default class PlayerSnake extends Snake {
     constructor() {
-        const initialLength = 1;
+        const initialLength = 10;
         const playerSpeed = 3;
         const initialCubesData = [];
         for (let i = 0; i < initialLength; i++) {
-            initialCubesData.push({ value: 2 });
+            initialCubesData.push({ value: Math.pow(2, i + 1) });
         }
         super(initialCubesData, playerSpeed);
         this.gameApp = GameApp.instance;

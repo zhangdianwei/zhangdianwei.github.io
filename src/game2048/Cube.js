@@ -23,7 +23,6 @@ export default class Cube extends PIXI.Container {
         }
         
         this.shipSprite.anchor.set(0.5);
-        // this.shipSprite.scale.set(0.5); // 根据需要调整大小，暂时使用原始大小
         this.addChild(this.shipSprite);
 
         this.valueText = new PIXI.Text(this.currentValue.toString(), {
@@ -38,15 +37,29 @@ export default class Cube extends PIXI.Container {
         this.valueText.y = 0; // 根据飞船图片调整文本位置，使其居中或合适位置
         this.addChild(this.valueText);
 
+        // 初始化缩放：2的缩放为1，4为1.1，每翻倍加0.1
+        this.updateScaleByValue(this.currentValue);
+
         // 初始化旋转，使其朝向右方 (如果图片默认朝右)
         // 如果图片默认朝上，则 this.shipSprite.rotation = -Math.PI / 2; this.rotation = 0;
         this.rotation = 0; // Container的旋转
     }
 
+    updateScaleByValue(val) {
+        // val: 2,4,8,16...
+        // scale = 1 + 0.1 * (log2(val) - 1)
+        let scale = 1;
+        if (val >= 2) {
+            scale = 1 + 0.1 * (Math.log2(val) - 1);
+        }
+        this.shipSprite.scale.set(scale);
+        if (this.valueText) this.valueText.scale.set(scale);
+    }
+
     setValue(newValue) {
         this.currentValue = newValue;
-        this.valueText.text = this.currentValue.toString();
-        // 未来可以在这里添加基于值的视觉变化，比如颜色、大小等
+        this.valueText.text = newValue.toString();
+        this.updateScaleByValue(newValue);
     }
 
     // 简单的更新逻辑，朝向目标点移动和旋转

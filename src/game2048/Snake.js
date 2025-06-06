@@ -40,6 +40,7 @@ export default class Snake extends PIXI.Container {
         newCube.speed = this.speed; // 将Snake的速度赋予新创建的Cube
         this.cubes.push(newCube);
         this.addChild(newCube); // 将Cube添加到PIXI的Container中以便渲染
+        this.updateCubeZOrder();
         return newCube;
     }
 
@@ -107,4 +108,14 @@ export default class Snake extends PIXI.Container {
     // removeCube(cubeInstanceOrIndex) {}
     // getAllCubeValues() {}
     // setAllCubesSpeed(newSpeed) {}
+
+    /**
+     * 刷新所有cube的显示层级，保证前面的cube在上层，后面的在下层
+     * 应在每帧逻辑后调用
+     */
+    updateCubeZOrder() {
+        for (let i = 0; i < this.cubes.length; i++) {
+            this.setChildIndex(this.cubes[i], this.cubes.length - 1 - i);
+        }
+    }
 }

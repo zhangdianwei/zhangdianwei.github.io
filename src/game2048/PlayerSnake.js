@@ -4,7 +4,7 @@ import Snake from './Snake.js';
 
 export default class PlayerSnake extends Snake {
     constructor() {
-        const initialLength = 10;
+        const initialLength = 1;
         const playerSpeed = 3;
         const initialCubesData = [];
         for (let i = 0; i < initialLength; i++) {

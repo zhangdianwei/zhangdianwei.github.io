@@ -246,9 +246,7 @@ export default class Snake extends PIXI.Container {
             const dy = leader.y - cube.y;
             const distanceToLeader = Math.sqrt(dx * dx + dy * dy);
             const idealGap = (leader.getSize() + cube.getSize()) / 4;
-            if (i == this.cubes.length - 1) {
-                console.log(distanceToLeader,idealGap);
-            }
+
             if (distanceToLeader > idealGap) {
                 // 推进+旋转（插值推进，有追击感）
                 const targetX = leader.x - (dx / distanceToLeader) * idealGap;

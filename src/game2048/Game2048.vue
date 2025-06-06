@@ -9,6 +9,7 @@ import BgCircle from './BgCircle.js';
 import { GameApp } from './GameApp.js';
 import PlayerSnake from './PlayerSnake.js';
 import Cube from './Cube.js';
+import StartScreen from './StartScreen.js';
 
 const pixiContainer = ref(null);
 let app;
@@ -16,6 +17,10 @@ let bgCircleInstance = null;
 let rootContainer;
 let playerSnakeInstance = null;
 const gameApp = GameApp.instance;
+
+let startScreenInstance = null;
+let gameStarted = false;
+
 
 let cameraLerpFactor = 0.1;
 
@@ -172,58 +177,73 @@ onMounted(() => {
             autoDensity: true,
             resolution: window.devicePixelRatio || 1,
         });
-
         pixiContainer.value.appendChild(app.view);
 
+        // 主容器
         rootContainer = new PIXI.Container();
         app.stage.addChild(rootContainer);
         rootContainer.x = app.screen.width / 2;
         rootContainer.y = app.screen.height / 2;
 
+        // 先显示BgCircle
+        bgCircleInstance = new BgCircle();
+        bgCircleInstance.init();
+        rootContainer.addChild(bgCircleInstance);
+        bgCircleInstance.x = 0;
+        bgCircleInstance.y = 0;
+        gameApp.rootContainer = rootContainer;
+        gameApp.bgCircle = bgCircleInstance;
         gameApp.initApp(app);
         gameApp.setRadius(Math.min(window.innerWidth, window.innerHeight) / 2 - 50);
 
-        bgCircleInstance = new BgCircle();
-        bgCircleInstance.init(); 
-        rootContainer.addChild(bgCircleInstance);
-        bgCircleInstance.x = 0; 
-        bgCircleInstance.y = 0;
+        // 开始界面（始终在最上层）
+        startScreenInstance = new StartScreen({
+            width: app.screen.width,
+            height: app.screen.height,
+            onStart: () => {
+                if (startScreenInstance && app.stage.children.includes(startScreenInstance)) {
+                    app.stage.removeChild(startScreenInstance);
+                    startScreenInstance.destroy({ children: true });
+                    startScreenInstance = null;
+                }
+                initGame();
+            }
+        });
+        app.stage.addChild(startScreenInstance);
 
-        gameApp.rootContainer = rootContainer;
-        gameApp.bgCircle = bgCircleInstance;
-
-        // Create Player instance
-        playerSnakeInstance = new PlayerSnake(); // Uses default initialValue=2, segmentLength=30
-        rootContainer.addChild(playerSnakeInstance);
-
-        // 保证初始散落Cube数量
-        ensureLooseCubes();
-        if (!looseCubeInterval) {
-            looseCubeInterval = setInterval(() => {
-                ensureLooseCubes();
-            }, 20000);
-        }
-
-        // Add update functions to PIXI ticker
+        // 只添加BgCircle的update
         if (bgCircleInstance && typeof bgCircleInstance.update === 'function') {
             app.ticker.add(bgCircleInstance.update, bgCircleInstance);
         }
-        if (playerSnakeInstance && typeof playerSnakeInstance.update === 'function') {
-            app.ticker.add(playerSnakeInstance.update, playerSnakeInstance);
-        }
-
-        // Add camera follow logic to the ticker
-        app.ticker.add(updateCamera);
-
         window.addEventListener('resize', handleResize);
         handleResize();
-
-        // Add keyboard listener for snake growth
-        window.addEventListener('keydown', handleKeyDown);
-        // 初始化完成后激活Cube自动拾取检测主循环
-        onAppReady();
     }
 });
+
+function initGame() {
+    // 创建Player
+    playerSnakeInstance = new PlayerSnake();
+    rootContainer.addChild(playerSnakeInstance);
+
+    // 保证初始散落Cube数量
+    ensureLooseCubes();
+    if (!looseCubeInterval) {
+        looseCubeInterval = setInterval(() => {
+            ensureLooseCubes();
+        }, 20000);
+    }
+
+    // 添加主逻辑update
+    if (playerSnakeInstance && typeof playerSnakeInstance.update === 'function') {
+        app.ticker.add(playerSnakeInstance.update, playerSnakeInstance);
+    }
+    // 摄像机跟随
+    app.ticker.add(updateCamera);
+    window.addEventListener('keydown', handleKeyDown);
+    // 初始化完成后激活Cube自动拾取检测主循环
+    onAppReady();
+}
+
 
 onUnmounted(() => {
     window.removeEventListener('resize', handleResize);

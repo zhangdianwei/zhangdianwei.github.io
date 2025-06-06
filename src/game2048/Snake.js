@@ -254,7 +254,7 @@ export default class Snake extends PIXI.Container {
                 const targetX = leader.x - (dx / distanceToLeader) * idealGap;
                 const targetY = leader.y - (dy / distanceToLeader) * idealGap;
                 const speed = this.finalSpeed * cube.speedRatio;
-                this.moveAndRotate(cube, targetX, targetY, speed, deltaTime, 1);
+                this.moveAndRotate(cube, targetX, targetY, speed, deltaTime, 1.5);
             } else if (distanceToLeader > 0.01) {
                 // 过近或重叠，直接对齐
                 const targetX = leader.x - (dx / distanceToLeader) * idealGap;

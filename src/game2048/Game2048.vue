@@ -128,6 +128,13 @@ const handleKeyDown = (event) => {
             playerSnakeInstance.addCube(2); // Default value for new cube is 2
         }
     }
+    if (event.key >= '1' && event.key <= '9') {
+        const n = parseInt(event.key);
+        const value = Math.pow(2, n);
+        if (playerSnakeInstance) {
+            playerSnakeInstance.addCube(value);
+        }
+    }
 };
 
 

@@ -62,54 +62,8 @@ export default class Cube extends PIXI.Container {
         this.updateScaleByValue(newValue);
     }
 
-    // 简单的更新逻辑，朝向目标点移动和旋转
-    // targetX, targetY 是Cube应该追逐的目标点的坐标 (在父容器坐标系中)
-    // deltaTime 是帧间时间差
-    updateMovement(targetX, targetY, deltaTime) {
-        const dx = targetX - this.x;
-        const dy = targetY - this.y;
-        const distanceToTarget = Math.sqrt(dx * dx + dy * dy);
-
-        // 更新旋转 (朝向目标)
-        if (distanceToTarget > 0.1) { // 避免在目标点时抖动
-            this.targetAngle = Math.atan2(dy, dx);
-        }
-        // 平滑旋转 (Lerp)
-        // this.rotation = lerpAngle(this.rotation, this.targetAngle, 0.1 * deltaTime);
-        // 暂时直接设置旋转，如果需要平滑，后续可以添加lerpAngle函数
-        this.rotation = this.targetAngle;
-
-
-        // 移动 (朝向目标)
-        if (distanceToTarget > 1) { // 移动阈值，避免微小抖动
-            const moveX = (dx / distanceToTarget) * this.speed * deltaTime;
-            const moveY = (dy / distanceToTarget) * this.speed * deltaTime;
-            this.x += moveX;
-            this.y += moveY;
-        } else if (distanceToTarget > 0) {
-            this.x = targetX;
-            this.y = targetY;
-        }
-    }
-
-    // 辅助函数：角度线性插值 (处理角度环绕问题)
-    // static lerpAngle(startAngle, endAngle, t) {
-    //     let delta = (endAngle - startAngle) % (2 * Math.PI);
-    //     if (delta > Math.PI) delta -= 2 * Math.PI;
-    //     if (delta < -Math.PI) delta += 2 * Math.PI;
-    //     return startAngle + delta * t;
-    // }
-
     get value() {
         return this.currentValue;
     }
 
-    // 如果需要，可以添加一个 getRadius() 或 getSize() 方法来帮助进行碰撞检测或间距保持
-    // getBoundingRadius() {
-    //     return Math.max(this.shipSprite.width, this.shipSprite.height) / 2;
-    // }
 }
-
-// 确保在 Game2048.vue 或 GameApp.js 中加载资源 'ship_E'
-// PIXI.Assets.add('ship_E', 'path/to/your/ship_E.png');
-// await PIXI.Assets.load('ship_E');

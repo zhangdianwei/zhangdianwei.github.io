@@ -53,8 +53,8 @@ const updateCamera = () => {
 
 const handleKeyDown = (event) => {
     if (event.code === 'Space') {
-        if (playerSnakeInstance && typeof playerSnakeInstance.grow === 'function') {
-            playerSnakeInstance.grow(); // Default value for new cube is 2
+        if (playerSnakeInstance) {
+            playerSnakeInstance.addCube(2); // Default value for new cube is 2
         }
     }
 };

@@ -66,4 +66,8 @@ export default class Cube extends PIXI.Container {
         return this.currentValue;
     }
 
+    getSize() {
+        // shipSprite.width是原始宽度，考虑scale
+        return this.shipSprite.width * this.shipSprite.scale.x;
+    }
 }

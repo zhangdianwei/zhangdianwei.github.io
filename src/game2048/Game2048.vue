@@ -7,16 +7,88 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import * as PIXI from 'pixi.js';
 import BgCircle from './BgCircle.js';
 import { GameApp } from './GameApp.js';
-import PlayerSnake from './PlayerSnake.js'; // Import the PlayerSnake class
+import PlayerSnake from './PlayerSnake.js';
+import Cube from './Cube.js';
 
 const pixiContainer = ref(null);
 let app;
 let bgCircleInstance = null;
 let rootContainer;
-let playerSnakeInstance = null; // Declare playerSnakeInstance
+let playerSnakeInstance = null;
 const gameApp = GameApp.instance;
 
-let cameraLerpFactor = 0.1; // Smoothing factor for camera movement (0.0 to 1.0)
+let cameraLerpFactor = 0.1;
+
+// ----------- 散落Cube生成与拾取逻辑 -----------
+const looseCubes = [];
+let looseCubeInterval = null;
+function randomCubeValue() {
+    const values = [2, 4, 8];
+    return values[Math.floor(Math.random() * values.length)];
+}
+function spawnLooseCube() {
+    let tryCount = 0;
+    let x, y, r, angle;
+    let minR = gameApp.radius * 0.3;
+    let maxR = gameApp.radius - 40;
+    let ok = false;
+    while (tryCount < 20 && !ok) {
+        angle = Math.random() * Math.PI * 2;
+        r = Math.sqrt(Math.random()) * (maxR - minR) + minR;
+        x = Math.cos(angle) * r;
+        y = Math.sin(angle) * r;
+        ok = true;
+        for (let i = 0; i < looseCubes.length; i++) {
+            const c = looseCubes[i];
+            const dx = c.x - x;
+            const dy = c.y - y;
+            if (Math.sqrt(dx*dx + dy*dy) < 40) {
+                ok = false;
+                break;
+            }
+        }
+        tryCount++;
+    }
+    if (!ok) return; // 放弃本次生成
+    const value = randomCubeValue();
+    const cube = new Cube(value, x, y);
+    cube.rotation = Math.random() * Math.PI * 2;
+    cube.interactive = false;
+    cube.buttonMode = false;
+    looseCubes.push(cube);
+    if (rootContainer) rootContainer.addChild(cube);
+}
+
+function ensureLooseCubes() {
+    while (looseCubes.length < 10) {
+        spawnLooseCube();
+    }
+}
+
+function checkSnakeHeadPickup() {
+    if (!playerSnakeInstance || !playerSnakeInstance.head) return;
+    const head = playerSnakeInstance.head;
+    for (let i = looseCubes.length - 1; i >= 0; i--) {
+        const cube = looseCubes[i];
+        const dx = cube.x - head.x;
+        const dy = cube.y - head.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const pickupDist = 40 * ((cube.scale.x + head.scale.x) / 2);
+        if (dist < pickupDist && head.currentValue >= cube.currentValue) {
+            playerSnakeInstance.addCube(cube.currentValue, undefined, undefined, 1);
+            if (rootContainer) rootContainer.removeChild(cube);
+            looseCubes.splice(i, 1);
+        }
+    }
+}
+
+function onAppReady() {
+    if (app && app.ticker) {
+        app.ticker.add(() => {
+            checkSnakeHeadPickup();
+        });
+    }
+}
 
 const updateCamera = () => {
     if (!app || !rootContainer || !playerSnakeInstance || !playerSnakeInstance.head) {
@@ -118,6 +190,14 @@ onMounted(() => {
         playerSnakeInstance = new PlayerSnake(); // Uses default initialValue=2, segmentLength=30
         rootContainer.addChild(playerSnakeInstance);
 
+        // 保证初始散落Cube数量
+        ensureLooseCubes();
+        if (!looseCubeInterval) {
+            looseCubeInterval = setInterval(() => {
+                ensureLooseCubes();
+            }, 20000);
+        }
+
         // Add update functions to PIXI ticker
         if (bgCircleInstance && typeof bgCircleInstance.update === 'function') {
             app.ticker.add(bgCircleInstance.update, bgCircleInstance);
@@ -134,6 +214,8 @@ onMounted(() => {
 
         // Add keyboard listener for snake growth
         window.addEventListener('keydown', handleKeyDown);
+        // 初始化完成后激活Cube自动拾取检测主循环
+        onAppReady();
     }
 });
 

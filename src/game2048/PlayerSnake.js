@@ -5,13 +5,12 @@ import Snake from './Snake.js';
 export default class PlayerSnake extends Snake {
     constructor() {
         const initialLength = 1;
-        const segmentLength = 35;
-        const playerSpeed = 5;
+        const playerSpeed = 3;
         const initialCubesData = [];
         for (let i = 0; i < initialLength; i++) {
-            initialCubesData.push({ value: 2, x: 0, y: 0 });
+            initialCubesData.push({ value: 2 });
         }
-        super(initialCubesData, segmentLength, playerSpeed);
+        super(initialCubesData, playerSpeed);
         this.gameApp = GameApp.instance;
         this.speedRatio = 1;
         this.targetDirectionX = 1;

@@ -19,15 +19,15 @@ function normalizeAnglePi(angle) {
 }
 
 export default class Snake extends PIXI.Container {
-    constructor(initialCubesData = [], segmentLength, speed) {
+    constructor(initialCubesData = [], speed) {
         super();
 
         this.cubes = [];
-        this.segmentLength = segmentLength;
+
         this.speed = speed;
 
         initialCubesData.forEach(data => {
-            this.addCube(data.value, data.x, data.y);
+            this.addCube(data.value);
         });
 
         this.pendingMerge = null;
@@ -37,16 +37,30 @@ export default class Snake extends PIXI.Container {
         return this.cubes[0];
     }
 
-    addCube(value, x = 0, y = 0) {
-        if (this.cubes.length > 0) {
-            const lastCube = this.cubes[this.cubes.length - 1];
-            x = lastCube.x - Math.cos(lastCube.rotation) * this.segmentLength;
-            y = lastCube.y - Math.sin(lastCube.rotation) * this.segmentLength;
+    addCube(value) {
+        let x = 0, y = 0;
+        // 计算插入降序索引
+        let idx = 0;
+        while (idx < this.cubes.length && this.cubes[idx].currentValue > value) {
+            idx++;
         }
-
+        // 计算插入坐标
+        if (this.cubes.length > 0) {
+            let refCube;
+            if (idx === 1 && this.cubes.length > 1) {
+                refCube = this.cubes[0];
+            } else if (idx > 0) {
+                refCube = this.cubes[idx - 1];
+            } else {
+                refCube = this.cubes[this.cubes.length - 1];
+            }
+            const dist = refCube.getSize();
+            x = refCube.x - Math.cos(refCube.rotation) * dist;
+            y = refCube.y - Math.sin(refCube.rotation) * dist;
+        }
         const newCube = new Cube(value, x, y);
         newCube.speed = this.speed;
-        this.cubes.push(newCube);
+        this.cubes.splice(idx, 0, newCube);
         this.addChild(newCube);
         this.updateCubeZOrder();
         return newCube;
@@ -185,9 +199,8 @@ export default class Snake extends PIXI.Container {
             const dx = leaderCube.x - currentCube.x;
             const dy = leaderCube.y - currentCube.y;
             const distanceToLeader = Math.sqrt(dx * dx + dy * dy);
-            const scaleA = leaderCube.scale.x;
-            const scaleB = currentCube.scale.x;
-            const idealGap = this.segmentLength * ((scaleA + scaleB) / 2);
+            // 用cube真实大小动态计算理想间距
+            const idealGap = (leaderCube.getSize() + currentCube.getSize()) / 4;
             if (distanceToLeader > 0.01) {
                 currentCube.rotation = Math.atan2(dy, dx);
             }

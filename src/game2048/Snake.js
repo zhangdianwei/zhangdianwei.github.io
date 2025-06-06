@@ -56,6 +56,10 @@ export default class Snake extends PIXI.Container {
         this.updateNormalMovement(delta);
         if (this.pendingMerge) {
             this.updateMergeAnimation(delta);
+        } else if (this.mergeCooldown && this.mergeCooldown > 0) {
+            const dt = delta && delta.deltaMS ? delta.deltaMS : 16;
+            this.mergeCooldown -= dt;
+            if (this.mergeCooldown < 0) this.mergeCooldown = 0;
         } else {
             this.mergeCubesIfPossible();
         }
@@ -110,7 +114,12 @@ export default class Snake extends PIXI.Container {
             }
         }
 
-        this.updateSnakeLogic(deltaTime);
+        // 排除合并动画中的cubeB
+        let excludeIndex = -1;
+        if (this.pendingMerge && this.pendingMerge.cubeB) {
+            excludeIndex = this.cubes.indexOf(this.pendingMerge.cubeB);
+        }
+        this.updateSnakeLogic(deltaTime, excludeIndex);
     }
 
     mergeCubesIfPossible() {
@@ -126,14 +135,7 @@ export default class Snake extends PIXI.Container {
                     cubeB,
                     animTime: 0,
                     phase: 1,
-                    phase1Duration: 200,
-                    phase2Duration: 250,
-                    cooldownDuration: 200,
-                    startPosB: { x: cubeB.x, y: cubeB.y },
-                    mergeTargetPos: { x: cubeA.x, y: cubeA.y },
-                    startScaleA: cubeA.scale.x,
-                    startScaleB: cubeB.scale.x,
-                    startAlphaB: cubeB.alpha
+                    hasMerged: false
                 };
                 break;
             }
@@ -146,110 +148,63 @@ export default class Snake extends PIXI.Container {
             this.pendingMerge = null;
             return;
         }
+        const DURATION = 200;
         const dt = delta && delta.deltaMS ? delta.deltaMS : 16;
         pm.animTime += dt;
-        if (!pm.cubeA || !pm.cubeB) {
-            this.pendingMerge = null;
-            return;
+        // 记录初始位置
+        if (pm._startX === undefined) {
+            pm._startX = pm.cubeB.x;
+            pm._startY = pm.cubeB.y;
         }
-        if (pm.phase === 1) {
-            const targetX = pm.cubeA.x;
-            const targetY = pm.cubeA.y;
-            const dx = targetX - pm.cubeB.x;
-            const dy = targetY - pm.cubeB.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const phase1Total = pm.phase1Duration || 2000;
-            const remainTime = Math.max(0.001, phase1Total - pm.animTime);
-            let move = dist / (remainTime / dt);
-            const maxMove = Math.min(move, dist);
-            if (dist > 10 && remainTime > 0) {
-                pm.cubeB.x += (dx / dist) * maxMove;
-                pm.cubeB.y += (dy / dist) * maxMove;
-            } else {
-                pm.cubeB.x = targetX;
-                pm.cubeB.y = targetY;
+        const t = Math.min(pm.animTime / DURATION, 1);
+        // 匀速插值
+        pm.cubeB.x = pm._startX + (pm.cubeA.x - pm._startX) * t;
+        pm.cubeB.y = pm._startY + (pm.cubeA.y - pm._startY) * t;
+        // 可选：透明度渐变
+        pm.cubeB.alpha = 1 - t;
+        if (t >= 1) {
+            if (pm.cubeB && pm.cubeB.parent) {
+                this.removeChild(pm.cubeB);
             }
-            let distAlpha = Math.sqrt((targetX - pm.cubeB.x) * 2 + (targetY - pm.cubeB.y) * 2);
-            distAlpha = 50;
-            pm.cubeB.alpha = pm.startAlphaB * Math.max(0, Math.min(1, distAlpha / 50));
-            pm.cubeA.scale.set(1);
-            if (pm.animTime >= (pm.phase1Duration || 4000) || dist <= 2) {
-                if (pm.cubeB) {
-                    pm.cubeB.x = targetX;
-                    pm.cubeB.y = targetY;
-                    pm.cubeB.alpha = 0;
-                }
-                pm.phase = 2;
-                pm.animTime = 0;
+            const idx = this.cubes.indexOf(pm.cubeB);
+            if (idx !== -1) {
+                this.cubes.splice(idx, 1);
             }
-        } else if (pm.phase === 2) {
-            const t = Math.min(pm.animTime / pm.phase2Duration, 1);
-            let scale;
-            if (t < 0.5) {
-                scale = 1 + 0.2 * (t * 2);
-                if (!pm.hasMerged && Math.abs(t - 0.5) < dt / pm.phase2Duration) {
-                    if (!pm.cubeA || !pm.cubeB) {
-                        this.pendingMerge = null;
-                        return;
-                    }
-                    const newValue = pm.cubeA.currentValue * 2;
-                    pm.cubeA.setValue(newValue);
-                    pm.cubeA.scale.set(1.2);
-                    pm.cubeB.scale.set(1);
-                    pm.cubeB.alpha = 1;
-                    if (pm.cubeB.parent) {
-                        this.removeChild(pm.cubeB);
-                    }
-                    const idx = this.cubes.indexOf(pm.cubeB);
-                    if (idx !== -1) {
-                        this.cubes.splice(idx, 1);
-                    }
-                    pm.cubeB = null;
-                    const leader = this.cubes[pm.i - 1];
-                    if (pm.cubeA && leader) {
-                        const dx = pm.cubeA.x - leader.x;
-                        const dy = pm.cubeA.y - leader.y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist !== this.segmentLength && dist > 0.01) {
-                            pm.cubeA.x = leader.x + (dx / dist) * this.segmentLength;
-                            pm.cubeA.y = leader.y + (dy / dist) * this.segmentLength;
-                        }
-                    }
-                    pm.hasMerged = true;
-                }
-            }
-
-            if (t >= 1) {
-                this.pendingMerge = null;
-            }
+            pm.cubeA.setValue(pm.cubeA.currentValue * 2);
+            this.pendingMerge = null;
+            this.mergeCooldown = 200;
         }
     }
 
-    updateSnakeLogic(deltaTime) {
+    updateSnakeLogic(deltaTime, excludeIndex = -1) {
         if (this.cubes.length < 2) return;
         for (let i = 1; i < this.cubes.length; i++) {
+            if (i === excludeIndex) continue;
             const currentCube = this.cubes[i];
             const leaderCube = this.cubes[i - 1];
             const dx = leaderCube.x - currentCube.x;
             const dy = leaderCube.y - currentCube.y;
             const distanceToLeader = Math.sqrt(dx * dx + dy * dy);
+            const scaleA = leaderCube.scale.x;
+            const scaleB = currentCube.scale.x;
+            const idealGap = this.segmentLength * ((scaleA + scaleB) / 2);
             if (distanceToLeader > 0.01) {
                 currentCube.rotation = Math.atan2(dy, dx);
             }
-            if (distanceToLeader > this.segmentLength) {
+            if (distanceToLeader > idealGap) {
                 const moveCapacity = currentCube.speed * deltaTime;
-                const desiredGapReduction = distanceToLeader - this.segmentLength;
+                const desiredGapReduction = distanceToLeader - idealGap;
                 const actualMoveDistance = Math.min(moveCapacity, desiredGapReduction);
                 if (distanceToLeader > 0.01) {
                     currentCube.x += (dx / distanceToLeader) * actualMoveDistance;
                     currentCube.y += (dy / distanceToLeader) * actualMoveDistance;
                 }
-            } else if (distanceToLeader < this.segmentLength && distanceToLeader > 0.01) {
-                currentCube.x = leaderCube.x - (dx / distanceToLeader) * this.segmentLength;
-                currentCube.y = leaderCube.y - (dy / distanceToLeader) * this.segmentLength;
+            } else if (distanceToLeader < idealGap && distanceToLeader > 0.01) {
+                currentCube.x = leaderCube.x - (dx / distanceToLeader) * idealGap;
+                currentCube.y = leaderCube.y - (dy / distanceToLeader) * idealGap;
             } else if (distanceToLeader <= 0.01 && i > 0) {
-                currentCube.x = leaderCube.x - Math.cos(leaderCube.rotation) * this.segmentLength;
-                currentCube.y = leaderCube.y - Math.sin(leaderCube.rotation) * this.segmentLength;
+                currentCube.x = leaderCube.x - Math.cos(leaderCube.rotation) * idealGap;
+                currentCube.y = leaderCube.y - Math.sin(leaderCube.rotation) * idealGap;
             }
         }
     }

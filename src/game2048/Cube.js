@@ -1,5 +1,4 @@
 import * as PIXI from 'pixi.js';
-import {GameApp} from './GameApp.js'; // 用于获取资源加载器等
 
 export default class Cube extends PIXI.Container {
     constructor(value, initialX = 0, initialY = 0) {
@@ -8,7 +7,7 @@ export default class Cube extends PIXI.Container {
         this.x = initialX;
         this.y = initialY;
         this.currentValue = value;
-        this.speed = 3; // 基础移动速度，可以被Snake或Player覆盖/调整
+        this.speedRatio = 1; // 默认1，可用于合并动画加速
         // this.targetAngle = 0; // 目标角度
         // this.currentAngle = 0; // 当前角度，用于平滑旋转
 

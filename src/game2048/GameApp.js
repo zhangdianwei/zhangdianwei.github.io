@@ -124,12 +124,20 @@ export class GameApp {
     addGameObject(obj, layer) {
         if (this._layerContainers[layer]) {
             this._layerContainers[layer].addChild(obj);
+            if (obj.onAdd) {
+                obj.onAdd();
+            }
         }
     }
 
     removeGameObject(obj) {
         this._layerContainers.forEach(layer => {
-            if (obj.parent === layer) layer.removeChild(obj);
+            if (obj.parent === layer) {
+                layer.removeChild(obj);
+                if (obj.onDestroy) {
+                    obj.onDestroy();
+                }
+            }
         });
     }
 

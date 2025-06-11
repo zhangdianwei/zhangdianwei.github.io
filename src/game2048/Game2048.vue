@@ -20,9 +20,10 @@ onMounted(() => {
     gameApp.init(pixiContainer.value, { width: window.innerWidth, height: window.innerHeight });
     createBgCircle();
     createPlayerSnake();
-    // createEnemySnakes(1);
     ensureLooseCubes();
     autoRemoveTimers.push(setInterval(ensureLooseCubes, 5000));
+    createEnemySnakes();
+    autoRemoveTimers.push(setInterval(createEnemySnakes, 5000));
     initCollisionLogic();
     window.addEventListener('resize', handleResize);
     window.addEventListener('keydown', handleKeyDown);
@@ -70,29 +71,16 @@ function createPlayerSnake() {
     gameApp.addGameObject(snake, GameLayer.PlayerSnake);
 }
 
-function createEnemySnakes(count = 1) {
-    // 移除所有旧敌人
-    for (const enemy of [...gameApp.enemySnakes]) {
-        gameApp.rootContainer.removeChild(enemy);
-        if (typeof enemy.destroy === 'function') {
-            enemy.destroy();
-        }
-    }
-    for (let i = 0; i < count; i++) {
-        const enemy = new EnermySnake([{ value: 4 }], 2, gameApp.playerSnake);
+function createEnemySnakes() {
+    const targetCount = 1;
+    if (gameApp.enemySnakes.length < targetCount) {
+        const enemy = new EnermySnake([{ value: 8 }], 2, gameApp.playerSnake);
         gameApp.addGameObject(enemy, GameLayer.EnermySnake);
     }
 }
 
 function ensureLooseCubes() {
     const targetCount = 10;
-    // 多余的先移除
-    while (gameApp.looseCubes.length > targetCount) {
-        const cube = gameApp.looseCubes[gameApp.looseCubes.length - 1];
-        if (cube.parent) cube.parent.removeChild(cube);
-        if (typeof cube.destroy === 'function') cube.destroy();
-    }
-    // 不足则补充
     while (gameApp.looseCubes.length < targetCount) {
         const value = Math.random() < 0.8 ? 2 : 4;
         const cube = new Cube(value);

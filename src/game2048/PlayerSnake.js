@@ -22,8 +22,8 @@ export default class PlayerSnake extends Snake {
     updateHeadDirectionStrategy() {
         const headCube = this.head;
         const globalMousePosition = this.gameApp.pixi.renderer.events.pointer.global;
-        const localMouseInRoot = this.gameApp.rootContainer.toLocal(globalMousePosition);
-        const headPositionInRoot = this.gameApp.rootContainer.toLocal(headCube.getGlobalPosition(new PIXI.Point(), false));
+        const localMouseInRoot = this.gameApp.gameContainer.toLocal(globalMousePosition);
+        const headPositionInRoot = this.gameApp.gameContainer.toLocal(headCube.getGlobalPosition(new PIXI.Point(), false));
         const mouseMovedThreshold = 1;
         if (Math.abs(localMouseInRoot.x - this.lastMouseX) > mouseMovedThreshold ||
             Math.abs(localMouseInRoot.y - this.lastMouseY) > mouseMovedThreshold ||

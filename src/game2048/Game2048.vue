@@ -3,22 +3,42 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
-import { GameApp, GameLayer } from './GameApp';
+import { ref, onMounted, onUnmounted, reactive } from 'vue';
+import { GameApp, GameLayer, UIName } from './GameApp';
 import BgCircle from './BgCircle';
 import PlayerSnake from './PlayerSnake';
 import EnermySnake from './EnermySnake';
 import Cube from './Cube';
 import { checkSnakeCollisions } from './collision';
+import FailScreen from './FailScreen';
+import StartScreen from './StartScreen';
 
 const pixiContainer = ref(null);
 const gameApp = GameApp.instance;
-
 let autoRemoveTimers = [];
+const gameState = ref('init'); // 'init' | 'playing' | 'fail'
 
 onMounted(() => {
     gameApp.init(pixiContainer.value, { width: window.innerWidth, height: window.innerHeight });
     createBgCircle();
+    showStartScreen();
+});
+
+onUnmounted(() => {
+    clearGame();
+    gameApp.destroy();
+});
+
+function showStartScreen() {
+    gameApp.showUILayer(new StartScreen({
+        width: gameApp.pixi.screen.width,
+        height: gameApp.pixi.screen.height,
+        onStart: startGame
+    }), UIName.StartScreen);
+}
+
+function startGame() {
+    clearGame();
     createPlayerSnake();
     ensureLooseCubes();
     autoRemoveTimers.push(setInterval(ensureLooseCubes, 5000));
@@ -29,32 +49,55 @@ onMounted(() => {
     window.addEventListener('keydown', handleKeyDown);
     handleResize();
     initCenterSnake();
-});
+    setTimeout(checkGameOver, 2000);
+}
+
+function clearGame(){
+    window.removeEventListener('resize', handleResize);
+    window.removeEventListener('keydown', handleKeyDown);
+    for (const timer of autoRemoveTimers) {
+        clearInterval(timer);
+    }
+    autoRemoveTimers = [];
+    gameApp.clearAllGameObjects();
+}
+
+
+function checkGameOver() {
+    gameApp.playerSnake.splitAt(0);
+    // 玩家蛇不存在或蛇身长度为0时，判定为失败
+    if (!gameApp.playerSnake || !gameApp.playerSnake.cubes || gameApp.playerSnake.cubes.length === 0) {
+        showFailScreen();
+    }
+}
+
+function showFailScreen() {
+    gameApp.showUILayer(new FailScreen({
+        width: gameApp.pixi.screen.width,
+        height: gameApp.pixi.screen.height,
+        onRestart: startGame
+    }), UIName.FailScreen);
+}
+
 
 function initCenterSnake() {
     gameApp.pixi.ticker.add(() => {
         if (gameApp.playerSnake && gameApp.playerSnake.head) {
             const head = gameApp.playerSnake.head;
-            const root = gameApp.rootContainer;
+            const root = gameApp.gameContainer;
             // 画布中心
             const cx = gameApp.pixi.screen.width / 2;
             const cy = gameApp.pixi.screen.height / 2;
-            // 玩家蛇头相对rootContainer的坐标
+            // 玩家蛇头相对gameContainer的坐标
             const hx = head.x;
             const hy = head.y;
-            // rootContainer位置调整，使玩家蛇头居中
+            // gameContainer位置调整，使玩家蛇头居中
             root.position.set(cx - hx, cy - hy);
         }
     });
 }
 
 function createBgCircle() {
-    if (gameApp.bgCircle) {
-        gameApp.rootContainer.removeChild(gameApp.bgCircle);
-        if (typeof gameApp.bgCircle.destroy === 'function') {
-            gameApp.bgCircle.destroy();
-        }
-    }
     const circle = new BgCircle();
     circle.init();
     gameApp.addGameObject(circle, GameLayer.BgLayer);
@@ -62,7 +105,7 @@ function createBgCircle() {
 
 function createPlayerSnake() {
     if (gameApp.playerSnake) {
-        gameApp.rootContainer.removeChild(gameApp.playerSnake);
+        gameApp.gameContainer.removeChild(gameApp.playerSnake);
         if (typeof gameApp.playerSnake.destroy === 'function') {
             gameApp.playerSnake.destroy();
         }
@@ -93,17 +136,6 @@ function ensureLooseCubes() {
         gameApp.addGameObject(cube, GameLayer.LooseCube);
     }
 }
-
-
-onUnmounted(() => {
-    window.removeEventListener('resize', handleResize);
-    window.removeEventListener('keydown', handleKeyDown);
-    for (const timer of autoRemoveTimers) {
-        clearInterval(timer);
-    }
-    autoRemoveTimers = [];
-    gameApp.destroy();
-});
 
 function initCollisionLogic() {
     gameApp.pixi.ticker.add(checkSnakeCollisions);
@@ -143,5 +175,11 @@ body {
     width: 100%;
     height: 100%;
     display: block;
+}
+.fail-mask {
+    position: fixed;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
 }
 </style>

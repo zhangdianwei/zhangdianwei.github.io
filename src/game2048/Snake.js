@@ -131,25 +131,6 @@ export default class Snake extends PIXI.Container {
 
     updateHeadDirectionStrategy(delta) { }
 
-    /**
-     * 彻底从场景和逻辑中移除该蛇
-     * @param {PIXI.Container} rootContainer
-     * @param {Array<EnermySnake>} enemySnakes
-     * @param {PIXI.Application} app
-     */
-    removeSelfFromGame(rootContainer, enemySnakes, app) {
-        if (rootContainer && this.parent) rootContainer.removeChild(this);
-        if (this.cubes) this.cubes.length = 0;
-        // 如果是敌人蛇，从enemySnakes数组移除并注销ticker
-        if (enemySnakes && Array.isArray(enemySnakes)) {
-            const idx = enemySnakes.indexOf(this);
-            if (idx !== -1) {
-                GameApp.instance.ticker.remove(this.update, this);
-                enemySnakes.splice(idx, 1);
-            }
-        }
-    }
-
     get finalSpeed() {
         return this.baseSpeed * this.speedRatio;
     }
@@ -308,6 +289,18 @@ export default class Snake extends PIXI.Container {
     updateCubeZOrder() {
         for (let i = 0; i < this.cubes.length; i++) {
             this.setChildIndex(this.cubes[i], this.cubes.length - 1 - i);
+        }
+    }
+
+    splitAt(index) {
+        const gameApp = GameApp.instance;
+        const removed = this.cubes.splice(index);
+        for (const cube of removed) {
+            cube.snake = null;
+            gameApp.addGameObject(cube, GameApp.GameLayer.LooseCube);
+        }
+        if (index === 0) {
+            gameApp.removeGameObject(this);
         }
     }
 }

@@ -1,8 +1,4 @@
 import * as PIXI from 'pixi.js';
-import PlayerSnake from './PlayerSnake.js';
-import EnermySnake from './EnermySnake.js';
-import Cube from './Cube.js';
-import BgCircle from './BgCircle.js';
 
 // 层级枚举
 export const GameLayer = {
@@ -20,14 +16,10 @@ export class GameApp {
     rootContainer = null;
     ticker = null;
 
-    // 游戏对象
-    bgCircle = null;
-    playerSnake = null;
-    enemySnakes = [];
-    looseCubes = [];
+    // 游戏对象全部通过分层容器统一管理
     radius = 300;
 
-    // 分层容器
+    // 分层容器（唯一游戏对象管理入口）
     _layerContainers = [null, null, null, null]; // [Bg, LooseCube, EnermySnake, PlayerSnake]
 
     // 状态
@@ -75,6 +67,21 @@ export class GameApp {
         this._inited = true;
     }
 
+    get bgCircle(){
+        return this._layerContainers[GameLayer.BgLayer].children[0];
+    }
+
+    get playerSnake() {
+        return this._layerContainers[GameLayer.PlayerSnake].children[0];
+    }
+
+    get enemySnakes() {
+        return this._layerContainers[GameLayer.EnermySnake].children;
+    }
+
+    get looseCubes() {
+        return this._layerContainers[GameLayer.LooseCube].children;
+    }
 
     destroy() {
         if (!this._inited) return;
@@ -83,10 +90,6 @@ export class GameApp {
             this.pixi.destroy(true, { children: true, texture: true, baseTexture: true });
         }
         this.rootContainer = null;
-        this.bgCircle = null;
-        this.playerSnake = null;
-        this.enemySnakes = [];
-        this.looseCubes = [];
         this._layerContainers = [null, null, null, null];
         this.pixi = null;
         this.ticker = null;

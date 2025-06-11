@@ -39,7 +39,4 @@ export default class PlayerSnake extends Snake {
         }
     }
 
-    destroy(options) {
-        super.destroy(options);
-    }
 }

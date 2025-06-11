@@ -151,10 +151,16 @@ export class GameApp {
     }
 
     showUILayer(node, name){
+        if (this.getUILayer(name)) {
+            return;
+        }
         node.name = name;
         this.uiContainer.addChild(node);
     }
     removeUILayer(name){
         this.uiContainer.removeChild(this.uiContainer.children.find(node => node.name === name));
+    }
+    getUILayer(name){
+        return this.uiContainer.children.find(node => node.name === name);
     }
 }

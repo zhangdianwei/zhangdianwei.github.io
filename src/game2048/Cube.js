@@ -40,13 +40,13 @@ export default class Cube extends PIXI.Container {
     constructor(value, initialX = 0, initialY = 0) {
         super();
 
-        this.x = initialX;
-        this.y = initialY;
         this.currentValue = value;
         this.speedRatio = 1; // 默认1，可用于合并动画加速
-        // this.targetAngle = 0; // 目标角度
-        // this.currentAngle = 0; // 当前角度，用于平滑旋转
+        this.snake = null; // 归属snake对象
 
+        this.x = initialX;
+        this.y = initialY;
+        
         // 确保资源已加载
         const texture = PIXI.Texture.from('shooter/ship_E.png');
         if (!texture) {

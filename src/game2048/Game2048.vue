@@ -9,6 +9,8 @@ import BgCircle from './BgCircle.js';
 import { GameApp } from './GameApp.js';
 import PlayerSnake from './PlayerSnake.js';
 import Cube from './Cube.js';
+import EnermySnake from './EnermySnake.js';
+import { checkSnakeCollisions } from './collision.js';
 import StartScreen from './StartScreen.js';
 
 const pixiContainer = ref(null);
@@ -16,6 +18,7 @@ let app;
 let bgCircleInstance = null;
 let rootContainer;
 let playerSnakeInstance = null;
+let enemySnakes = []; // 敌人蛇数组
 const gameApp = GameApp.instance;
 
 let startScreenInstance = null;
@@ -89,7 +92,9 @@ function checkSnakeHeadPickup() {
 function onAppReady() {
     if (app && app.ticker) {
         app.ticker.add(() => {
-            checkSnakeHeadPickup();
+            // checkSnakeHeadPickup();
+            // 蛇头-身体碰撞检测
+            checkSnakeCollisions(playerSnakeInstance, enemySnakes, looseCubes, rootContainer, app);
         });
     }
 }
@@ -224,6 +229,17 @@ function initGame() {
     // 创建Player
     playerSnakeInstance = new PlayerSnake();
     rootContainer.addChild(playerSnakeInstance);
+
+    // 创建敌人蛇
+    enemySnakes = [];
+    for (let i = 0; i < 1; i++) { // 可调整敌人数量
+        const enermy = new EnermySnake([{ value: 2 }], 2.5, playerSnakeInstance);
+        enemySnakes.push(enermy);
+        rootContainer.addChild(enermy);
+        if (typeof enermy.update === 'function') {
+            app.ticker.add(enermy.update, enermy);
+        }
+    }
 
     // 保证初始散落Cube数量
     ensureLooseCubes();

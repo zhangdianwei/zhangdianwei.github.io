@@ -80,6 +80,7 @@ export default class Snake extends PIXI.Container {
         newCube.x = x;
         newCube.y = y;
         newCube.rotation = rotation;
+        newCube.snake = this;
 
         this.cubes.splice(idx, 0, newCube);
         this.addChild(newCube);
@@ -127,13 +128,41 @@ export default class Snake extends PIXI.Container {
 
     updateHeadDirectionStrategy(delta) { }
 
+    /**
+     * 彻底从场景和逻辑中移除该蛇
+     * @param {PIXI.Container} rootContainer
+     * @param {Array<EnermySnake>} enemySnakes
+     * @param {PIXI.Application} app
+     */
+    removeSelfFromGame(rootContainer, enemySnakes, app) {
+        if (rootContainer && this.parent) rootContainer.removeChild(this);
+        if (this.cubes) this.cubes.length = 0;
+        // 如果是敌人蛇，从enemySnakes数组移除并注销ticker
+        if (enemySnakes && Array.isArray(enemySnakes)) {
+            const idx = enemySnakes.indexOf(this);
+            if (idx !== -1) {
+                if (app && app.ticker && typeof this.update === 'function') {
+                    app.ticker.remove(this.update, this);
+                }
+                enemySnakes.splice(idx, 1);
+            }
+        }
+    }
+
     get finalSpeed() {
         return this.baseSpeed * this.speedRatio;
     }
 
     setHeadDirection(x, y) {
-        this.targetDirectionX = x;
-        this.targetDirectionY = y;
+        // 归一化向量，避免速度异常
+        const len = Math.sqrt(x * x + y * y);
+        if (len > 0.00001) {
+            this.targetDirectionX = x / len;
+            this.targetDirectionY = y / len;
+        } else {
+            this.targetDirectionX = 1;
+            this.targetDirectionY = 0;
+        }
     }
 
     updateHeadMovement(deltaTime){
@@ -160,6 +189,10 @@ export default class Snake extends PIXI.Container {
                 headCube.y = Math.sin(clampAngle) * maxRadius;
             }
         }
+
+        // if (this.constructor.name === 'EnermySnake') {
+        //     console.log('snake head pos', this.targetDirectionX, this.targetDirectionY);
+        // }
     }
 
     updateNormalMovement(delta) {

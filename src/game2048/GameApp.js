@@ -24,6 +24,7 @@ export class GameApp {
 
     // 游戏对象全部通过分层容器统一管理
     radius = 300;
+    gameState = null; // 'init' | 'playing' | 'fail'
 
     // 分层容器（唯一游戏对象管理入口）
     layerContainers = [null, null, null, null]; // [Bg, LooseCube, EnermySnake, PlayerSnake]
@@ -135,6 +136,7 @@ export class GameApp {
     }
 
     removeGameObject(obj) {
+        console.log('removeGameObject', obj);
         this.layerContainers.forEach(layer => {
             if (obj.parent === layer) {
                 layer.removeChild(obj);

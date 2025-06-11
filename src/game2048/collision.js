@@ -23,16 +23,30 @@ export function checkSnakeCollisions() {
             const minDist = cube.getSize() / 2;
             if (dist < minDist) {
                 if (!cube.snake) {
+                    // 普通吃散块
                     if (head.currentValue >= cube.currentValue) {
                         snake.addCube(cube.currentValue);
                         gameApp.removeGameObject(cube);
                         break;
                     }
                 } else {
+                    // snake撞snake
                     const parentSnake = cube.snake;
                     const indexInSnake = parentSnake ? parentSnake.cubes.indexOf(cube) : -1;
                     if (parentSnake && indexInSnake !== -1) {
-                        parentSnake.splitAt(indexInSnake);
+                        // 无论撞到哪一节，都按head与cube的currentValue比较
+                        if (head.currentValue > cube.currentValue) {
+                            parentSnake.splitAt(indexInSnake);
+                        } else if (head.currentValue < cube.currentValue) {
+                            snake.splitAt(0);
+                        } else {
+                            // 相等时，playerSnake占优势
+                            if (snake === gameApp.playerSnake) {
+                                parentSnake.splitAt(indexInSnake);
+                            } else {
+                                snake.splitAt(0);
+                            }
+                        }
                     }
                 }
                 break;

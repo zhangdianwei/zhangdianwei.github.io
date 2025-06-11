@@ -16,12 +16,11 @@ import StartScreen from './StartScreen';
 const pixiContainer = ref(null);
 const gameApp = GameApp.instance;
 let autoRemoveTimers = [];
-const gameState = ref('init'); // 'init' | 'playing' | 'fail'
 
 onMounted(() => {
     gameApp.init(pixiContainer.value, { width: window.innerWidth, height: window.innerHeight });
     createBgCircle();
-    showStartScreen();
+    setGameState('init');
 });
 
 onUnmounted(() => {
@@ -29,12 +28,31 @@ onUnmounted(() => {
     gameApp.destroy();
 });
 
+function setGameState(state){
+    if(gameApp.gameState === state){
+        return;
+    }
+    gameApp.gameState = state;
+    console.log('gameState', state);
+    if (state === 'init') {
+        showStartScreen();
+    }else if (state === 'playing') {
+        startGame();
+    }else if (state === 'fail') {
+        setTimeout(showFailScreen, 500);
+    }
+}
+
 function showStartScreen() {
     gameApp.showUILayer(new StartScreen({
         width: gameApp.pixi.screen.width,
         height: gameApp.pixi.screen.height,
-        onStart: startGame
+        onStart: onClickStart
     }), UIName.StartScreen);
+}
+
+function onClickStart() {
+    setGameState('playing');
 }
 
 function startGame() {
@@ -44,12 +62,12 @@ function startGame() {
     autoRemoveTimers.push(setInterval(ensureLooseCubes, 5000));
     createEnemySnakes();
     autoRemoveTimers.push(setInterval(createEnemySnakes, 5000));
-    initCollisionLogic();
+    gameApp.pixi.ticker.add(checkSnakeCollisions);
+    gameApp.pixi.ticker.add(checkGameOver);
     window.addEventListener('resize', handleResize);
     window.addEventListener('keydown', handleKeyDown);
     handleResize();
     initCenterSnake();
-    setTimeout(checkGameOver, 2000);
 }
 
 function clearGame(){
@@ -59,15 +77,15 @@ function clearGame(){
         clearInterval(timer);
     }
     autoRemoveTimers = [];
+    gameApp.pixi.ticker.remove(checkSnakeCollisions);
     gameApp.clearAllGameObjects();
 }
 
 
 function checkGameOver() {
-    gameApp.playerSnake.splitAt(0);
     // 玩家蛇不存在或蛇身长度为0时，判定为失败
     if (!gameApp.playerSnake || !gameApp.playerSnake.cubes || gameApp.playerSnake.cubes.length === 0) {
-        showFailScreen();
+        setGameState('fail');
     }
 }
 
@@ -75,7 +93,7 @@ function showFailScreen() {
     gameApp.showUILayer(new FailScreen({
         width: gameApp.pixi.screen.width,
         height: gameApp.pixi.screen.height,
-        onRestart: startGame
+        onRestart: onClickStart
     }), UIName.FailScreen);
 }
 
@@ -135,10 +153,6 @@ function ensureLooseCubes() {
         cube.rotation = Math.random() * Math.PI * 2;
         gameApp.addGameObject(cube, GameLayer.LooseCube);
     }
-}
-
-function initCollisionLogic() {
-    gameApp.pixi.ticker.add(checkSnakeCollisions);
 }
 
 function handleResize() {

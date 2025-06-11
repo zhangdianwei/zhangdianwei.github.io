@@ -30,7 +30,7 @@ export default class BgCircle extends PIXI.Container {
         this.stars = [];
 
         const gameApp = GameApp.instance;
-        if (!gameApp || !gameApp.pixi || !gameApp.pixi.screen) return;
+
         const width = gameApp.pixi.screen.width;
         const height = gameApp.pixi.screen.height;
         const starCount = 80;
@@ -68,7 +68,6 @@ export default class BgCircle extends PIXI.Container {
 
     _updateStars(delta) {
         const gameApp = GameApp.instance;
-        if (!gameApp || !gameApp.pixi || !gameApp.pixi.screen) return;
         const width = gameApp.pixi.screen.width;
         const height = gameApp.pixi.screen.height;
         for (let i = this.stars.length - 1; i >= 0; i--) {

@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
 import Cube from './Cube.js';
+import { GameApp } from './GameApp.js';
 
 function shortestAngleDist(a0, a1) {
     const max = Math.PI * 2;
@@ -31,6 +32,8 @@ export default class Snake extends PIXI.Container {
         });
 
         this.pendingMerge = null;
+
+        GameApp.instance.ticker.add(this.update, this);
     }
 
     get head() {
@@ -141,9 +144,7 @@ export default class Snake extends PIXI.Container {
         if (enemySnakes && Array.isArray(enemySnakes)) {
             const idx = enemySnakes.indexOf(this);
             if (idx !== -1) {
-                if (app && app.ticker && typeof this.update === 'function') {
-                    app.ticker.remove(this.update, this);
-                }
+                GameApp.instance.ticker.remove(this.update, this);
                 enemySnakes.splice(idx, 1);
             }
         }

@@ -3,295 +3,112 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue';
-import * as PIXI from 'pixi.js';
-import BgCircle from './BgCircle.js';
-import { GameApp } from './GameApp.js';
-import PlayerSnake from './PlayerSnake.js';
-import Cube from './Cube.js';
-import EnermySnake from './EnermySnake.js';
-import { checkSnakeCollisions } from './collision.js';
-import StartScreen from './StartScreen.js';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { GameApp } from './GameApp';
+import BgCircle from './BgCircle';
+import PlayerSnake from './PlayerSnake';
+import EnermySnake from './EnermySnake';
+import Cube from './Cube';
 
 const pixiContainer = ref(null);
-let app;
-let bgCircleInstance = null;
-let rootContainer;
-let playerSnakeInstance = null;
-let enemySnakes = []; // 敌人蛇数组
 const gameApp = GameApp.instance;
 
-let startScreenInstance = null;
-let gameStarted = false;
-
-
-let cameraLerpFactor = 0.1;
-
-// ----------- 散落Cube生成与拾取逻辑 -----------
-const looseCubes = [];
-let looseCubeInterval = null;
-function randomCubeValue() {
-    const values = [2, 4, 8];
-    return values[Math.floor(Math.random() * values.length)];
-}
-function spawnLooseCube() {
-    let tryCount = 0;
-    let x, y, r, angle;
-    let minR = gameApp.radius * 0.3;
-    let maxR = gameApp.radius - 40;
-    let ok = false;
-    while (tryCount < 20 && !ok) {
-        angle = Math.random() * Math.PI * 2;
-        r = Math.sqrt(Math.random()) * (maxR - minR) + minR;
-        x = Math.cos(angle) * r;
-        y = Math.sin(angle) * r;
-        ok = true;
-        for (let i = 0; i < looseCubes.length; i++) {
-            const c = looseCubes[i];
-            const dx = c.x - x;
-            const dy = c.y - y;
-            if (Math.sqrt(dx*dx + dy*dy) < 40) {
-                ok = false;
-                break;
-            }
-        }
-        tryCount++;
-    }
-    if (!ok) return; // 放弃本次生成
-    const value = randomCubeValue();
-    const cube = new Cube(value, x, y);
-    cube.rotation = Math.random() * Math.PI * 2;
-    cube.buttonMode = false;
-    looseCubes.push(cube);
-    if (rootContainer) rootContainer.addChild(cube);
-}
-
-function ensureLooseCubes() {
-    while (looseCubes.length < 10) {
-        spawnLooseCube();
-    }
-}
-
-function checkSnakeHeadPickup() {
-    if (!playerSnakeInstance || !playerSnakeInstance.head) return;
-    const head = playerSnakeInstance.head;
-    for (let i = looseCubes.length - 1; i >= 0; i--) {
-        const cube = looseCubes[i];
-        const dx = cube.x - head.x;
-        const dy = cube.y - head.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const pickupDist = 40 * ((cube.scale.x + head.scale.x) / 2);
-        if (dist < pickupDist && head.currentValue >= cube.currentValue) {
-            playerSnakeInstance.addCube(cube.currentValue, undefined, undefined, 1);
-            if (rootContainer) rootContainer.removeChild(cube);
-            looseCubes.splice(i, 1);
-        }
-    }
-}
-
-function onAppReady() {
-    if (app && app.ticker) {
-        app.ticker.add(() => {
-            // checkSnakeHeadPickup();
-            // 蛇头-身体碰撞检测
-            checkSnakeCollisions(playerSnakeInstance, enemySnakes, looseCubes, rootContainer, app);
-        });
-    }
-}
-
-const updateCamera = () => {
-    if (!app || !rootContainer || !playerSnakeInstance || !playerSnakeInstance.head) {
-        return;
-    }
-
-    const screenCenterX = app.screen.width / 2;
-    const screenCenterY = app.screen.height / 2;
-
-    const headGlobalPosition = playerSnakeInstance.head.getGlobalPosition(new PIXI.Point(), false);
-    const headPositionInRootSpace = rootContainer.toLocal(headGlobalPosition, undefined, undefined, true);
-
-    let idealTargetRootX = screenCenterX - headPositionInRootSpace.x;
-    let idealTargetRootY = screenCenterY - headPositionInRootSpace.y;
-
-    const maxVisibleOverflow = Math.min(app.screen.width, app.screen.height) * 0.5; 
-
-    // Calculate the bounds for rootContainer's position
-    // This ensures the snake head, when at the game world's edge, is still visible within maxVisibleOverflow from screen edge.
-    const minClampedRootX = (app.screen.width - maxVisibleOverflow) - gameApp.radius; // rootContainer.x when head at right world edge is shown at right screen edge 
-    const maxClampedRootX = maxVisibleOverflow + gameApp.radius;                    // rootContainer.x when head at left world edge is shown at left screen edge
-    
-    const minClampedRootY = (app.screen.height - maxVisibleOverflow) - gameApp.radius;
-    const maxClampedRootY = maxVisibleOverflow + gameApp.radius;
-
-    // Clamp the ideal target position
-    // Note: The min/max might seem swapped here, but it's correct because idealTargetRootX moves inversely to headPositionInRootSpace.x
-    const clampedTargetRootX = Math.max(minClampedRootX, Math.min(maxClampedRootX, idealTargetRootX));
-    const clampedTargetRootY = Math.max(minClampedRootY, Math.min(maxClampedRootY, idealTargetRootY));
-
-    rootContainer.x += (clampedTargetRootX - rootContainer.x) * cameraLerpFactor;
-    rootContainer.y += (clampedTargetRootY - rootContainer.y) * cameraLerpFactor;
-};
-
-const handleKeyDown = (event) => {
-    if (event.code === 'Space') {
-        if (playerSnakeInstance) {
-            playerSnakeInstance.addCube(2); // Default value for new cube is 2
-        }
-    }
-    if (event.key >= '1' && event.key <= '9') {
-        const n = parseInt(event.key);
-        const value = Math.pow(2, n);
-        if (playerSnakeInstance) {
-            playerSnakeInstance.addCube(value);
-        }
-    }
-};
-
-
-const handleResize = () => {
-    if (app && app.renderer && gameApp) {
-        const newWidth = window.innerWidth;
-        const newHeight = window.innerHeight;
-        app.renderer.resize(newWidth, newHeight);
-        
-        gameApp.setRadius(Math.min(newWidth, newHeight));
-
-        // With camera follow, rootContainer's initial position might not need to be screen center,
-        // as it will be updated by updateCamera. However, setting it initially can prevent a jump.
-        // Or, we can let updateCamera handle it from the start.
-        // For now, let's keep this to avoid an initial jump if player starts at (0,0) in world.
-        if (rootContainer) {
-             // This initial centering is less critical now but doesn't harm.
-            // The updateCamera function will adjust it based on player position.
-            // rootContainer.x = newWidth / 2;
-            // rootContainer.y = newHeight / 2;
-        }
-        if (bgCircleInstance) {
-            bgCircleInstance.init();
-        }
-    }
-};
-
 onMounted(() => {
-    if (pixiContainer.value) {
-        app = new PIXI.Application({
-            width: window.innerWidth,
-            height: window.innerHeight,
-            backgroundColor: 0x000000,
-            antialias: true,
-            autoDensity: true,
-            resolution: window.devicePixelRatio || 1,
-        });
-        pixiContainer.value.appendChild(app.view);
-
-        // 主容器
-        rootContainer = new PIXI.Container();
-        app.stage.addChild(rootContainer);
-        rootContainer.x = app.screen.width / 2;
-        rootContainer.y = app.screen.height / 2;
-
-        // 先显示BgCircle
-        bgCircleInstance = new BgCircle();
-        bgCircleInstance.init();
-        rootContainer.addChild(bgCircleInstance);
-        bgCircleInstance.x = 0;
-        bgCircleInstance.y = 0;
-        gameApp.rootContainer = rootContainer;
-        gameApp.bgCircle = bgCircleInstance;
-        gameApp.initApp(app);
-        gameApp.setRadius(Math.min(window.innerWidth, window.innerHeight) / 2 - 50);
-
-        // 开始界面（始终在最上层）
-        startScreenInstance = new StartScreen({
-            width: app.screen.width,
-            height: app.screen.height,
-            onStart: () => {
-                if (startScreenInstance && app.stage.children.includes(startScreenInstance)) {
-                    app.stage.removeChild(startScreenInstance);
-                    startScreenInstance.destroy({ children: true });
-                    startScreenInstance = null;
-                }
-                initGame();
-            }
-        });
-        app.stage.addChild(startScreenInstance);
-
-        // 只添加BgCircle的update
-        if (bgCircleInstance && typeof bgCircleInstance.update === 'function') {
-            app.ticker.add(bgCircleInstance.update, bgCircleInstance);
-        }
-        window.addEventListener('resize', handleResize);
-        handleResize();
-    }
+    gameApp.init(pixiContainer.value, { width: window.innerWidth, height: window.innerHeight });
+    createBgCircle();
+    createPlayerSnake();
+    // createEnemySnakes(1);
+    // ensureLooseCubes();
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('keydown', handleKeyDown);
+    handleResize();
 });
 
-function initGame() {
-    // 创建Player
-    playerSnakeInstance = new PlayerSnake();
-    rootContainer.addChild(playerSnakeInstance);
+function createBgCircle() {
+    if (gameApp.bgCircle) {
+        gameApp.rootContainer.removeChild(gameApp.bgCircle);
+        if (typeof gameApp.bgCircle.destroy === 'function') {
+            gameApp.bgCircle.destroy();
+        }
+        gameApp.bgCircle = null;
+    }
+    gameApp.bgCircle = new BgCircle();
+    gameApp.bgCircle.init();
+    gameApp.getLayerContainer(gameApp.GameLayer?.BgLayer ?? 0).addChild(gameApp.bgCircle);
+}
 
-    // 创建敌人蛇
-    enemySnakes = [];
-    for (let i = 0; i < 1; i++) { // 可调整敌人数量
-        const enermy = new EnermySnake([{ value: 2 }], 2.5, playerSnakeInstance);
-        enemySnakes.push(enermy);
-        rootContainer.addChild(enermy);
-        if (typeof enermy.update === 'function') {
-            app.ticker.add(enermy.update, enermy);
+function createPlayerSnake() {
+    if (gameApp.playerSnake) {
+        gameApp.rootContainer.removeChild(gameApp.playerSnake);
+        if (typeof gameApp.playerSnake.destroy === 'function') {
+            gameApp.playerSnake.destroy();
+        }
+        gameApp.playerSnake = null;
+    }
+    gameApp.playerSnake = new PlayerSnake();
+    gameApp.getLayerContainer(gameApp.GameLayer?.PlayerSnake ?? 3).addChild(gameApp.playerSnake);
+}
+
+function createEnemySnakes(count = 1) {
+    if (Array.isArray(gameApp.enemySnakes)) {
+        gameApp.enemySnakes.forEach(enemy => {
+            gameApp.rootContainer.removeChild(enemy);
+            if (typeof enemy.destroy === 'function') {
+                enemy.destroy();
+            }
+        });
+    }
+    gameApp.enemySnakes = [];
+    for (let i = 0; i < count; i++) {
+        const enemy = new EnermySnake([{value:4}], 2, gameApp.playerSnake);
+        gameApp.enemySnakes.push(enemy);
+        gameApp.getLayerContainer(gameApp.GameLayer?.EnermySnake ?? 2).addChild(enemy);
+    }
+}
+
+function ensureLooseCubes(targetCount = 5) {
+    if (Array.isArray(gameApp.looseCubes) && gameApp.looseCubes.length > targetCount) {
+        while (gameApp.looseCubes.length > targetCount) {
+            const cube = gameApp.looseCubes.pop();
+            gameApp.rootContainer.removeChild(cube);
+            if (typeof cube.destroy === 'function') {
+                cube.destroy();
+            }
         }
     }
-
-    // 保证初始散落Cube数量
-    ensureLooseCubes();
-    if (!looseCubeInterval) {
-        looseCubeInterval = setInterval(() => {
-            ensureLooseCubes();
-        }, 20000);
+    while (gameApp.looseCubes.length < targetCount) {
+        const value = Math.random() < 0.8 ? 2 : 4;
+        const cube = new Cube(value);
+        const radius = 220;
+        const angle = Math.random() * Math.PI * 2;
+        cube.x = 400 + Math.cos(angle) * radius;
+        cube.y = 300 + Math.sin(angle) * radius;
+        gameApp.looseCubes.push(cube);
+        gameApp.getLayerContainer(gameApp.GameLayer?.LooseCube ?? 1).addChild(cube);
     }
-
-    // 添加主逻辑update
-    if (playerSnakeInstance && typeof playerSnakeInstance.update === 'function') {
-        app.ticker.add(playerSnakeInstance.update, playerSnakeInstance);
-    }
-    // 摄像机跟随
-    app.ticker.add(updateCamera);
-    window.addEventListener('keydown', handleKeyDown);
-    // 初始化完成后激活Cube自动拾取检测主循环
-    onAppReady();
 }
 
 
 onUnmounted(() => {
     window.removeEventListener('resize', handleResize);
     window.removeEventListener('keydown', handleKeyDown);
-
-    // Remove update functions from PIXI ticker
-    if (app && app.ticker) {
-        if (bgCircleInstance && typeof bgCircleInstance.update === 'function') {
-            app.ticker.remove(bgCircleInstance.update, bgCircleInstance);
-        }
-        if (playerSnakeInstance && typeof playerSnakeInstance.update === 'function') {
-            app.ticker.remove(playerSnakeInstance.update, playerSnakeInstance);
-        }
-        app.ticker.remove(updateCamera);
-    }
-
-    if (playerSnakeInstance) {
-        playerSnakeInstance.destroy({ children: true }); // Ensure internal snake and cubes are destroyed
-        playerSnakeInstance = null;
-    }
-    
-    gameApp.destroyGlobalResources(); 
-
-    if (app) {
-        app.destroy(true, { children: true, texture: true, baseTexture: true });
-    }
+    gameApp.destroy();
 });
 
+function handleResize() {
+    if (gameApp.resize) {
+        gameApp.resize(window.innerWidth, window.innerHeight);
+    }
+}
+
+function handleKeyDown(e) {
+    if (gameApp.handleKeyDown) {
+        gameApp.handleKeyDown(e);
+    }
+}
 </script>
 
 <style>
-/* Global styles for true full-screen */
 html,
 body {
     margin: 0;
@@ -299,16 +116,16 @@ body {
     overflow: hidden;
     width: 100%;
     height: 100%;
-    background-color: #000; 
+    background-color: #000;
 }
 
 .pixi-container {
     width: 100%;
     height: 100%;
-    display: block; 
+    display: block;
 }
 
-.pixi-container > canvas {
+.pixi-container>canvas {
     width: 100%;
     height: 100%;
     display: block;

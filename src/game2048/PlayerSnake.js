@@ -34,4 +34,8 @@ export default class PlayerSnake extends Snake {
         }
     }
 
+    onHeadValueChanged() {
+        GameApp.instance.playerRank.value = this.head.value;
+    }
+
 }

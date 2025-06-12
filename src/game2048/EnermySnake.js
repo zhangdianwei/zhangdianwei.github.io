@@ -24,10 +24,12 @@ export default class EnermySnake extends Snake {
     }
 
     setRandomWanderTarget() {
-        // 在圆形区域随机找一个点
+        // 在圆形区域随机找一个点，且保证目标点不会超出边界
         const radius = GameApp.instance.radius;
+        const safeMargin = 30;
+        const maxR = radius - safeMargin;
         const angle = Math.random() * Math.PI * 2;
-        const r = Math.random() * (radius - 60) + 30;
+        const r = Math.random() * maxR;
         this.wanderTarget.x = Math.cos(angle) * r;
         this.wanderTarget.y = Math.sin(angle) * r;
     }
@@ -41,21 +43,26 @@ export default class EnermySnake extends Snake {
         this.stateTimer += delta?.deltaMS || 16;
         if (this.stateTimer >= this.stateInterval) {
             this.stateTimer = 0;
+            // 只有比玩家大才追逐，否则只闲逛
+            const playerHead = this.playerSnakeInstance?.head;
             if (this.state === 'wander') {
-                this.state = 'chase';
+                if (playerHead && this.head.value > playerHead.value) {
+                    this.state = 'chase';
+                } else {
+                    this.state = 'wander';
+                    this.setRandomWanderTarget();
+                }
             } else {
                 this.state = 'wander';
                 this.setRandomWanderTarget();
             }
         }
 
-        if (this.state === 'chase' && this.playerSnakeInstance) {
+        const playerHead = this.playerSnakeInstance?.head;
+        if (this.state === 'chase' && playerHead && this.head.value > playerHead.value) {
             // 追踪玩家蛇头
-            const playerHead = this.playerSnakeInstance.head;
-            if (playerHead) {
-                this.setHeadDirection(playerHead.x - this.head.x, playerHead.y - this.head.y);
-            }
-        } else if (this.state === 'wander') {
+            this.setHeadDirection(playerHead.x - this.head.x, playerHead.y - this.head.y);
+        } else {
             // 闲逛，朝向wanderTarget
             this.setHeadDirection(this.wanderTarget.x - this.head.x, this.wanderTarget.y - this.head.y);
             // 如果接近目标点，重新选一个

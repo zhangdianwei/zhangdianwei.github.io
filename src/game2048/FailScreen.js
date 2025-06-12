@@ -70,19 +70,56 @@ export default class FailScreen extends PIXI.Container {
         content.addChild(rankTitle);
 
         // 排行榜内容
-        console.log(rankList);
-        rankList.forEach((item, i) => {
-            const isPlayer = item.name === 'YOU' || item.name === 'You' || item.name === 'you';
-            const row = new PIXI.Text(`${i+1}. ${item.name}  ${item.value}`, {
+        let rankListToShow = rankList.slice();
+        // 利用GameApp.instance.playerRank，确保玩家一定出现且高亮
+        const playerRank = GameApp.instance.playerRank;
+        // 检查是否已在榜单（避免重复）
+        let playerInRank = rankListToShow.some(item => item.name === playerRank.name);
+        if (!playerInRank && playerRank.value > 0) {
+            rankListToShow.push({ name: playerRank.name, value: playerRank.value });
+        }
+        // 排序并保留前5
+        rankListToShow.sort((a, b) => b.value - a.value);
+        if (rankListToShow.length > 5) rankListToShow.length = 5;
+        // 三列布局：排名、名字、分数
+        const colRankX = -90;
+        const colNameX = 0;
+        const colValueX = 90;
+        rankListToShow.forEach((item, i) => {
+            const isPlayer = item.name === playerRank.name;
+            // 排名
+            const rankText = new PIXI.Text(`${i+1}`, {
                 fontFamily: 'Arial Black, Arial, sans-serif',
                 fontSize: 22,
                 fill: isPlayer ? 0xff6600 : 0x333333,
-                align: 'left',
+                align: 'center',
             });
-            row.anchor.set(0.5, 0);
-            row.x = 0;
-            row.y = rankTitle.y + rankTitleHeight + 16 + i * rowHeight;
-            content.addChild(row);
+            rankText.anchor.set(0.5, 0);
+            rankText.x = colRankX;
+            rankText.y = rankTitle.y + rankTitleHeight + 16 + i * rowHeight;
+            content.addChild(rankText);
+            // 名字
+            const nameText = new PIXI.Text(item.name, {
+                fontFamily: 'Arial Black, Arial, sans-serif',
+                fontSize: 22,
+                fill: isPlayer ? 0xff6600 : 0x333333,
+                align: 'center',
+            });
+            nameText.anchor.set(0.5, 0);
+            nameText.x = colNameX;
+            nameText.y = rankTitle.y + rankTitleHeight + 16 + i * rowHeight;
+            content.addChild(nameText);
+            // 分数
+            const valueText = new PIXI.Text(`${item.value}`, {
+                fontFamily: 'Arial Black, Arial, sans-serif',
+                fontSize: 22,
+                fill: isPlayer ? 0xff6600 : 0x333333,
+                align: 'center',
+            });
+            valueText.anchor.set(0.5, 0);
+            valueText.x = colValueX;
+            valueText.y = rankTitle.y + rankTitleHeight + 16 + i * rowHeight;
+            content.addChild(valueText);
         });
 
         // 重新开始按钮

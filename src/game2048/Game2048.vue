@@ -140,8 +140,8 @@ function createEnermySnakes() {
         const enemy = new EnermySnake();
         enemy.addCubes([enemyValue]);
         // 生成远离玩家的位置
-        let px = gameApp.playerSnake?.x || 0;
-        let py = gameApp.playerSnake?.y || 0;
+        let px = gameApp.playerSnake?.head?.x || 0;
+        let py = gameApp.playerSnake?.head?.y || 0;
         let ex = 0, ey = 0;
         const minDist = gameApp.radius * 0.6;
         for (let i = 0; i < 10; i++) {

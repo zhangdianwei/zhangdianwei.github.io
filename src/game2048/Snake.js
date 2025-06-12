@@ -20,19 +20,13 @@ function normalizeAnglePi(angle) {
 }
 
 export default class Snake extends PIXI.Container {
-    constructor(initialCubesData = [], baseSpeed) {
+    constructor() {
         super();
 
         this.cubes = [];
-        this.baseSpeed = baseSpeed;
-        this.speedRatio = 1; // 全局倍率
-
-        initialCubesData.forEach(data => {
-            this.addCube(data.value);
-        });
-
+        this.baseSpeed = 3;
+        this.speedRatio = 1;
         this.pendingMerge = null;
-
     }
 
     onAdd(){
@@ -45,6 +39,11 @@ export default class Snake extends PIXI.Container {
 
     get head() {
         return this.cubes[0];
+    }
+
+    setPosition(x, y) {
+        this.head.x = x;
+        this.head.y = y;
     }
 
     computeIdealCubePose(leaderCube, currentCube) {
@@ -62,6 +61,12 @@ export default class Snake extends PIXI.Container {
             rotation = Math.atan2(dy, dx);
         }
         return { x, y, rotation };
+    }
+
+    addCubes(values){
+        values.forEach(value => {
+            this.addCube(value);
+        });
     }
 
     addCube(value) {
@@ -95,7 +100,12 @@ export default class Snake extends PIXI.Container {
         this.cubes.splice(idx, 0, newCube);
         this.addChild(newCube);
         this.updateCubeZOrder();
+        this.onHeadValueChanged();
         return newCube;
+    }
+
+    onHeadValueChanged(){
+
     }
 
     update(delta) {

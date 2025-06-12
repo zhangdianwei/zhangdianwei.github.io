@@ -1,3 +1,4 @@
+import { GameApp } from './GameApp.js';
 import Snake from './Snake.js';
 import * as PIXI from 'pixi.js';
 
@@ -8,25 +9,31 @@ export default class EnermySnake extends Snake {
      * @param {number} baseSpeed
      * @param {object} playerSnakeInstance  // 玩家蛇实例
      */
-    constructor(initialCubesData = [], baseSpeed, playerSnakeInstance) {
-        super(initialCubesData, baseSpeed);
-        this.playerSnakeInstance = playerSnakeInstance;
+    constructor() {
+        super();
         this.state = 'wander'; // 'wander' or 'chase'
         this.stateTimer = 0;
         this.stateInterval = 10000; // 10秒
         this.wanderTarget = { x: 0, y: 0 };
-        this.head.x = 100;
-        this.head.y = 100;
         this.setRandomWanderTarget();
+        this.name = GameApp.instance.randomName();
+    }
+
+    get playerSnakeInstance(){
+        return GameApp.instance.playerSnake;
     }
 
     setRandomWanderTarget() {
         // 在圆形区域随机找一个点
-        const radius = this.gameApp?.radius || 300;
+        const radius = GameApp.instance.radius;
         const angle = Math.random() * Math.PI * 2;
         const r = Math.random() * (radius - 60) + 30;
         this.wanderTarget.x = Math.cos(angle) * r;
         this.wanderTarget.y = Math.sin(angle) * r;
+    }
+
+    onHeadValueChanged() {
+        GameApp.instance.updateRankList(this.name, this.head.value);
     }
 
     updateHeadDirectionStrategy(delta) {

@@ -60,8 +60,8 @@ function startGame() {
     createPlayerSnake();
     ensureLooseCubes();
     autoRemoveTimers.push(setInterval(ensureLooseCubes, 5000));
-    createEnemySnakes();
-    autoRemoveTimers.push(setInterval(createEnemySnakes, 5000));
+    createEnermySnakes();
+    autoRemoveTimers.push(setInterval(createEnermySnakes, 5000));
     gameApp.pixi.ticker.add(checkSnakeCollisions);
     gameApp.pixi.ticker.add(checkGameOver);
     window.addEventListener('resize', handleResize);
@@ -83,7 +83,6 @@ function clearGame(){
 
 
 function checkGameOver() {
-    // 玩家蛇不存在或蛇身长度为0时，判定为失败
     if (!gameApp.playerSnake || !gameApp.playerSnake.cubes || gameApp.playerSnake.cubes.length === 0) {
         setGameState('fail');
     }
@@ -129,13 +128,30 @@ function createPlayerSnake() {
         }
     }
     const snake = new PlayerSnake();
+    snake.addCubes([2]);
     gameApp.addGameObject(snake, GameLayer.PlayerSnake);
 }
 
-function createEnemySnakes() {
-    const targetCount = 1;
+function createEnermySnakes() {
+    const targetCount = 5;
     if (gameApp.enemySnakes.length < targetCount) {
-        const enemy = new EnermySnake([{ value: 8 }], 2, gameApp.playerSnake);
+        const playerValue = gameApp.playerSnake?.head?.value || 2;
+        const enemyValue = playerValue * 2;
+        const enemy = new EnermySnake();
+        enemy.addCubes([enemyValue]);
+        // 生成远离玩家的位置
+        let px = gameApp.playerSnake?.x || 0;
+        let py = gameApp.playerSnake?.y || 0;
+        let ex = 0, ey = 0;
+        const minDist = gameApp.radius * 0.6;
+        for (let i = 0; i < 10; i++) {
+            ex = Math.random() * (gameApp.radius * 2) - gameApp.radius;
+            ey = Math.random() * (gameApp.radius * 2) - gameApp.radius;
+            const dx = ex - px;
+            const dy = ey - py;
+            if (Math.sqrt(dx*dx + dy*dy) >= minDist) break;
+        }
+        enemy.setPosition(ex, ey);
         gameApp.addGameObject(enemy, GameLayer.EnermySnake);
     }
 }

@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import { GameApp } from './GameApp.js';
 
 export default class FailScreen extends PIXI.Container {
     constructor({ width = 800, height = 600, onRestart = null } = {}) {
@@ -8,16 +9,28 @@ export default class FailScreen extends PIXI.Container {
         this.height = height;
         this.onRestart = onRestart;
 
-        // 半透明遮罩
+        const rankList = GameApp.instance.rankList;
+
+        // 半透明遮罩（全屏）
         const mask = new PIXI.Graphics();
         mask.beginFill(0x000000, 0.6);
-        mask.drawRect(0, 0, width, height);
+        mask.drawRect(-width/2, -height/2, width, height);
         mask.endFill();
         this.addChild(mask);
 
-        // 卡片背景
+        // 卡片整体垂直居中
+        const rankCount = rankList.length;
+        const minCardHeight = 260;
+        const btnHeightVal = 60;
+        const rowHeight = 32;
+        const cardInnerPadding = 32;
+        const titleHeight = 54;
+        const rankTitleHeight = 28;
+        const rankListHeight = rankCount > 0 ? rankCount * rowHeight : rowHeight;
+        const rankToBtnGap = 32;
+        const cardContentHeight = cardInnerPadding + titleHeight + 16 + rankTitleHeight + 16 + rankListHeight + rankToBtnGap + btnHeightVal + cardInnerPadding;
+        const cardHeight = Math.max(minCardHeight, cardContentHeight);
         const cardWidth = 420;
-        const cardHeight = 240;
         const card = new PIXI.Graphics();
         card.beginFill(0xffffff, 0.98);
         card.drawRoundedRect(-cardWidth/2, -cardHeight/2, cardWidth, cardHeight, 32);
@@ -26,31 +39,64 @@ export default class FailScreen extends PIXI.Container {
         card.y = 0;
         this.addChild(card);
 
-        // 失败文字
+        // 卡片内容分层容器，便于整体居中
+        const content = new PIXI.Container();
+        content.x = 0;
+        content.y = -cardHeight/2;
+        this.addChild(content);
+
+        // 失败大标题
         const title = new PIXI.Text('游戏失败', {
             fontFamily: 'Arial Black, Arial, sans-serif',
             fontSize: 48,
             fill: 0x222222,
             align: 'center',
         });
-        title.anchor.set(0.5);
+        title.anchor.set(0.5, 0);
         title.x = 0;
-        title.y = -40;
-        this.addChild(title);
+        title.y = cardInnerPadding;
+        content.addChild(title);
+
+        // 排行榜标题
+        const rankTitle = new PIXI.Text('排行榜', {
+            fontFamily: 'Arial Black, Arial, sans-serif',
+            fontSize: 24,
+            fill: 0x666666,
+            align: 'center',
+        });
+        rankTitle.anchor.set(0.5, 0);
+        rankTitle.x = 0;
+        rankTitle.y = title.y + titleHeight + 16;
+        content.addChild(rankTitle);
+
+        // 排行榜内容
+        console.log(rankList);
+        rankList.forEach((item, i) => {
+            const isPlayer = item.name === 'YOU' || item.name === 'You' || item.name === 'you';
+            const row = new PIXI.Text(`${i+1}. ${item.name}  ${item.value}`, {
+                fontFamily: 'Arial Black, Arial, sans-serif',
+                fontSize: 22,
+                fill: isPlayer ? 0xff6600 : 0x333333,
+                align: 'left',
+            });
+            row.anchor.set(0.5, 0);
+            row.x = 0;
+            row.y = rankTitle.y + rankTitleHeight + 16 + i * rowHeight;
+            content.addChild(row);
+        });
 
         // 重新开始按钮
         const btnWidth = 180;
-        const btnHeight = 60;
-        const btnY = 40;
+        const btnY = rankTitle.y + rankTitleHeight + 16 + rankListHeight + rankToBtnGap;
         const btn = new PIXI.Graphics();
         btn.beginFill(0x2d8cf0, 1);
-        btn.drawRoundedRect(-btnWidth/2, -btnHeight/2, btnWidth, btnHeight, 18);
+        btn.drawRoundedRect(-btnWidth/2, -btnHeightVal/2, btnWidth, btnHeightVal, 18);
         btn.endFill();
         btn.x = 0;
-        btn.y = btnY;
+        btn.y = btnY + btnHeightVal/2;
         btn.eventMode = 'static';
         btn.cursor = 'pointer';
-        this.addChild(btn);
+        content.addChild(btn);
 
         const btnText = new PIXI.Text('重新开始', {
             fontFamily: 'Arial Black, Arial, sans-serif',
@@ -60,10 +106,11 @@ export default class FailScreen extends PIXI.Container {
         });
         btnText.anchor.set(0.5);
         btnText.x = 0;
-        btnText.y = btnY;
+        btnText.y = btn.y;
         btnText.eventMode = 'static';
         btnText.cursor = 'pointer';
-        this.addChild(btnText);
+        content.addChild(btnText);
+
 
         // backIn/backOut 缓动函数
         function easeOutBack(t) {

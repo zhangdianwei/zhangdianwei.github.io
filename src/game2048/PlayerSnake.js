@@ -4,19 +4,14 @@ import Snake from './Snake.js';
 
 export default class PlayerSnake extends Snake {
     constructor() {
-        const initialLength = 1;
-        const playerSpeed = 3;
-        const initialCubesData = [];
-        for (let i = 0; i < initialLength; i++) {
-            initialCubesData.push({ value: Math.pow(2, i + 1) });
-        }
-        super(initialCubesData, playerSpeed);
+        super();
         this.gameApp = GameApp.instance;
         this.speedRatio = 1;
         this.targetDirectionX = 1;
         this.targetDirectionY = 0;
         this.lastMouseX = -1;
         this.lastMouseY = -1;
+        this.name = 'YOU';
     }
 
     updateHeadDirectionStrategy() {

@@ -63,6 +63,32 @@ export default class Snake extends PIXI.Container {
         return { x, y, rotation };
     }
 
+    setName(name){
+        this.name = name;
+        this.updateName();
+    }
+
+    updateName(){
+        if (!this.head) return;
+        if (!this.nameTxt) {
+            this.nameTxt = new PIXI.Text(this.name || '', {
+                fontFamily: 'Arial Black, Arial, sans-serif',
+                fontSize: 20,
+                fill: 0xffff66, // 亮黄色
+                stroke: 0x222222, // 深色描边
+                strokeThickness: 5,
+                align: 'center',
+            });
+            this.nameTxt.anchor.set(0.5, 1);
+            this.head.addChild(this.nameTxt);
+        }
+        this.nameTxt.text = this.name || '';
+        this.nameTxt.x = 30;
+        this.nameTxt.y = 0;
+        this.nameTxt.rotation = Math.PI / 2; // 保持正向朝上
+        this.nameTxt.visible = !!this.name;
+    }
+
     addCubes(values){
         values.forEach(value => {
             this.addCube(value);
@@ -95,12 +121,13 @@ export default class Snake extends PIXI.Container {
         newCube.x = x;
         newCube.y = y;
         newCube.rotation = rotation;
-        newCube.snake = this;
+        newCube.setSnake(this);
 
         this.cubes.splice(idx, 0, newCube);
         this.addChild(newCube);
         this.updateCubeZOrder();
         this.onHeadValueChanged();
+        this.updateName();
         return newCube;
     }
 
@@ -313,7 +340,7 @@ export default class Snake extends PIXI.Container {
         const gameApp = GameApp.instance;
         const removed = this.cubes.splice(index);
         for (const cube of removed) {
-            cube.snake = null;
+            cube.setSnake(null);
             gameApp.addGameObject(cube, GameLayer.LooseCube);
         }
         if (index === 0) {

@@ -85,6 +85,20 @@ export default class Cube extends PIXI.Container {
         // 初始化旋转，使其朝向右方 (如果图片默认朝右)
         // 如果图片默认朝上，则 this.shipSprite.rotation = -Math.PI / 2; this.rotation = 0;
         this.rotation = 0; // Container的旋转
+
+        this.setSnake(null);
+    }
+
+    setSnake(snake){
+        this.snake = snake;
+        if (snake) {
+            this.shipSprite.tint = Cube.getLightColorByValue(this.currentValue);
+            this.valueText.style.fill = Cube.getColorByValue(this.currentValue);
+        }
+        else{
+            this.shipSprite.tint = 0xcccccc;
+            this.valueText.style.fill = 0xcccccc;
+        }
     }
 
     updateScaleByValue(val) {

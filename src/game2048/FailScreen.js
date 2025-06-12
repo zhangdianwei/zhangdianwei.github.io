@@ -46,7 +46,7 @@ export default class FailScreen extends PIXI.Container {
         this.addChild(content);
 
         // 失败大标题
-        const title = new PIXI.Text('游戏失败', {
+        const title = new PIXI.Text('GAME OVER', {
             fontFamily: 'Arial Black, Arial, sans-serif',
             fontSize: 48,
             fill: 0x222222,
@@ -80,7 +80,6 @@ export default class FailScreen extends PIXI.Container {
         }
         // 排序并保留前5
         rankListToShow.sort((a, b) => b.value - a.value);
-        if (rankListToShow.length > 5) rankListToShow.length = 5;
         // 三列布局：排名、名字、分数
         const colRankX = -90;
         const colNameX = 0;

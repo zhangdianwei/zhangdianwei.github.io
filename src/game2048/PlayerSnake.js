@@ -11,7 +11,7 @@ export default class PlayerSnake extends Snake {
         this.targetDirectionY = 0;
         this.lastMouseX = -1;
         this.lastMouseY = -1;
-        this.baseSpeed = 3.5;
+        this.setBaseSpeed(3.5);
         this.setName('YOU');
     }
 

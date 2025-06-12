@@ -106,7 +106,7 @@ export class GameApp {
         this.layerContainers.forEach(layer => this.gameContainer.addChild(layer));
         this.pixi.stage.addChild(this.gameContainer);
         this.gameContainer.position.set(this.pixi.screen.width / 2, this.pixi.screen.height / 2);
-        this.radius = this.pixi.screen.width / 2;
+        this.radius = Math.max(this.pixi.screen.width / 2, this.pixi.screen.height / 2);
 
         this.uiContainer = new PIXI.Container();
         this.pixi.stage.addChild(this.uiContainer);

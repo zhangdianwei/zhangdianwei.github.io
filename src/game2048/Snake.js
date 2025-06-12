@@ -24,9 +24,16 @@ export default class Snake extends PIXI.Container {
         super();
 
         this.cubes = [];
-        this.baseSpeed = 3;
+        this.setBaseSpeed(3);
         this.speedRatio = 1;
         this.pendingMerge = null;
+    }
+
+    setBaseSpeed(speed){
+        this.baseSpeed = speed;
+        if (/Mobi|Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(navigator.userAgent)) {
+            this.baseSpeed = this.baseSpeed / 2;
+        }
     }
 
     onAdd(){

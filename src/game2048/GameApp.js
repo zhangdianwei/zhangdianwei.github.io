@@ -45,7 +45,6 @@ export class GameApp {
     ];
     randomName(){
         const name = this.chineseFunnyNames[Math.floor(Math.random() * this.chineseFunnyNames.length)];
-        console.log(name);
         return name;
     }
 

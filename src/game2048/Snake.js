@@ -290,6 +290,9 @@ export default class Snake extends PIXI.Container {
                 this.cubes.splice(idx, 1);
             }
             pm.cubeA.setValue(pm.cubeA.currentValue * 2);
+            if (this.cubes.indexOf(pm.cubeA) === 0) {
+                this.onHeadValueChanged();
+            }
             this.pendingMerge = null;
             this.mergeCooldown = 200;
         }

@@ -33,7 +33,6 @@ function setGameState(state){
         return;
     }
     gameApp.gameState = state;
-    console.log('gameState', state);
     if (state === 'init') {
         showStartScreen();
     }else if (state === 'playing') {

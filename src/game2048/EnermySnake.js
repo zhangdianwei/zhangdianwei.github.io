@@ -4,11 +4,7 @@ import * as PIXI from 'pixi.js';
 
 // 敌人蛇：每10秒闲逛，每10秒追踪玩家
 export default class EnermySnake extends Snake {
-    /**
-     * @param {Array} initialCubesData
-     * @param {number} baseSpeed
-     * @param {object} playerSnakeInstance  // 玩家蛇实例
-     */
+
     constructor() {
         super();
         this.state = 'wander'; // 'wander' or 'chase'

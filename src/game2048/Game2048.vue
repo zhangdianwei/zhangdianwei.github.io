@@ -127,7 +127,9 @@ function createPlayerSnake() {
         }
     }
     const snake = new PlayerSnake();
-    snake.addCubes([2]);
+    for (let i = 3; i > 0; i--) {
+        snake.addCube(2**i);
+    }
     gameApp.addGameObject(snake, GameLayer.PlayerSnake);
 }
 
@@ -177,6 +179,10 @@ function handleResize() {
 }
 
 function handleKeyDown(e) {
+    if (e.key === 'k') {
+        startGame();
+        return;
+    }
     if (gameApp.handleKeyDown) {
         gameApp.handleKeyDown(e);
     }

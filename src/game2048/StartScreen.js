@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import PlaneEightAnim from './StartScreen.PlaneEightAnim.js';
 
 export default class StartScreen extends PIXI.Container {
     constructor({ width = 800, height = 600, onStart = null } = {}) {
@@ -34,6 +35,10 @@ export default class StartScreen extends PIXI.Container {
         title.x = 0;
         title.y = -110;
         this.addChild(title);
+
+        // 中间小飞机8字动画
+        const planeAnim = new PlaneEightAnim({ centerX: 0, centerY: -10, radius: 48 });
+        this.addChild(planeAnim);
 
         // 开始按钮
         const btnWidth = 180;

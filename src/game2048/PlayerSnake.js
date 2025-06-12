@@ -7,10 +7,11 @@ export default class PlayerSnake extends Snake {
         super();
         this.gameApp = GameApp.instance;
         this.speedRatio = 1;
-        this.targetDirectionX = 1;
+        this.targetDirectionX = 0;
         this.targetDirectionY = 0;
         this.lastMouseX = -1;
         this.lastMouseY = -1;
+        this.baseSpeed = 3.5;
         this.setName('YOU');
     }
 

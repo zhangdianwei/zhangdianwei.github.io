@@ -57,9 +57,6 @@ export default class Snake extends PIXI.Container {
         const dx = x - leaderCube.x;
         const dy = y - leaderCube.y;
         let rotation = leaderCube.rotation;
-        if (dx !== 0 || dy !== 0) {
-            rotation = Math.atan2(dy, dx);
-        }
         return { x, y, rotation };
     }
 

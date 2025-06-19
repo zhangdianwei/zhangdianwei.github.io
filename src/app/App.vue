@@ -20,6 +20,7 @@ import PixiHello from "../pixi/PixiHello.vue"
 import Game2048 from "../game2048/Game2048.vue"
 import SplitImage from "../comp/SplitImage.vue"
 import Shooter from "../shooter/Shooter.vue"
+import GameMatch from "../match/GameMatch.vue"
 
 const routesArray = [
   { id: "TankMain", title: "坦克大战", comp: TankMain },
@@ -47,6 +48,7 @@ const routesArray = [
   { id: "Game2048", title: "Game2048", comp: Game2048 },
   { id: "SplitImage", title: "SplitImage", comp: SplitImage },
   { id: "Shooter", title: "Shooter", comp: Shooter },
+  { id: "GameMatch", title: "GameMatch", comp: GameMatch },
 ];
 
 const curPath = ref(window.location.hash.slice(1))

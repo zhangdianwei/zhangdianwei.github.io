@@ -20,6 +20,11 @@ export default class DragManager {
     }
 
     startDrag(event) {
+        // 检查是否可以接受玩家输入
+        if (!this.gameApp.levelManager.canAcceptInput()) {
+            return;
+        }
+
         const point = event.global;
         this.isDragging = true;
         this.currentDragCell = null;
@@ -34,6 +39,11 @@ export default class DragManager {
     }
 
     updateDrag(event) {
+        // 检查是否可以接受玩家输入
+        if (!this.gameApp.levelManager.canAcceptInput()) {
+            return;
+        }
+
         const point = event.global;
         if (!this.isDragging) return;
 
@@ -67,17 +77,20 @@ export default class DragManager {
         if (!this.isDragging) return;
 
         this.isDragging = false;
+        this.currentDragCell = null;
+
+        if (this.dragCellQueue.length === 0) return;
+
+        const firstCell = this.dragCellQueue[0];
+        const remainingCellsOfColor = this.countRemainingCellsOfColor(firstCell.colorIndex);
 
         // 处理匹配结果
-        if (this.dragCellQueue.length >= 1) {
+        if (this.dragCellQueue.length >= 3 || remainingCellsOfColor < 3) {
             this.processDragMatch();
         } else {
             // 清除高亮
             this.clearDragQueue();
         }
-
-        // 重置状态
-        this.currentDragCell = null;
     }
 
     clearDragQueue() {
@@ -95,7 +108,7 @@ export default class DragManager {
         for (let i = this.gameApp.cells.children.length - 1; i >= 0; i--) {
             const cell = this.gameApp.cells.children[i];
             const bounds = cell.getDisplayPoints();
-            if (this.isPointInPolygon([point.x, point.y], bounds.map(p => [p.x, p.y]))) {
+            if (!cell.isDestroyed && this.isPointInPolygon([point.x, point.y], bounds.map(p => [p.x, p.y]))) {
                 return cell;
             }
         }
@@ -118,13 +131,19 @@ export default class DragManager {
         return inside;
     }
 
+    /**
+     * 处理拖拽匹配
+     */
     processDragMatch() {
-        // 清除所有cell的高亮状态
+        // 在方法一开始就标记所有相关的 cell 为已移除状态
         this.dragCellQueue.forEach(cell => {
             if (cell && !cell.isDestroyed) {
-                cell.setHighlight(false);
+                cell.isRemoved = true; // 标记为已移除
+                cell.setHighlight(false); // 清除高亮
             }
         });
+
+        let levelCompleted = false; // 记录关卡是否完成
 
         // 按顺序处理每个Cell
         this.dragCellQueue.forEach((cell, index) => {
@@ -132,9 +151,14 @@ export default class DragManager {
 
             // 延迟处理，创造连锁效果
             setTimeout(() => {
-                if (cell && !cell.isDestroyed) {
+                if (cell && !cell.isDestroyed && cell.isRemoved) {
                     // 先更新分数，获取返回值
                     const result = this.gameApp.levelManager.updateScore(score, cell.colorIndex);
+
+                    // 检查关卡是否完成
+                    if (result && result.levelCompleted) {
+                        levelCompleted = true;
+                    }
 
                     // 播放破碎动画
                     this.gameApp.animationManager.playCellBreakAnim(cell, result);
@@ -142,11 +166,38 @@ export default class DragManager {
                     // 立即移除Cell
                     this.gameApp.removeCell(cell);
                 }
-            }, index * 150); // 每个Cell延迟50ms
+            }, index * 150); // 每个Cell延迟150ms
         });
 
         // 清空队列
         this.dragCellQueue = [];
+
+        // 如果关卡完成，延迟结束游戏；否则生成新水滴
+        if (levelCompleted) {
+            setTimeout(() => {
+                this.gameApp.levelManager.endGame(true);
+            }, 500);
+        } else {
+            setTimeout(() => {
+                this.gameApp.levelManager.checkAndGenerateCells();
+            }, 500);
+        }
+    }
+
+    /**
+     * 计算场上剩余的指定颜色的水滴数量
+     * @param {number} colorIndex - 颜色索引
+     * @returns {number} - 剩余水滴数量
+     */
+    countRemainingCellsOfColor(colorIndex) {
+        let count = 0;
+        for (let i = 0; i < this.gameApp.cells.children.length; i++) {
+            const cell = this.gameApp.cells.children[i];
+            if (!cell.isDestroyed && cell.colorIndex === colorIndex) {
+                count++;
+            }
+        }
+        return count;
     }
 
     destroy() {

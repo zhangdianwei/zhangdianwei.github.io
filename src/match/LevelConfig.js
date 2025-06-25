@@ -1,137 +1,127 @@
 /**
  * 关卡配置
- * 简化版本：去除布局策略和难度设置，使用统一的六边形网格生成
+ * 所有关卡都设计为简单易上手的挑战，颜色数量控制在5个以内
  */
 
 export const levelConfigs = [
-// 第1关 - 新手入门
+    // 第1关 - 色彩缤纷
     {
         id: 1,
-        name: "新手入门",
-        description: "学习基本操作",
-        timeLimit: 0, // 0表示不限时
-        targetScore: 50,
-        minMatchLength: 2,
-        colorIndex: [0, 1], // 使用前两种颜色
+        name: "色彩缤纷",
+        description: "体验多彩世界",
+        targetScore: 100,
+        minMatchLength: 3,
+        colorIndex: [0, 1], // 2种颜色
         dropletCount: [3, 3], // 每种颜色3个水滴
         collectCount: [3, 3] // 每种颜色需要收集3个
     },
 
-    // 第2关 - 基础练习
+    // 第2关 - 长链挑战
     {
         id: 2,
-        name: "基础练习",
-        description: "掌握匹配技巧",
-        timeLimit: 0,
-        targetScore: 100,
-        minMatchLength: 2,
-        colorIndex: [0, 1, 2],
-        dropletCount: [2, 2, 2],
-        collectCount: [2, 2, 2]
-    },
-
-    // 第3关 - 技巧提升
-    {
-        id: 3,
-        name: "技巧提升",
-        description: "提高匹配效率",
-        timeLimit: 0,
-        targetScore: 150,
-        minMatchLength: 3,
-        colorIndex: [0, 1, 2, 3],
-        dropletCount: [2, 2, 2, 2],
-        collectCount: [2, 2, 2, 2]
-    },
-
-    // 第4关 - 时间挑战
-    {
-        id: 4,
-        name: "时间挑战",
-        description: "在限定时间内完成目标",
-        timeLimit: 120, // 2分钟
-        targetScore: 200,
-        minMatchLength: 3,
-        colorIndex: [0, 1, 2, 3, 4],
-        dropletCount: null, // null表示所有水滴数量都无限
-        collectCount: [5, 5, 5, 5, 5]
-    },
-
-    // 第5关 - 颜色大师
-    {
-        id: 5,
-        name: "颜色大师",
-        description: "处理更多颜色",
-        timeLimit: 100,
-        targetScore: 300,
-        minMatchLength: 3,
-        colorIndex: [0, 1, 2, 3, 4, 5],
-        dropletCount: null, // null表示所有水滴数量都无限
-        collectCount: [4, 4, 4, 4, 4, 4]
-    },
-
-    // 第6关 - 长链挑战
-    {
-        id: 6,
         name: "长链挑战",
         description: "形成更长的匹配链",
-        timeLimit: 90,
-        targetScore: 400,
-        minMatchLength: 4,
-        colorIndex: [0, 1, 2, 3, 4, 5, 6],
-        dropletCount: null, // null表示所有水滴数量都无限
-        collectCount: [3, 3, 3, 3, 3, 3, 3]
+        targetScore: 150,
+        minMatchLength: 3,
+        colorIndex: [0, 1, 2], // 3种颜色
+        dropletCount: [4, 4, 4], // 每种颜色4个水滴
+        collectCount: [4, 4, 4] // 每种颜色需要收集4个
     },
 
-    // 第7关 - 速度测试
+    // 第3关 - 时间压力
     {
-        id: 7,
-        name: "速度测试",
-        description: "快速匹配挑战",
-        timeLimit: 80,
-        targetScore: 500,
-        minMatchLength: 4,
-        colorIndex: [0, 1, 2, 3, 4, 5, 6, 7],
-        dropletCount: null, // null表示所有水滴数量都无限
-        collectCount: [3, 3, 3, 3, 3, 3, 3, 3]
+        id: 3,
+        name: "时间压力",
+        description: "在限定时间内完成目标",
+        targetScore: 200,
+        minMatchLength: 3,
+        colorIndex: [0, 1, 2, 3], // 4种颜色
+        dropletCount: [5, 5, 5, 5], // 每种颜色5个水滴
+        collectCount: [5, 5, 5, 5] // 每种颜色需要收集5个
     },
 
-    // 第8关 - 专家模式
+    // 第4关 - 大师挑战
     {
-        id: 8,
-        name: "专家模式",
-        description: "高难度挑战",
-        timeLimit: 70,
-        targetScore: 600,
-        minMatchLength: 4,
-        colorIndex: [0, 1, 2, 3, 4, 5, 6, 7, 8],
-        dropletCount: null, // null表示所有水滴数量都无限
-        collectCount: [2, 2, 2, 2, 2, 2, 2, 2, 2]
-    },
-
-    // 第9关 - 大师挑战
-    {
-        id: 9,
+        id: 4,
         name: "大师挑战",
-        description: "终极挑战",
-        timeLimit: 60,
-        targetScore: 700,
-        minMatchLength: 5,
-        colorIndex: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-        dropletCount: null, // null表示所有水滴数量都无限
-        collectCount: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+        description: "高难度挑战",
+        targetScore: 250,
+        minMatchLength: 4,
+        colorIndex: [0, 1, 2, 3, 4], // 5种颜色
+        dropletCount: [6, 6, 6, 6, 6], // 每种颜色6个水滴
+        collectCount: [6, 6, 6, 6, 6] // 每种颜色需要收集6个
     },
 
-    // 第10关 - 传奇模式
+    // 第5关 - 传奇模式
     {
-        id: 10,
+        id: 5,
         name: "传奇模式",
         description: "传奇级别的挑战",
-        timeLimit: 50,
-        targetScore: 800,
-        minMatchLength: 5,
-        colorIndex: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        targetScore: 300,
+        minMatchLength: 4,
+        colorIndex: [0, 1, 2, 3, 4], // 5种颜色
         dropletCount: null, // null表示所有水滴数量都无限
-        collectCount: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        collectCount: [8, 8, 8, 8, 8] // 每种颜色需要收集8个
+    },
+
+    // 第6关 - 终极挑战
+    {
+        id: 6,
+        name: "终极挑战",
+        description: "终极挑战模式",
+        targetScore: 350,
+        minMatchLength: 4,
+        colorIndex: [0, 1, 2, 3, 4], // 5种颜色
+        dropletCount: null,
+        collectCount: [10, 10, 10, 10, 10] // 每种颜色需要收集10个
+    },
+
+    // 第7关 - 完美风暴
+    {
+        id: 7,
+        name: "完美风暴",
+        description: "完美风暴挑战",
+        targetScore: 400,
+        minMatchLength: 5,
+        colorIndex: [0, 1, 2, 3, 4], // 5种颜色
+        dropletCount: null,
+        collectCount: [12, 12, 12, 12, 12] // 每种颜色需要收集12个
+    },
+
+    // 第8关 - 神级挑战
+    {
+        id: 8,
+        name: "神级挑战",
+        description: "神级难度挑战",
+        targetScore: 450,
+        minMatchLength: 5,
+        colorIndex: [0, 1, 2, 3, 4], // 5种颜色
+        dropletCount: null,
+        collectCount: [15, 15, 15, 15, 15] // 每种颜色需要收集15个
+    },
+
+    // 第9关 - 无尽挑战
+    {
+        id: 9,
+        name: "无尽挑战",
+        description: "无尽挑战模式",
+        targetScore: 500,
+        minMatchLength: 5,
+        colorIndex: [0, 1, 2, 3, 4], // 5种颜色
+        dropletCount: null,
+        collectCount: [18, 18, 18, 18, 18] // 每种颜色需要收集18个
+    },
+
+    // 第10关 - 终极传奇
+    {
+        id: 10,
+        name: "终极传奇",
+        description: "终极传奇挑战",
+        targetScore: 600,
+        minMatchLength: 5,
+        colorIndex: [0, 1, 2, 3, 4], // 5种颜色
+        dropletCount: null,
+        collectCount: [20, 20, 20, 20, 20] // 每种颜色需要收集20个
     }
 ];
 

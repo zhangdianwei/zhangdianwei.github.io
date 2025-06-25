@@ -38,7 +38,7 @@ export default class UIManager {
         // 清空颜色指示器数组
         this.levelColorIndicators = [];
 
-        const indicatorWidth = 240;
+        const indicatorWidth = 120;
         const indicatorSpacing = 30;
         const totalWidth = config.colorIndex.length * indicatorWidth + (config.colorIndex.length - 1) * indicatorSpacing;
         const startX = -totalWidth / 2;
@@ -56,7 +56,7 @@ export default class UIManager {
         });
 
         // 初始化进度显示
-        this.updateLevelProgressUI();
+        this.initLevelProgressUI();
 
         // 重新计算居中位置
         this.levelInfoUI.x = this.gameApp.pixi.screen.width / 2;
@@ -64,7 +64,7 @@ export default class UIManager {
     }
 
     // 更新关卡进度UI（每次收集水滴时调用）
-    updateLevelProgressUI() {
+    initLevelProgressUI() {
         if (!this.levelInfoUI || !this.gameApp.levelManager || !this.gameApp.levelManager.currentLevelConfig) {
             return;
         }

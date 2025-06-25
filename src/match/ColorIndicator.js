@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import gameApp from './GameApp';
 
 // 颜色指示器类
 export default class ColorIndicator extends PIXI.Container {
@@ -57,8 +58,13 @@ export default class ColorIndicator extends PIXI.Container {
             if (this.children.includes(glow)) {
                 this.removeChild(glow);
             }
+
+            console.log('playHitEffect', result);
+            if (result.levelCompleted) {
+                gameApp.levelManager.endGame(true);
+            }
         }, 100);
 
-        this.updateProgress(result.currentScore);
+        this.updateProgress(result.count);
     }
 } 

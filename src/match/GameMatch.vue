@@ -17,7 +17,7 @@ onMounted(() => {
 function initGameApp() {
     window.gameApp = gameApp;
 
-    const options = { designWidth: 1080, designHeight: 1920, scale: 0.8 };
+    const options = { designWidth: 1080, designHeight: 1920, scale: 0.9 };
     gameApp.initDom(pixiContainer.value, options)
     gameApp.init(pixiContainer.value);
 }

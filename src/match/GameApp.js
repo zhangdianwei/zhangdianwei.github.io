@@ -5,6 +5,7 @@ import LevelManager from './LevelManager.js';
 import DragManager from './DragManager.js';
 import UIManager from './UIManager.js';
 import RenderManager from './RenderManager.js';
+import SettlementManager from './SettlementManager.js';
 
 class GameApp {
 
@@ -40,6 +41,7 @@ class GameApp {
     dragManager = null;
     uiManager = null;
     renderManager = null;
+    settlementManager = null;
 
     // 渲染层
     normalCellGraphic = null; // 普通cell层
@@ -74,6 +76,7 @@ class GameApp {
         this.levelManager = new LevelManager(this);
         this.dragManager = new DragManager(this);
         this.uiManager = new UIManager(this);
+        this.settlementManager = new SettlementManager(this);
     }
 
     // 初始化渲染层
@@ -109,7 +112,7 @@ class GameApp {
     // 物理更新循环
     updatePhysics() {
         // 更新物理世界
-        this.physicsWorld.step(1 / 60, 10, 8);
+        this.physicsWorld.step(1 / 60, 4, 2);
 
         // 更新所有Cell的图形
         this.renderManager.drawAllCellGraphics();
@@ -125,20 +128,26 @@ class GameApp {
         // 创建一个静态的 ground body 来容纳所有的墙
         const ground = this.physicsWorld.createBody();
 
+        // 上边界
+        ground.createFixture(new planck.Edge(
+            new planck.Vec2(0, 0),
+            new planck.Vec2(screenWidth / this.PPM, 0)
+        ));
+
         // 下边界
-        ground.createFixture(planck.Edge(
+        ground.createFixture(new planck.Edge(
             new planck.Vec2(0, screenHeight / this.PPM),
             new planck.Vec2(screenWidth / this.PPM, screenHeight / this.PPM)
         ));
 
         // 左边界
-        ground.createFixture(planck.Edge(
+        ground.createFixture(new planck.Edge(
             new planck.Vec2(0, 0),
             new planck.Vec2(0, screenHeight / this.PPM)
         ));
 
         // 右边界
-        ground.createFixture(planck.Edge(
+        ground.createFixture(new planck.Edge(
             new planck.Vec2(screenWidth / this.PPM, 0),
             new planck.Vec2(screenWidth / this.PPM, screenHeight / this.PPM)
         ));
@@ -208,8 +217,6 @@ class GameApp {
         // 添加到显示容器
         this.cells.addChild(cell);
 
-        // 更新所有Cell的图形
-        this.renderManager.drawAllCellGraphics();
     }
 
     removeCell(cell) {
@@ -231,8 +238,6 @@ class GameApp {
         // 从显示容器中移除
         this.cells.removeChild(cell);
 
-        // 更新所有Cell的图形
-        this.renderManager.drawAllCellGraphics();
     }
 
     findAndRemoveMatches(startCell) {
@@ -312,6 +317,9 @@ class GameApp {
         }
         if (this.renderManager) {
             this.renderManager.destroy();
+        }
+        if (this.settlementManager) {
+            this.settlementManager.destroy();
         }
 
         // 清理渲染层

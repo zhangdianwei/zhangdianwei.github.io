@@ -1,5 +1,7 @@
 <template>
-    <canvas ref="pixiContainer"></canvas>
+    <div class="game-container">
+        <canvas ref="pixiContainer"></canvas>
+    </div>
 </template>
 
 <script setup>
@@ -27,8 +29,8 @@ onUnmounted(() => {
 });
 </script>
 
-<style>
-html, body {
+<style scoped>
+.game-container {
     margin: 0;
     padding: 0;
     overflow: hidden;

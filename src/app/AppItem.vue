@@ -15,13 +15,19 @@ function onClick() {
 </script>
 
 <template>
-
-  <div style="width: 100%; text-align: center; ">
+  <div class="app-item">
     <Button type="success" size="large" @click="onClick">
       <Icon type="md-eye" />
       {{ routeData.title }}
     </Button>
   </div>
-
-
 </template>
+<style scoped>
+.app-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 10px;
+}
+</style>

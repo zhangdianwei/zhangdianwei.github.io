@@ -21,6 +21,7 @@ import Game2048 from "../game2048/Game2048.vue"
 import SplitImage from "../comp/SplitImage.vue"
 import Shooter from "../shooter/Shooter.vue"
 import GameMatch from "../match/GameMatch.vue"
+import { Row, Col } from 'view-ui-plus'
 
 const routesArray = [
   { id: "TankMain", title: "坦克大战", comp: TankMain },
@@ -71,17 +72,24 @@ function onClickItem(routeData) {
 </script>
 
 <template>
-  <div v-if="curView">
-    <Suspense>
-      <component v-if="curRouteData.link" :is="curView" :link="curRouteData.link" />
-      <component v-else="!curRouteData.link" :is="curView" />
-    </Suspense>
-  </div>
+  <!-- 路由视图 -->
+  <Suspense v-if="curView">
+    <template #default>
+      <component :is="curView" v-bind="curRouteData.link ? { link: curRouteData.link } : {}" />
+    </template>
+    <template #fallback>
+      <div class="loading">加载中...</div>
+    </template>
+  </Suspense>
+
+  <!-- 项目列表 -->
   <div v-else>
-    <Grid :col="5">
-      <GridItem v-for="routeData in routesArray">
-        <AppItem :routeData="routeData"></AppItem>
-      </GridItem>
-    </Grid>
+    <Row :gutter="16">
+      <Col v-for="routeData in routesArray" :key="routeData.id" :span="4" :xs="12" :sm="8" :md="6" :lg="4" :xl="4">
+      <div @click="onClickItem(routeData)">
+        <AppItem :routeData="routeData" />
+      </div>
+      </Col>
+    </Row>
   </div>
 </template>

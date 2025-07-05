@@ -112,7 +112,7 @@ class GameApp {
     // 物理更新循环
     updatePhysics() {
         // 更新物理世界
-        this.physicsWorld.step(1 / 60, 4, 2);
+        this.physicsWorld.step(1 / 60, 2, 1);
 
         // 更新所有Cell的图形
         this.renderManager.drawAllCellGraphics();

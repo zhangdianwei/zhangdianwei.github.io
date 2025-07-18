@@ -8,6 +8,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import * as PIXI from 'pixi.js';
 import { gsap } from 'gsap';
 import { initDom, createPixi } from '../pixi/PixiHelper';
+import { PixiPlugin } from "gsap/PixiPlugin";
 
 // 关卡配置
 const AllLevelConfig = [
@@ -18,10 +19,10 @@ const AllLevelConfig = [
             type: "line",
             start: { x: 0.1, y: 0.7 },
             end: { x: 0.9, y: 0.7 },
-            width: 0.03
+            width: 0.06
         },
         obstacles: {
-            interval: 1200,
+            interval: 2000,
             types: ["hankey", "hankey", "bomb"] // 70% 狗屎, 30% 炸弹
         },
         playerSpeed: 0.006
@@ -32,13 +33,14 @@ const AllLevelConfig = [
         path: {
             type: "arc",
             center: { x: 0.5, y: 0.7 },
-            radius: 0.2,
+            radiusX: 0.4, // 左右半径更大
+            radiusY: 0.15, // 上下半径更小，使弧度更扁平
             startAngle: 0,
             endAngle: Math.PI,
-            width: 0.03
+            width: 0.06
         },
         obstacles: {
-            interval: 1000,
+            interval: 1800,
             types: ["hankey", "hankey", "hankey", "bomb"] // 75% 狗屎, 25% 炸弹
         },
         playerSpeed: 0.007
@@ -47,15 +49,15 @@ const AllLevelConfig = [
         name: "波浪之旅",
         targetScore: 12,
         path: {
-            type: "wave",
+            type: "sin",
             start: { x: 0.1, y: 0.7 },
             end: { x: 0.9, y: 0.7 },
             amplitude: 0.08,
-            frequency: 3,
-            width: 0.03
+            frequency: 2,
+            width: 0.06
         },
         obstacles: {
-            interval: 800,
+            interval: 1600,
             types: ["hankey", "hankey", "bomb", "bomb"] // 50% 狗屎, 50% 炸弹
         },
         playerSpeed: 0.008
@@ -66,11 +68,11 @@ const AllLevelConfig = [
         path: {
             type: "circle",
             center: { x: 0.5, y: 0.7 },
-            radius: 0.15,
-            width: 0.03
+            radius: 0.4,
+            width: 0.06
         },
         obstacles: {
-            interval: 700,
+            interval: 1400,
             types: ["hankey", "bomb", "bomb"] // 33% 狗屎, 67% 炸弹
         },
         playerSpeed: 0.009
@@ -79,21 +81,18 @@ const AllLevelConfig = [
         name: "终极挑战",
         targetScore: 20,
         path: {
-            type: "polyline",
-            points: [
-                { x: 0.1, y: 0.7 },
-                { x: 0.3, y: 0.7 },
-                { x: 0.5, y: 0.7 },
-                { x: 0.7, y: 0.7 },
-                { x: 0.9, y: 0.7 }
-            ],
-            width: 0.03
+            type: "wave",
+            start: { x: 0.1, y: 0.7 },
+            end: { x: 0.9, y: 0.7 },
+            amplitude: 0.12,
+            frequency: 2,
+            width: 0.06
         },
         obstacles: {
-            interval: 600,
+            interval: 1200,
             types: ["hankey", "bomb", "bomb", "bomb"] // 25% 狗屎, 75% 炸弹
         },
-        playerSpeed: 0.01
+        playerSpeed: 0.015
     }
 ];
 
@@ -146,21 +145,61 @@ class Player {
             case "arc":
                 const angle = this.path.startAngle + (this.path.endAngle - this.path.startAngle) * t;
                 return {
-                    x: this.path.center.x * width + Math.cos(angle) * this.path.radius * width,
-                    y: this.path.center.y * height + Math.sin(angle) * this.path.radius * height
+                    x: this.path.center.x * width + Math.cos(angle) * this.path.radiusX * width,
+                    y: this.path.center.y * height + Math.sin(angle) * this.path.radiusY * height
                 };
-            case "wave":
+            case "sin":
+                // 使用正弦函数计算玩家位置
                 const x = this.path.start.x * width + (this.path.end.x * width - this.path.start.x * width) * t;
-                const waveY = Math.sin(t * this.path.frequency * Math.PI * 2) * this.path.amplitude * height;
+                const sinY = Math.sin(t * this.path.frequency * Math.PI * 2) * this.path.amplitude * height;
                 return {
                     x: x,
-                    y: this.path.start.y * height + waveY
+                    y: this.path.start.y * height + sinY
+                };
+            case "wave":
+                // 使用贝塞尔曲线计算玩家位置，与绘制路径保持一致
+                const startX = this.path.start.x * width;
+                const endX = this.path.end.x * width;
+                const centerY = this.path.start.y * height;
+                const amplitude = this.path.amplitude * height;
+                const frequency = this.path.frequency;
+
+                // 计算波浪的周期
+                const totalDistance = endX - startX;
+                const wavelength = totalDistance / frequency;
+
+                // 计算当前t值对应的波浪周期和周期内的位置
+                const currentX = startX + t * totalDistance;
+                const waveIndex = Math.floor((currentX - startX) / wavelength);
+                const waveT = ((currentX - startX) % wavelength) / wavelength;
+
+                // 使用贝塞尔曲线公式计算Y坐标
+                const waveStartX = startX + waveIndex * wavelength;
+                const cp1X = waveStartX + wavelength * 0.25;
+                const cp1Y = centerY + amplitude;
+                const cp2X = waveStartX + wavelength * 0.75;
+                const cp2Y = centerY - amplitude;
+                const waveEndX = waveStartX + wavelength;
+
+                // 贝塞尔曲线公式：B(t) = (1-t)³P₀ + 3(1-t)²tP₁ + 3(1-t)t²P₂ + t³P₃
+                const t1 = 1 - waveT;
+                const t2 = waveT;
+                const y = t1 * t1 * t1 * centerY +
+                    3 * t1 * t1 * t2 * cp1Y +
+                    3 * t1 * t2 * t2 * cp2Y +
+                    t2 * t2 * t2 * centerY;
+
+                return {
+                    x: currentX,
+                    y: y
                 };
             case "circle":
                 const circleAngle = t * Math.PI * 2;
+                // 使用相同的半径值确保玩家移动路径与绘制路径一致
+                const radius = this.path.radius * Math.min(width, height);
                 return {
-                    x: this.path.center.x * width + Math.cos(circleAngle) * this.path.radius * width,
-                    y: this.path.center.y * height + Math.sin(circleAngle) * this.path.radius * height
+                    x: this.path.center.x * width + Math.cos(circleAngle) * radius,
+                    y: this.path.center.y * height + Math.sin(circleAngle) * radius
                 };
             case "polyline":
                 const segmentCount = this.path.points.length - 1;
@@ -271,7 +310,7 @@ class Obstacle {
 class GameApp {
     constructor() {
         this.pixi = null;
-        this.currentLevel = 0;
+        this.currentLevel = 4;
         this.score = 0;
         this.gameState = "waiting"; // "waiting", "playing", "gameover", "win"
 
@@ -304,7 +343,7 @@ class GameApp {
     }
 
     async init() {
-        const options = { designWidth: 1080, designHeight: 1920, scale: 0.9 };
+        const options = { designWidth: 1080, designHeight: 1920, scale: 1 };
         initDom(pixiContainer.value, options);
         this.pixi = createPixi(pixiContainer.value);
         this.pixi.gameApp = this; // 让pixi实例可以访问gameApp
@@ -515,7 +554,7 @@ class GameApp {
         const pathWidth = pathConfig.width * width;
 
         this.pathGraphics.lineStyle(pathWidth, 0x666666, 0.5);
-        this.pathGraphics.beginFill(0x444444, 0.3);
+        // 移除填充，只绘制线条
 
         switch (pathConfig.type) {
             case "line":
@@ -527,28 +566,83 @@ class GameApp {
                 );
                 break;
             case "arc":
-                this.pathGraphics.arc(
-                    pathConfig.center.x * width, pathConfig.center.y * height,
-                    pathConfig.radius * width, pathConfig.startAngle, pathConfig.endAngle
-                );
-                break;
-            case "wave":
-                const segments = 100;
-                for (let i = 0; i <= segments; i++) {
-                    const t = i / segments;
-                    const pos = this.getWavePosition(pathConfig, t);
+                // 绘制椭圆弧，使用多个线段近似
+                const arcSegments = 100;
+                for (let i = 0; i <= arcSegments; i++) {
+                    const t = i / arcSegments;
+                    const angle = pathConfig.startAngle + (pathConfig.endAngle - pathConfig.startAngle) * t;
+                    const x = pathConfig.center.x * width + Math.cos(angle) * pathConfig.radiusX * width;
+                    const y = pathConfig.center.y * height + Math.sin(angle) * pathConfig.radiusY * height;
+
                     if (i === 0) {
-                        this.pathGraphics.moveTo(pos.x, pos.y);
+                        this.pathGraphics.moveTo(x, y);
                     } else {
-                        this.pathGraphics.lineTo(pos.x, pos.y);
+                        this.pathGraphics.lineTo(x, y);
                     }
                 }
                 break;
+            case "sin":
+                // 使用正弦函数绘制平滑的波浪
+                const sinSegments = 200;
+                for (let i = 0; i <= sinSegments; i++) {
+                    const t = i / sinSegments;
+                    const x = pathConfig.start.x * width + (pathConfig.end.x * width - pathConfig.start.x * width) * t;
+                    const sinY = Math.sin(t * pathConfig.frequency * Math.PI * 2) * pathConfig.amplitude * height;
+                    const y = pathConfig.start.y * height + sinY;
+
+                    if (i === 0) {
+                        this.pathGraphics.moveTo(x, y);
+                    } else {
+                        this.pathGraphics.lineTo(x, y);
+                    }
+                }
+                break;
+            case "wave":
+                // 使用贝塞尔曲线绘制平滑的波浪
+                const waveStartX = pathConfig.start.x * width;
+                const waveEndX = pathConfig.end.x * width;
+                const waveCenterY = pathConfig.start.y * height;
+                const waveAmplitude = pathConfig.amplitude * height;
+                const waveFrequency = pathConfig.frequency;
+
+                // 计算波浪的周期
+                const waveTotalDistance = waveEndX - waveStartX;
+                const waveWavelength = waveTotalDistance / waveFrequency;
+
+                // 绘制贝塞尔曲线波浪
+                this.pathGraphics.moveTo(waveStartX, waveCenterY);
+
+                for (let i = 0; i < waveFrequency; i++) {
+                    const periodStartX = waveStartX + i * waveWavelength;
+                    const periodEndX = waveStartX + (i + 1) * waveWavelength;
+
+                    // 每个波浪周期的控制点
+                    const cp1X = periodStartX + waveWavelength * 0.25;
+                    const cp1Y = waveCenterY + waveAmplitude;
+                    const cp2X = periodStartX + waveWavelength * 0.75;
+                    const cp2Y = waveCenterY - waveAmplitude;
+
+                    // 绘制贝塞尔曲线
+                    this.pathGraphics.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, periodEndX, waveCenterY);
+                }
+                break;
             case "circle":
-                this.pathGraphics.drawCircle(
-                    pathConfig.center.x * width, pathConfig.center.y * height,
-                    pathConfig.radius * width
-                );
+                // 绘制圆形路径，使用多个线段近似
+                const circleSegments = 100;
+                for (let i = 0; i <= circleSegments; i++) {
+                    const t = i / circleSegments;
+                    const angle = t * Math.PI * 2;
+                    // 使用相同的半径值确保绘制的是圆形
+                    const radius = pathConfig.radius * Math.min(width, height);
+                    const x = pathConfig.center.x * width + Math.cos(angle) * radius;
+                    const y = pathConfig.center.y * height + Math.sin(angle) * radius;
+
+                    if (i === 0) {
+                        this.pathGraphics.moveTo(x, y);
+                    } else {
+                        this.pathGraphics.lineTo(x, y);
+                    }
+                }
                 break;
             case "polyline":
                 this.pathGraphics.moveTo(pathConfig.points[0].x * width, pathConfig.points[0].y * height);
@@ -558,7 +652,6 @@ class GameApp {
                 break;
         }
 
-        this.pathGraphics.endFill();
         this.pixi.stage.addChild(this.pathGraphics);
     }
 
@@ -704,17 +797,12 @@ class GameApp {
         explosion.y = y;
         this.pixi.stage.addChild(explosion);
 
-        // 使用GSAP创建爆炸动画
+        // 使用GSAP + PixiPlugin创建爆炸动画
         gsap.to(explosion, {
             alpha: 0,
+            pixi: { scale: 2 }, // 使用PixiPlugin的scale属性
             duration: 0.8,
             ease: "power2.out",
-            onUpdate: () => {
-                // 手动处理scale属性
-                const progress = gsap.getProperty(explosion, "progress") || 0;
-                const scale = 1 + progress; // 从1缩放到2
-                explosion.scale.set(scale);
-            },
             onComplete: () => {
                 this.pixi.stage.removeChild(explosion);
             }
@@ -730,58 +818,20 @@ class GameApp {
         this.pixi.stage.addChild(hankeySprite);
 
         // 目标位置（分数显示区域）
-        const targetX = this.pixi.screen.width * 0.95;
-        const targetY = this.pixi.screen.height * 0.04;
+        const targetX = this.scoreText.x - this.scoreText.width / 2;
+        const targetY = this.scoreText.y;
 
-        // 使用GSAP创建平滑的抛物线飞行动画
-        const timeline = gsap.timeline({
+        gsap.to(hankeySprite, {
+            pixi: {
+                x: targetX,
+                y: targetY,
+                scale: 0.5
+            },
+            duration: 0.6,
+            ease: "power2.inOut",
             onComplete: () => {
                 this.pixi.stage.removeChild(hankeySprite);
                 this.updateUI(); // 更新分数显示
-            }
-        });
-
-        // 创建平滑的抛物线轨迹
-        const controlPoint1X = x + (targetX - x) * 0.3;
-        const controlPoint1Y = Math.min(y, targetY) - 150; // 控制点1，向上150px
-        const controlPoint2X = x + (targetX - x) * 0.7;
-        const controlPoint2Y = Math.min(y, targetY) - 80;  // 控制点2，向上80px
-
-        timeline.to(hankeySprite, {
-            duration: 1.2,
-            ease: "power2.inOut",
-            onUpdate: () => {
-                // 使用三次贝塞尔曲线计算平滑轨迹
-                const progress = timeline.progress();
-                const t = progress;
-                const t2 = t * t;
-                const t3 = t2 * t;
-                const mt = 1 - t;
-                const mt2 = mt * mt;
-                const mt3 = mt2 * mt;
-
-                // 三次贝塞尔曲线公式
-                const newX = x * mt3 + controlPoint1X * 3 * mt2 * t + controlPoint2X * 3 * mt * t2 + targetX * t3;
-                const newY = y * mt3 + controlPoint1Y * 3 * mt2 * t + controlPoint2Y * 3 * mt * t2 + targetY * t3;
-
-                hankeySprite.x = newX;
-                hankeySprite.y = newY;
-
-                // 平滑的缩放动画
-                let scale;
-                if (progress < 0.3) {
-                    // 前30%：从1缩放到0.8
-                    const localProgress = progress / 0.3;
-                    scale = 1 - (localProgress * 0.2);
-                } else if (progress < 0.7) {
-                    // 30%-70%：保持0.8
-                    scale = 0.8;
-                } else {
-                    // 后30%：从0.8缩放到0.1
-                    const localProgress = (progress - 0.7) / 0.3;
-                    scale = 0.8 - (localProgress * 0.7);
-                }
-                hankeySprite.scale.set(scale);
             }
         });
     }
@@ -871,23 +921,13 @@ class GameApp {
 
         timeline.to(winSprite, {
             alpha: 1,
+            pixi: { scale: 1.2 }, // 使用PixiPlugin的scale属性
             duration: 0.8,
-            ease: "back.out(1.7)",
-            onUpdate: () => {
-                // 手动处理scale属性 - 从1缩放到1.2
-                const progress = timeline.progress();
-                const scale = 1 + (progress * 0.2);
-                winSprite.scale.set(scale);
-            }
+            ease: "back.out(1.7)"
         }).to(winSprite, {
+            pixi: { scale: 1 }, // 使用PixiPlugin的scale属性
             duration: 0.3,
-            ease: "power2.out",
-            onUpdate: () => {
-                // 手动处理scale属性 - 从1.2缩放到1
-                const progress = timeline.progress();
-                const scale = 1.2 - (progress * 0.2);
-                winSprite.scale.set(scale);
-            }
+            ease: "power2.out"
         }).to(winSprite, {
             alpha: 0,
             duration: 0.5,
@@ -963,6 +1003,8 @@ const gameApp = new GameApp();
 const pixiContainer = ref(null);
 
 onMounted(async () => {
+    gsap.registerPlugin(PixiPlugin);
+    PixiPlugin.registerPIXI(PIXI);
     await gameApp.init();
     gameApp.initGame();
 

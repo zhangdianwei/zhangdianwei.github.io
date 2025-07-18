@@ -20,10 +20,10 @@ const AllLevelConfig = [
             width: 0.03
         },
         obstacles: {
-            interval: 1800,
+            interval: 1200,
             types: ["hankey", "hankey", "bomb"] // 70% 狗屎, 30% 炸弹
         },
-        playerSpeed: 0.004
+        playerSpeed: 0.006
     },
     {
         name: "弯道挑战",
@@ -37,10 +37,10 @@ const AllLevelConfig = [
             width: 0.03
         },
         obstacles: {
-            interval: 1600,
+            interval: 1000,
             types: ["hankey", "hankey", "hankey", "bomb"] // 75% 狗屎, 25% 炸弹
         },
-        playerSpeed: 0.005
+        playerSpeed: 0.007
     },
     {
         name: "波浪之旅",
@@ -54,10 +54,10 @@ const AllLevelConfig = [
             width: 0.03
         },
         obstacles: {
-            interval: 1400,
+            interval: 800,
             types: ["hankey", "hankey", "bomb", "bomb"] // 50% 狗屎, 50% 炸弹
         },
-        playerSpeed: 0.006
+        playerSpeed: 0.008
     },
     {
         name: "环形赛道",
@@ -69,10 +69,10 @@ const AllLevelConfig = [
             width: 0.03
         },
         obstacles: {
-            interval: 1200,
+            interval: 700,
             types: ["hankey", "bomb", "bomb"] // 33% 狗屎, 67% 炸弹
         },
-        playerSpeed: 0.007
+        playerSpeed: 0.009
     },
     {
         name: "终极挑战",
@@ -89,10 +89,10 @@ const AllLevelConfig = [
             width: 0.03
         },
         obstacles: {
-            interval: 1000,
+            interval: 600,
             types: ["hankey", "bomb", "bomb", "bomb"] // 25% 狗屎, 75% 炸弹
         },
-        playerSpeed: 0.008
+        playerSpeed: 0.01
     }
 ];
 
@@ -111,9 +111,8 @@ class Player {
 
     init() {
         // 加载玩家图片
-        this.sprite = PIXI.Sprite.from('/ballgame/player_run.png');
+        this.sprite = new PIXI.Sprite(this.pixi.gameApp.textures['/ballgame/player_run.png']);
         this.sprite.anchor.set(0.5);
-        this.sprite.scale.set(0.3);
         this.pixi.stage.addChild(this.sprite);
 
         // 设置初始位置
@@ -127,9 +126,9 @@ class Player {
 
         // 根据移动方向翻转图片
         if (this.direction < 0) {
-            this.sprite.scale.x = -0.3;
+            this.sprite.scale.x = -1;
         } else {
-            this.sprite.scale.x = 0.3;
+            this.sprite.scale.x = 1;
         }
     }
 
@@ -202,11 +201,17 @@ class Player {
     }
 
     getBounds() {
+        const bounds = this.sprite.getBounds();
+        const scale = 0.9; // 碰撞区域为原始大小的0.9倍
+        const centerX = bounds.x + bounds.width / 2;
+        const centerY = bounds.y + bounds.height / 2;
+        const scaledWidth = bounds.width * scale;
+        const scaledHeight = bounds.height * scale;
         return {
-            x: this.sprite.x - 30,
-            y: this.sprite.y - 30,
-            width: 60,
-            height: 60
+            x: centerX - scaledWidth / 2,
+            y: centerY - scaledHeight / 2,
+            width: scaledWidth,
+            height: scaledHeight
         };
     }
 }
@@ -218,16 +223,15 @@ class Obstacle {
         this.sprite = null;
         this.x = x;
         this.y = y;
-        this.speed = 2;
+        this.speed = 4;
 
         this.init();
     }
 
     init() {
         const texturePath = this.type === "bomb" ? "/ballgame/bomb.png" : "/ballgame/hankey.png";
-        this.sprite = PIXI.Sprite.from(texturePath);
+        this.sprite = new PIXI.Sprite(this.pixi.gameApp.textures[texturePath]);
         this.sprite.anchor.set(0.5);
-        this.sprite.scale.set(0.4);
         this.sprite.x = this.x;
         this.sprite.y = this.y;
         this.pixi.stage.addChild(this.sprite);
@@ -242,11 +246,17 @@ class Obstacle {
     }
 
     getBounds() {
+        const bounds = this.sprite.getBounds();
+        const scale = 0.9; // 碰撞区域为原始大小的0.9倍
+        const centerX = bounds.x + bounds.width / 2;
+        const centerY = bounds.y + bounds.height / 2;
+        const scaledWidth = bounds.width * scale;
+        const scaledHeight = bounds.height * scale;
         return {
-            x: this.sprite.x - 25,
-            y: this.sprite.y - 25,
-            width: 50,
-            height: 50
+            x: centerX - scaledWidth / 2,
+            y: centerY - scaledHeight / 2,
+            width: scaledWidth,
+            height: scaledHeight
         };
     }
 
@@ -276,12 +286,27 @@ class GameApp {
 
         this.audioContext = null;
         this.sounds = {};
+
+        // 资源管理
+        this.textures = {};
+        this.resourcesLoaded = false;
+
+        // 基础字体样式
+        this.baseFontStyle = {
+            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontWeight: 'bold',
+            strokeThickness: 5
+        };
     }
 
-    init() {
+    async init() {
         const options = { designWidth: 1080, designHeight: 1920, scale: 0.9 };
         initDom(pixiContainer.value, options);
         this.pixi = createPixi(pixiContainer.value);
+        this.pixi.gameApp = this; // 让pixi实例可以访问gameApp
+
+        // 加载资源
+        await this.loadResources();
 
         // 添加背景装饰
         this.createBackground();
@@ -294,6 +319,35 @@ class GameApp {
 
         // 开始游戏循环
         this.gameLoop();
+    }
+
+    async loadResources() {
+        const resources = [
+            '/ballgame/player_run.png',
+            '/ballgame/player_win.png',
+            '/ballgame/player_fail.png',
+            '/ballgame/bomb.png',
+            '/ballgame/hankey.png'
+        ];
+
+        const loadPromises = resources.map(url => {
+            return new Promise((resolve, reject) => {
+                const texture = PIXI.Texture.from(url);
+                texture.baseTexture.on('loaded', () => {
+                    this.textures[url] = texture;
+                    resolve();
+                });
+                texture.baseTexture.on('error', reject);
+            });
+        });
+
+        try {
+            await Promise.all(loadPromises);
+            this.resourcesLoaded = true;
+            console.log('所有资源加载完成');
+        } catch (error) {
+            console.error('资源加载失败:', error);
+        }
     }
 
     createBackground() {
@@ -351,50 +405,56 @@ class GameApp {
     }
 
     initUI() {
-        // 分数显示 (目标：1/8 格式)
-        this.scoreText = new PIXI.Text('目标：0/5', {
-            fontFamily: 'Arial',
-            fontSize: 56,
-            fill: 0xFFFFFF,
-            stroke: 0x000000,
-            strokeThickness: 4
+        // 游戏标题 (左上角)
+        this.titleText = new PIXI.Text('抓住狗屎运', {
+            ...this.baseFontStyle,
+            fontSize: 64,
+            fill: 0xDDDDE6,
+            dropShadow: true,
+            dropShadowColor: 0xFFFFFF,
+            dropShadowBlur: 4,
+            dropShadowDistance: 2
         });
-        this.scoreText.x = this.pixi.screen.width * 0.85;
-        this.scoreText.y = this.pixi.screen.height * 0.05;
-        this.pixi.stage.addChild(this.scoreText);
+        this.titleText.anchor.set(0, 0.5);
+        this.titleText.x = this.pixi.screen.width * 0.05;
+        this.titleText.y = this.pixi.screen.height * 0.04;
+        this.pixi.stage.addChild(this.titleText);
 
-        // 关卡显示
+        // 关卡显示 (游戏名下面)
         this.levelText = new PIXI.Text('', {
-            fontFamily: 'Arial',
+            ...this.baseFontStyle,
             fontSize: 48,
-            fill: 0xFFFFFF,
-            stroke: 0x000000,
-            strokeThickness: 4
+            fill: 0xB0E0E6,
+            dropShadow: true,
+            dropShadowColor: 0xFFFFFF,
+            dropShadowBlur: 2,
+            dropShadowDistance: 1
         });
+        this.levelText.anchor.set(0, 0.5);
         this.levelText.x = this.pixi.screen.width * 0.05;
-        this.levelText.y = this.pixi.screen.height * 0.05;
+        this.levelText.y = this.pixi.screen.height * 0.08;
         this.pixi.stage.addChild(this.levelText);
 
-        // 游戏标题
-        this.titleText = new PIXI.Text('抓住狗屎运', {
-            fontFamily: 'Arial',
-            fontSize: 64,
-            fill: 0xFFFF00,
-            stroke: 0x000000,
-            strokeThickness: 6
+        // 分数显示 (右上角)
+        this.scoreText = new PIXI.Text('目标：0/5', {
+            ...this.baseFontStyle,
+            fontSize: 56,
+            fill: 0xB0E0E6,
+            dropShadow: true,
+            dropShadowColor: 0xFFFFFF,
+            dropShadowBlur: 2,
+            dropShadowDistance: 1
         });
-        this.titleText.anchor.set(0.5);
-        this.titleText.x = this.pixi.screen.width * 0.5;
-        this.titleText.y = this.pixi.screen.height * 0.08;
-        this.pixi.stage.addChild(this.titleText);
+        this.scoreText.anchor.set(1, 0.5);
+        this.scoreText.x = this.pixi.screen.width * 0.95;
+        this.scoreText.y = this.pixi.screen.height * 0.04;
+        this.pixi.stage.addChild(this.scoreText);
 
         // 说明文字
         this.instructionText = new PIXI.Text('点击屏幕开始游戏', {
-            fontFamily: 'Arial',
-            fontSize: 48,
-            fill: 0xFFFFFF,
-            stroke: 0x000000,
-            strokeThickness: 6
+            ...this.baseFontStyle,
+            fontSize: 60,
+            fill: 0xB0E0E6
         });
         this.instructionText.anchor.set(0.5);
         this.instructionText.x = this.pixi.screen.width * 0.5;
@@ -402,12 +462,10 @@ class GameApp {
         this.pixi.stage.addChild(this.instructionText);
 
         // 游戏说明
-        this.helpText = new PIXI.Text('点击屏幕让角色反向移动\n收集狗屎得分，避开炸弹', {
-            fontFamily: 'Arial',
-            fontSize: 28,
-            fill: 0xCCCCCC,
-            stroke: 0x000000,
-            strokeThickness: 2,
+        this.helpText = new PIXI.Text('收集狗屎得分，避开炸弹', {
+            ...this.baseFontStyle,
+            fontSize: 50,
+            fill: 0xB0E0E6,
             align: 'center'
         });
         this.helpText.anchor.set(0.5);
@@ -426,7 +484,7 @@ class GameApp {
         this.cleanupLevel();
 
         const levelConfig = AllLevelConfig[levelIndex];
-        this.levelText.text = levelConfig.name;
+        this.levelText.text = `${levelConfig.name}`;
 
         // 绘制路径
         this.drawPath(levelConfig.path);
@@ -671,8 +729,8 @@ class GameApp {
         this.pixi.stage.addChild(hankeySprite);
 
         // 目标位置（分数显示区域）
-        const targetX = this.pixi.screen.width * 0.85;
-        const targetY = this.pixi.screen.height * 0.05;
+        const targetX = this.pixi.screen.width * 0.95;
+        const targetY = this.pixi.screen.height * 0.04;
 
         // 动画效果
         const startX = x;
@@ -704,11 +762,12 @@ class GameApp {
         animate();
     }
 
+
+
     showFailScreen() {
         // 创建失败图片
-        const failSprite = PIXI.Sprite.from('/ballgame/player_fail.png');
+        const failSprite = new PIXI.Sprite(this.textures['/ballgame/player_fail.png']);
         failSprite.anchor.set(0.5);
-        failSprite.scale.set(0.4);
         failSprite.x = this.pixi.screen.width * 0.5;
         failSprite.y = this.pixi.screen.height * 0.5;
         failSprite.alpha = 0;
@@ -744,9 +803,8 @@ class GameApp {
 
     showWinScreen() {
         // 创建胜利图片
-        const winSprite = PIXI.Sprite.from('/ballgame/player_win.png');
+        const winSprite = new PIXI.Sprite(this.textures['/ballgame/player_win.png']);
         winSprite.anchor.set(0.5);
-        winSprite.scale.set(0.4);
         winSprite.x = this.pixi.screen.width * 0.5;
         winSprite.y = this.pixi.screen.height * 0.5;
         winSprite.alpha = 0;
@@ -884,8 +942,8 @@ class GameApp {
 const gameApp = new GameApp();
 const pixiContainer = ref(null);
 
-onMounted(() => {
-    gameApp.init();
+onMounted(async () => {
+    await gameApp.init();
     gameApp.initGame();
 
     // 添加点击事件

@@ -11,94 +11,99 @@ import { initDom, createPixi } from '../pixi/PixiHelper';
 // 关卡配置
 const AllLevelConfig = [
     {
-        name: "第一关 - 直线",
+        name: "新手村",
         targetScore: 5,
         path: {
             type: "line",
-            start: { x: 200, y: 540 },
-            end: { x: 1720, y: 540 },
-            width: 60
-        },
-        obstacles: {
-            interval: 2500,
-            types: ["hankey", "hankey", "bomb"] // 70% 狗屎, 30% 炸弹
-        }
-    },
-    {
-        name: "第二关 - 圆弧",
-        targetScore: 8,
-        path: {
-            type: "arc",
-            center: { x: 960, y: 540 },
-            radius: 400,
-            startAngle: 0,
-            endAngle: Math.PI,
-            width: 60
-        },
-        obstacles: {
-            interval: 2200,
-            types: ["hankey", "hankey", "hankey", "bomb"] // 75% 狗屎, 25% 炸弹
-        }
-    },
-    {
-        name: "第三关 - 波浪",
-        targetScore: 12,
-        path: {
-            type: "wave",
-            start: { x: 200, y: 540 },
-            end: { x: 1720, y: 540 },
-            amplitude: 150,
-            frequency: 3,
-            width: 60
-        },
-        obstacles: {
-            interval: 2000,
-            types: ["hankey", "hankey", "bomb", "bomb"] // 50% 狗屎, 50% 炸弹
-        }
-    },
-    {
-        name: "第四关 - 圆形",
-        targetScore: 15,
-        path: {
-            type: "circle",
-            center: { x: 960, y: 540 },
-            radius: 300,
-            width: 60
+            start: { x: 0.1, y: 0.5 },
+            end: { x: 0.9, y: 0.5 },
+            width: 0.03
         },
         obstacles: {
             interval: 1800,
-            types: ["hankey", "bomb", "bomb"] // 33% 狗屎, 67% 炸弹
-        }
+            types: ["hankey", "hankey", "bomb"] // 70% 狗屎, 30% 炸弹
+        },
+        playerSpeed: 0.004
     },
     {
-        name: "第五关 - 折线",
+        name: "弯道挑战",
+        targetScore: 8,
+        path: {
+            type: "arc",
+            center: { x: 0.5, y: 0.5 },
+            radius: 0.2,
+            startAngle: 0,
+            endAngle: Math.PI,
+            width: 0.03
+        },
+        obstacles: {
+            interval: 1600,
+            types: ["hankey", "hankey", "hankey", "bomb"] // 75% 狗屎, 25% 炸弹
+        },
+        playerSpeed: 0.005
+    },
+    {
+        name: "波浪之旅",
+        targetScore: 12,
+        path: {
+            type: "wave",
+            start: { x: 0.1, y: 0.5 },
+            end: { x: 0.9, y: 0.5 },
+            amplitude: 0.08,
+            frequency: 3,
+            width: 0.03
+        },
+        obstacles: {
+            interval: 1400,
+            types: ["hankey", "hankey", "bomb", "bomb"] // 50% 狗屎, 50% 炸弹
+        },
+        playerSpeed: 0.006
+    },
+    {
+        name: "环形赛道",
+        targetScore: 15,
+        path: {
+            type: "circle",
+            center: { x: 0.5, y: 0.5 },
+            radius: 0.15,
+            width: 0.03
+        },
+        obstacles: {
+            interval: 1200,
+            types: ["hankey", "bomb", "bomb"] // 33% 狗屎, 67% 炸弹
+        },
+        playerSpeed: 0.007
+    },
+    {
+        name: "终极挑战",
         targetScore: 20,
         path: {
             type: "polyline",
             points: [
-                { x: 200, y: 300 },
-                { x: 600, y: 600 },
-                { x: 1000, y: 300 },
-                { x: 1400, y: 600 },
-                { x: 1720, y: 300 }
+                { x: 0.1, y: 0.3 },
+                { x: 0.3, y: 0.6 },
+                { x: 0.5, y: 0.3 },
+                { x: 0.7, y: 0.6 },
+                { x: 0.9, y: 0.3 }
             ],
-            width: 60
+            width: 0.03
         },
         obstacles: {
-            interval: 1500,
+            interval: 1000,
             types: ["hankey", "bomb", "bomb", "bomb"] // 25% 狗屎, 75% 炸弹
-        }
+        },
+        playerSpeed: 0.008
     }
 ];
 
 class Player {
-    constructor(pixi, path) {
+    constructor(pixi, path, speed) {
         this.pixi = pixi;
         this.path = path;
+        this.speed = speed;
         this.sprite = null;
         this.currentPosition = 0; // 在路径上的位置 (0-1)
         this.direction = 1; // 1: 正向, -1: 反向
-        this.speed = 0.005;
         this.isMoving = false;
 
         this.init();
@@ -129,30 +134,33 @@ class Player {
     }
 
     getPathPosition(t) {
+        const width = this.pixi.screen.width;
+        const height = this.pixi.screen.height;
+
         switch (this.path.type) {
             case "line":
                 return {
-                    x: this.path.start.x + (this.path.end.x - this.path.start.x) * t,
-                    y: this.path.start.y + (this.path.end.y - this.path.start.y) * t
+                    x: this.path.start.x * width + (this.path.end.x * width - this.path.start.x * width) * t,
+                    y: this.path.start.y * height + (this.path.end.y * height - this.path.start.y * height) * t
                 };
             case "arc":
                 const angle = this.path.startAngle + (this.path.endAngle - this.path.startAngle) * t;
                 return {
-                    x: this.path.center.x + Math.cos(angle) * this.path.radius,
-                    y: this.path.center.y + Math.sin(angle) * this.path.radius
+                    x: this.path.center.x * width + Math.cos(angle) * this.path.radius * width,
+                    y: this.path.center.y * height + Math.sin(angle) * this.path.radius * height
                 };
             case "wave":
-                const x = this.path.start.x + (this.path.end.x - this.path.start.x) * t;
-                const waveY = Math.sin(t * this.path.frequency * Math.PI * 2) * this.path.amplitude;
+                const x = this.path.start.x * width + (this.path.end.x * width - this.path.start.x * width) * t;
+                const waveY = Math.sin(t * this.path.frequency * Math.PI * 2) * this.path.amplitude * height;
                 return {
                     x: x,
-                    y: this.path.start.y + waveY
+                    y: this.path.start.y * height + waveY
                 };
             case "circle":
                 const circleAngle = t * Math.PI * 2;
                 return {
-                    x: this.path.center.x + Math.cos(circleAngle) * this.path.radius,
-                    y: this.path.center.y + Math.sin(circleAngle) * this.path.radius
+                    x: this.path.center.x * width + Math.cos(circleAngle) * this.path.radius * width,
+                    y: this.path.center.y * height + Math.sin(circleAngle) * this.path.radius * height
                 };
             case "polyline":
                 const segmentCount = this.path.points.length - 1;
@@ -162,8 +170,8 @@ class Player {
                 const p1 = this.path.points[segment];
                 const p2 = this.path.points[segment + 1];
                 return {
-                    x: p1.x + (p2.x - p1.x) * segmentT,
-                    y: p1.y + (p2.y - p1.y) * segmentT
+                    x: p1.x * width + (p2.x * width - p1.x * width) * segmentT,
+                    y: p1.y * height + (p2.y * height - p1.y * height) * segmentT
                 };
         }
     }
@@ -230,7 +238,7 @@ class Obstacle {
     }
 
     isOutOfScreen() {
-        return this.sprite.y > 1200;
+        return this.sprite.y > this.pixi.screen.height + 100;
     }
 
     getBounds() {
@@ -254,8 +262,7 @@ class GameApp {
         this.pixi = null;
         this.currentLevel = 0;
         this.score = 0;
-        this.gameState = "waiting"; // "waiting", "playing", "paused", "gameover", "win"
-        this.completedLevels = 0;
+        this.gameState = "waiting"; // "waiting", "playing", "gameover", "win"
 
         this.player = null;
         this.obstacles = [];
@@ -269,11 +276,10 @@ class GameApp {
 
         this.audioContext = null;
         this.sounds = {};
-        this.soundEnabled = true;
     }
 
     init() {
-        const options = { designWidth: 1920, designHeight: 1080, scale: 0.9 };
+        const options = { designWidth: 1080, designHeight: 1920, scale: 0.9 };
         initDom(pixiContainer.value, options);
         this.pixi = createPixi(pixiContainer.value);
 
@@ -297,8 +303,8 @@ class GameApp {
             star.beginFill(0xFFFFFF, Math.random() * 0.5 + 0.2);
             star.drawCircle(0, 0, Math.random() * 3 + 1);
             star.endFill();
-            star.x = Math.random() * 1920;
-            star.y = Math.random() * 1080;
+            star.x = Math.random() * this.pixi.screen.width;
+            star.y = Math.random() * this.pixi.screen.height;
             this.pixi.stage.addChild(star);
 
             // 让星星闪烁
@@ -336,7 +342,7 @@ class GameApp {
     }
 
     playSound(name) {
-        if (this.soundEnabled && this.sounds[name] && this.audioContext.state === 'running') {
+        if (this.sounds[name] && this.audioContext.state === 'running') {
             const source = this.audioContext.createBufferSource();
             source.buffer = this.sounds[name];
             source.connect(this.audioContext.destination);
@@ -345,53 +351,42 @@ class GameApp {
     }
 
     initUI() {
-        // 分数显示
-        this.scoreText = new PIXI.Text('分数: 0', {
+        // 分数显示 (目标：1/8 格式)
+        this.scoreText = new PIXI.Text('目标：0/5', {
             fontFamily: 'Arial',
-            fontSize: 36,
+            fontSize: 56,
             fill: 0xFFFFFF,
             stroke: 0x000000,
             strokeThickness: 4
         });
-        this.scoreText.x = 1600;
-        this.scoreText.y = 50;
+        this.scoreText.x = this.pixi.screen.width * 0.85;
+        this.scoreText.y = this.pixi.screen.height * 0.05;
         this.pixi.stage.addChild(this.scoreText);
 
         // 关卡显示
         this.levelText = new PIXI.Text('', {
             fontFamily: 'Arial',
-            fontSize: 32,
+            fontSize: 48,
             fill: 0xFFFFFF,
             stroke: 0x000000,
             strokeThickness: 4
         });
-        this.levelText.x = 50;
-        this.levelText.y = 50;
+        this.levelText.x = this.pixi.screen.width * 0.05;
+        this.levelText.y = this.pixi.screen.height * 0.05;
         this.pixi.stage.addChild(this.levelText);
 
-        // 已通关数显示
-        this.completedText = new PIXI.Text('已通关: 0', {
+        // 游戏标题
+        this.titleText = new PIXI.Text('抓住狗屎运', {
             fontFamily: 'Arial',
-            fontSize: 24,
-            fill: 0x00FF00,
-            stroke: 0x000000,
-            strokeThickness: 3
-        });
-        this.completedText.x = 50;
-        this.completedText.y = 90;
-        this.pixi.stage.addChild(this.completedText);
-
-        // 目标分数显示
-        this.targetText = new PIXI.Text('目标: 0', {
-            fontFamily: 'Arial',
-            fontSize: 28,
+            fontSize: 64,
             fill: 0xFFFF00,
             stroke: 0x000000,
-            strokeThickness: 3
+            strokeThickness: 6
         });
-        this.targetText.x = 1600;
-        this.targetText.y = 100;
-        this.pixi.stage.addChild(this.targetText);
+        this.titleText.anchor.set(0.5);
+        this.titleText.x = this.pixi.screen.width * 0.5;
+        this.titleText.y = this.pixi.screen.height * 0.08;
+        this.pixi.stage.addChild(this.titleText);
 
         // 说明文字
         this.instructionText = new PIXI.Text('点击屏幕开始游戏', {
@@ -402,58 +397,23 @@ class GameApp {
             strokeThickness: 6
         });
         this.instructionText.anchor.set(0.5);
-        this.instructionText.x = 960;
-        this.instructionText.y = 300;
+        this.instructionText.x = this.pixi.screen.width * 0.5;
+        this.instructionText.y = this.pixi.screen.height * 0.35;
         this.pixi.stage.addChild(this.instructionText);
 
         // 游戏说明
-        this.helpText = new PIXI.Text('点击屏幕或按空格键让角色反向移动\n收集狗屎得分，避开炸弹\n按P键暂停游戏', {
+        this.helpText = new PIXI.Text('点击屏幕让角色反向移动\n收集狗屎得分，避开炸弹', {
             fontFamily: 'Arial',
-            fontSize: 24,
+            fontSize: 28,
             fill: 0xCCCCCC,
             stroke: 0x000000,
             strokeThickness: 2,
             align: 'center'
         });
         this.helpText.anchor.set(0.5);
-        this.helpText.x = 960;
-        this.helpText.y = 400;
+        this.helpText.x = this.pixi.screen.width * 0.5;
+        this.helpText.y = this.pixi.screen.height * 0.45;
         this.pixi.stage.addChild(this.helpText);
-
-        // 音效开关按钮
-        this.soundButton = new PIXI.Text('🔊', {
-            fontFamily: 'Arial',
-            fontSize: 32,
-            fill: 0xFFFFFF,
-            stroke: 0x000000,
-            strokeThickness: 3
-        });
-        this.soundButton.x = 1800;
-        this.soundButton.y = 50;
-        this.soundButton.interactive = true;
-        this.soundButton.buttonMode = true;
-        this.soundButton.on('pointerdown', () => {
-            this.soundEnabled = !this.soundEnabled;
-            this.soundButton.text = this.soundEnabled ? '🔊' : '🔇';
-        });
-        this.pixi.stage.addChild(this.soundButton);
-
-        // 暂停按钮
-        this.pauseButton = new PIXI.Text('⏸️', {
-            fontFamily: 'Arial',
-            fontSize: 32,
-            fill: 0xFFFFFF,
-            stroke: 0x000000,
-            strokeThickness: 3
-        });
-        this.pauseButton.x = 1750;
-        this.pauseButton.y = 50;
-        this.pauseButton.interactive = true;
-        this.pauseButton.buttonMode = true;
-        this.pauseButton.on('pointerdown', () => {
-            this.togglePause();
-        });
-        this.pixi.stage.addChild(this.pauseButton);
     }
 
     initGame() {
@@ -467,13 +427,12 @@ class GameApp {
 
         const levelConfig = AllLevelConfig[levelIndex];
         this.levelText.text = levelConfig.name;
-        this.targetText.text = `目标: ${levelConfig.targetScore}`;
 
         // 绘制路径
         this.drawPath(levelConfig.path);
 
         // 创建玩家
-        this.player = new Player(this.pixi, levelConfig.path);
+        this.player = new Player(this.pixi, levelConfig.path, levelConfig.playerSpeed);
 
         // 重置游戏状态
         this.score = 0;
@@ -491,17 +450,27 @@ class GameApp {
         }
 
         this.pathGraphics = new PIXI.Graphics();
-        this.pathGraphics.lineStyle(pathConfig.width, 0x666666, 0.5);
+        const width = this.pixi.screen.width;
+        const height = this.pixi.screen.height;
+        const pathWidth = pathConfig.width * width;
+
+        this.pathGraphics.lineStyle(pathWidth, 0x666666, 0.5);
         this.pathGraphics.beginFill(0x444444, 0.3);
 
         switch (pathConfig.type) {
             case "line":
-                this.pathGraphics.moveTo(pathConfig.start.x, pathConfig.start.y);
-                this.pathGraphics.lineTo(pathConfig.end.x, pathConfig.end.y);
+                // 绘制圆头直线
+                this.drawRoundedLine(
+                    pathConfig.start.x * width, pathConfig.start.y * height,
+                    pathConfig.end.x * width, pathConfig.end.y * height,
+                    pathWidth / 2
+                );
                 break;
             case "arc":
-                this.pathGraphics.arc(pathConfig.center.x, pathConfig.center.y,
-                    pathConfig.radius, pathConfig.startAngle, pathConfig.endAngle);
+                this.pathGraphics.arc(
+                    pathConfig.center.x * width, pathConfig.center.y * height,
+                    pathConfig.radius * width, pathConfig.startAngle, pathConfig.endAngle
+                );
                 break;
             case "wave":
                 const segments = 100;
@@ -516,12 +485,15 @@ class GameApp {
                 }
                 break;
             case "circle":
-                this.pathGraphics.drawCircle(pathConfig.center.x, pathConfig.center.y, pathConfig.radius);
+                this.pathGraphics.drawCircle(
+                    pathConfig.center.x * width, pathConfig.center.y * height,
+                    pathConfig.radius * width
+                );
                 break;
             case "polyline":
-                this.pathGraphics.moveTo(pathConfig.points[0].x, pathConfig.points[0].y);
+                this.pathGraphics.moveTo(pathConfig.points[0].x * width, pathConfig.points[0].y * height);
                 for (let i = 1; i < pathConfig.points.length; i++) {
-                    this.pathGraphics.lineTo(pathConfig.points[i].x, pathConfig.points[i].y);
+                    this.pathGraphics.lineTo(pathConfig.points[i].x * width, pathConfig.points[i].y * height);
                 }
                 break;
         }
@@ -530,12 +502,29 @@ class GameApp {
         this.pixi.stage.addChild(this.pathGraphics);
     }
 
+    drawRoundedLine(x1, y1, x2, y2, radius) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const length = Math.sqrt(dx * dx + dy * dy);
+
+        if (length === 0) return;
+
+        const unitX = dx / length;
+        const unitY = dy / length;
+
+        // 绘制主体线段
+        this.pathGraphics.moveTo(x1 + unitX * radius, y1 + unitY * radius);
+        this.pathGraphics.lineTo(x2 - unitX * radius, y2 - unitY * radius);
+    }
+
     getWavePosition(pathConfig, t) {
-        const x = pathConfig.start.x + (pathConfig.end.x - pathConfig.start.x) * t;
-        const waveY = Math.sin(t * pathConfig.frequency * Math.PI * 2) * pathConfig.amplitude;
+        const width = this.pixi.screen.width;
+        const height = this.pixi.screen.height;
+        const x = pathConfig.start.x * width + (pathConfig.end.x * width - pathConfig.start.x * width) * t;
+        const waveY = Math.sin(t * pathConfig.frequency * Math.PI * 2) * pathConfig.amplitude * height;
         return {
             x: x,
-            y: pathConfig.start.y + waveY
+            y: pathConfig.start.y * height + waveY
         };
     }
 
@@ -556,8 +545,8 @@ class GameApp {
     }
 
     updateUI() {
-        this.scoreText.text = `分数: ${this.score}`;
-        this.completedText.text = `已通关: ${this.completedLevels}`;
+        const levelConfig = AllLevelConfig[this.currentLevel];
+        this.scoreText.text = `目标：${this.score}/${levelConfig.targetScore}`;
 
         if (this.gameState === "waiting") {
             this.instructionText.text = "点击屏幕开始游戏";
@@ -565,10 +554,6 @@ class GameApp {
             this.helpText.visible = true;
         } else if (this.gameState === "playing") {
             this.instructionText.visible = false;
-            this.helpText.visible = false;
-        } else if (this.gameState === "paused") {
-            this.instructionText.text = "游戏暂停中，点击继续";
-            this.instructionText.visible = true;
             this.helpText.visible = false;
         } else if (this.gameState === "gameover") {
             this.instructionText.text = "游戏结束！点击重新开始";
@@ -609,7 +594,7 @@ class GameApp {
     spawnObstacle() {
         const levelConfig = AllLevelConfig[this.currentLevel];
         const type = levelConfig.obstacles.types[Math.floor(Math.random() * levelConfig.obstacles.types.length)];
-        const x = Math.random() * 1600 + 160; // 随机X位置
+        const x = Math.random() * this.pixi.screen.width * 0.8 + this.pixi.screen.width * 0.1; // 随机X位置
         const obstacle = new Obstacle(this.pixi, type, x, -50);
         this.obstacles.push(obstacle);
     }
@@ -634,13 +619,12 @@ class GameApp {
                 } else if (obstacle.type === "hankey") {
                     this.score++;
                     this.playSound('collect');
-                    this.createCollectEffect(obstacle.sprite.x, obstacle.sprite.y);
+                    this.createHankeyFlyEffect(obstacle.sprite.x, obstacle.sprite.y);
 
                     // 检查是否达到目标分数
                     const levelConfig = AllLevelConfig[this.currentLevel];
                     if (this.score >= levelConfig.targetScore) {
                         this.gameState = "win";
-                        this.completedLevels++;
                         this.updateUI();
                         this.showWinScreen();
                     }
@@ -677,32 +661,44 @@ class GameApp {
         animate();
     }
 
-    createCollectEffect(x, y) {
-        const effect = new PIXI.Text('+1', {
-            fontFamily: 'Arial',
-            fontSize: 32,
-            fill: 0x00FF00,
-            stroke: 0x000000,
-            strokeThickness: 3
-        });
-        effect.anchor.set(0.5);
-        effect.x = x;
-        effect.y = y;
-        this.pixi.stage.addChild(effect);
+    createHankeyFlyEffect(x, y) {
+        // 创建狗屎精灵
+        const hankeySprite = PIXI.Sprite.from('/ballgame/hankey.png');
+        hankeySprite.anchor.set(0.5);
+        hankeySprite.scale.set(0.3);
+        hankeySprite.x = x;
+        hankeySprite.y = y;
+        this.pixi.stage.addChild(hankeySprite);
+
+        // 目标位置（分数显示区域）
+        const targetX = this.pixi.screen.width * 0.85;
+        const targetY = this.pixi.screen.height * 0.05;
 
         // 动画效果
-        let alpha = 1;
-        let yOffset = 0;
-        const animate = () => {
-            alpha -= 0.02;
-            yOffset -= 1;
-            effect.alpha = alpha;
-            effect.y = y + yOffset;
+        const startX = x;
+        const startY = y;
+        const duration = 30; // 帧数
+        let frame = 0;
 
-            if (alpha > 0) {
+        const animate = () => {
+            frame++;
+            const progress = frame / duration;
+
+            // 抛物线轨迹
+            const currentX = startX + (targetX - startX) * progress;
+            const currentY = startY + (targetY - startY) * progress - Math.sin(progress * Math.PI) * 100;
+
+            hankeySprite.x = currentX;
+            hankeySprite.y = currentY;
+
+            // 缩小效果
+            hankeySprite.scale.set(0.3 - progress * 0.2);
+
+            if (frame < duration) {
                 requestAnimationFrame(animate);
             } else {
-                this.pixi.stage.removeChild(effect);
+                this.pixi.stage.removeChild(hankeySprite);
+                this.updateUI(); // 更新分数显示
             }
         };
         animate();
@@ -713,24 +709,24 @@ class GameApp {
         const failSprite = PIXI.Sprite.from('/ballgame/player_fail.png');
         failSprite.anchor.set(0.5);
         failSprite.scale.set(0.4);
-        failSprite.x = 960;
-        failSprite.y = 540;
+        failSprite.x = this.pixi.screen.width * 0.5;
+        failSprite.y = this.pixi.screen.height * 0.5;
         failSprite.alpha = 0;
         this.pixi.stage.addChild(failSprite);
 
         // 淡入动画
         let alpha = 0;
         const fadeIn = () => {
-            alpha += 0.05;
+            alpha += 0.1;
             failSprite.alpha = alpha;
 
             if (alpha < 1) {
                 requestAnimationFrame(fadeIn);
             } else {
-                // 3秒后淡出
+                // 1秒后淡出
                 setTimeout(() => {
                     const fadeOut = () => {
-                        alpha -= 0.05;
+                        alpha -= 0.1;
                         failSprite.alpha = alpha;
 
                         if (alpha > 0) {
@@ -740,7 +736,7 @@ class GameApp {
                         }
                     };
                     fadeOut();
-                }, 3000);
+                }, 1000);
             }
         };
         fadeIn();
@@ -751,8 +747,8 @@ class GameApp {
         const winSprite = PIXI.Sprite.from('/ballgame/player_win.png');
         winSprite.anchor.set(0.5);
         winSprite.scale.set(0.4);
-        winSprite.x = 960;
-        winSprite.y = 540;
+        winSprite.x = this.pixi.screen.width * 0.5;
+        winSprite.y = this.pixi.screen.height * 0.5;
         winSprite.alpha = 0;
         this.pixi.stage.addChild(winSprite);
 
@@ -762,8 +758,8 @@ class GameApp {
             particle.beginFill(0xFFFF00, 0.8);
             particle.drawCircle(0, 0, 5);
             particle.endFill();
-            particle.x = 960;
-            particle.y = 540;
+            particle.x = this.pixi.screen.width * 0.5;
+            particle.y = this.pixi.screen.height * 0.5;
             particle.alpha = 0;
             this.pixi.stage.addChild(particle);
 
@@ -864,8 +860,6 @@ class GameApp {
 
             // 检查碰撞
             this.checkCollisions();
-        } else if (this.gameState === "paused") {
-            // 暂停状态下不更新游戏逻辑，但继续渲染
         }
 
         requestAnimationFrame(() => this.gameLoop());
@@ -876,26 +870,7 @@ class GameApp {
             this.startGame();
         } else if (this.gameState === "playing") {
             this.reversePlayer();
-        } else if (this.gameState === "paused") {
-            this.resumeGame();
         }
-    }
-
-    togglePause() {
-        if (this.gameState === "playing") {
-            this.gameState = "paused";
-            this.pauseButton.text = '▶️';
-            this.instructionText.text = "游戏暂停中，点击继续";
-            this.instructionText.visible = true;
-        } else if (this.gameState === "paused") {
-            this.resumeGame();
-        }
-    }
-
-    resumeGame() {
-        this.gameState = "playing";
-        this.pauseButton.text = '⏸️';
-        this.instructionText.visible = false;
     }
 
     destroy() {
@@ -918,24 +893,11 @@ onMounted(() => {
         gameApp.handleClick();
     };
 
-    // 添加键盘事件
-    const handleKeyDown = (event) => {
-        if (event.code === 'Space') {
-            event.preventDefault();
-            gameApp.handleClick();
-        } else if (event.code === 'KeyP') {
-            event.preventDefault();
-            gameApp.togglePause();
-        }
-    };
-
     document.addEventListener('click', handleClick);
-    document.addEventListener('keydown', handleKeyDown);
 
     // 清理事件监听器
     onUnmounted(() => {
         document.removeEventListener('click', handleClick);
-        document.removeEventListener('keydown', handleKeyDown);
         gameApp.destroy();
     });
 });

@@ -15,8 +15,8 @@ const AllLevelConfig = [
         targetScore: 5,
         path: {
             type: "line",
-            start: { x: 0.1, y: 0.5 },
-            end: { x: 0.9, y: 0.5 },
+            start: { x: 0.1, y: 0.7 },
+            end: { x: 0.9, y: 0.7 },
             width: 0.03
         },
         obstacles: {
@@ -30,7 +30,7 @@ const AllLevelConfig = [
         targetScore: 8,
         path: {
             type: "arc",
-            center: { x: 0.5, y: 0.5 },
+            center: { x: 0.5, y: 0.7 },
             radius: 0.2,
             startAngle: 0,
             endAngle: Math.PI,
@@ -47,8 +47,8 @@ const AllLevelConfig = [
         targetScore: 12,
         path: {
             type: "wave",
-            start: { x: 0.1, y: 0.5 },
-            end: { x: 0.9, y: 0.5 },
+            start: { x: 0.1, y: 0.7 },
+            end: { x: 0.9, y: 0.7 },
             amplitude: 0.08,
             frequency: 3,
             width: 0.03
@@ -64,7 +64,7 @@ const AllLevelConfig = [
         targetScore: 15,
         path: {
             type: "circle",
-            center: { x: 0.5, y: 0.5 },
+            center: { x: 0.5, y: 0.7 },
             radius: 0.15,
             width: 0.03
         },
@@ -80,11 +80,11 @@ const AllLevelConfig = [
         path: {
             type: "polyline",
             points: [
-                { x: 0.1, y: 0.3 },
-                { x: 0.3, y: 0.6 },
-                { x: 0.5, y: 0.3 },
-                { x: 0.7, y: 0.6 },
-                { x: 0.9, y: 0.3 }
+                { x: 0.1, y: 0.7 },
+                { x: 0.3, y: 0.7 },
+                { x: 0.5, y: 0.7 },
+                { x: 0.7, y: 0.7 },
+                { x: 0.9, y: 0.7 }
             ],
             width: 0.03
         },
@@ -631,7 +631,6 @@ class GameApp {
             this.playSound('click');
             this.updateUI();
         } else if (this.gameState === "gameover") {
-            this.currentLevel = 0;
             this.loadLevel(this.currentLevel);
         } else if (this.gameState === "win") {
             this.currentLevel++;

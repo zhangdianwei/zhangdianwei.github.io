@@ -6,6 +6,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import * as PIXI from 'pixi.js';
+import { gsap } from 'gsap';
 import { initDom, createPixi } from '../pixi/PixiHelper';
 
 // 关卡配置
@@ -291,6 +292,9 @@ class GameApp {
         this.textures = {};
         this.resourcesLoaded = false;
 
+        // 星星容器
+        this.starContainer = null;
+
         // 基础字体样式
         this.baseFontStyle = {
             fontFamily: 'Verdana, Geneva, sans-serif',
@@ -307,6 +311,10 @@ class GameApp {
 
         // 加载资源
         await this.loadResources();
+
+        // 创建星星容器
+        this.starContainer = new PIXI.Container();
+        this.pixi.stage.addChildAt(this.starContainer, 0); // 放在最底层
 
         // 添加背景装饰
         this.createBackground();
@@ -327,7 +335,8 @@ class GameApp {
             '/ballgame/player_win.png',
             '/ballgame/player_fail.png',
             '/ballgame/bomb.png',
-            '/ballgame/hankey.png'
+            '/ballgame/hankey.png',
+            '/ballgame/star_small.png'
         ];
 
         const loadPromises = resources.map(url => {
@@ -351,27 +360,20 @@ class GameApp {
     }
 
     createBackground() {
-        // 创建一些装饰性的星星
-        for (let i = 0; i < 50; i++) {
-            const star = new PIXI.Graphics();
-            star.beginFill(0xFFFFFF, Math.random() * 0.5 + 0.2);
-            star.drawCircle(0, 0, Math.random() * 3 + 1);
-            star.endFill();
+        // 创建固定的星星背景
+        for (let i = 0; i < 30; i++) {
+            const star = new PIXI.Sprite(this.textures['/ballgame/star_small.png']);
+            star.anchor.set(0.5);
+
+        // 随机位置
             star.x = Math.random() * this.pixi.screen.width;
             star.y = Math.random() * this.pixi.screen.height;
-            this.pixi.stage.addChild(star);
 
-            // 让星星闪烁
-            let alpha = star.alpha;
-            let direction = 1;
-            const twinkle = () => {
-                alpha += 0.02 * direction;
-                if (alpha >= 0.7) direction = -1;
-                if (alpha <= 0.2) direction = 1;
-                star.alpha = alpha;
-                setTimeout(twinkle, 50);
-            };
-            setTimeout(twinkle, Math.random() * 2000);
+            // 随机大小和透明度
+            star.scale.set(Math.random() * 0.5 + 0.5);
+            star.alpha = Math.random() * 0.4 + 0.2; // 0.2-0.6
+
+            this.starContainer.addChild(star);
         }
     }
 
@@ -702,27 +704,27 @@ class GameApp {
         explosion.y = y;
         this.pixi.stage.addChild(explosion);
 
-        // 动画效果
-        let scale = 1;
-        const animate = () => {
-            scale += 0.1;
-            explosion.scale.set(scale);
-            explosion.alpha -= 0.05;
-
-            if (explosion.alpha > 0) {
-                requestAnimationFrame(animate);
-            } else {
+        // 使用GSAP创建爆炸动画
+        gsap.to(explosion, {
+            alpha: 0,
+            duration: 0.8,
+            ease: "power2.out",
+            onUpdate: () => {
+                // 手动处理scale属性
+                const progress = gsap.getProperty(explosion, "progress") || 0;
+                const scale = 1 + progress; // 从1缩放到2
+                explosion.scale.set(scale);
+            },
+            onComplete: () => {
                 this.pixi.stage.removeChild(explosion);
             }
-        };
-        animate();
+        });
     }
 
     createHankeyFlyEffect(x, y) {
         // 创建狗屎精灵
-        const hankeySprite = PIXI.Sprite.from('/ballgame/hankey.png');
+        const hankeySprite = new PIXI.Sprite(this.textures['/ballgame/hankey.png']);
         hankeySprite.anchor.set(0.5);
-        hankeySprite.scale.set(0.3);
         hankeySprite.x = x;
         hankeySprite.y = y;
         this.pixi.stage.addChild(hankeySprite);
@@ -731,34 +733,57 @@ class GameApp {
         const targetX = this.pixi.screen.width * 0.95;
         const targetY = this.pixi.screen.height * 0.04;
 
-        // 动画效果
-        const startX = x;
-        const startY = y;
-        const duration = 30; // 帧数
-        let frame = 0;
-
-        const animate = () => {
-            frame++;
-            const progress = frame / duration;
-
-            // 抛物线轨迹
-            const currentX = startX + (targetX - startX) * progress;
-            const currentY = startY + (targetY - startY) * progress - Math.sin(progress * Math.PI) * 100;
-
-            hankeySprite.x = currentX;
-            hankeySprite.y = currentY;
-
-            // 缩小效果
-            hankeySprite.scale.set(0.3 - progress * 0.2);
-
-            if (frame < duration) {
-                requestAnimationFrame(animate);
-            } else {
+        // 使用GSAP创建平滑的抛物线飞行动画
+        const timeline = gsap.timeline({
+            onComplete: () => {
                 this.pixi.stage.removeChild(hankeySprite);
                 this.updateUI(); // 更新分数显示
             }
-        };
-        animate();
+        });
+
+        // 创建平滑的抛物线轨迹
+        const controlPoint1X = x + (targetX - x) * 0.3;
+        const controlPoint1Y = Math.min(y, targetY) - 150; // 控制点1，向上150px
+        const controlPoint2X = x + (targetX - x) * 0.7;
+        const controlPoint2Y = Math.min(y, targetY) - 80;  // 控制点2，向上80px
+
+        timeline.to(hankeySprite, {
+            duration: 1.2,
+            ease: "power2.inOut",
+            onUpdate: () => {
+                // 使用三次贝塞尔曲线计算平滑轨迹
+                const progress = timeline.progress();
+                const t = progress;
+                const t2 = t * t;
+                const t3 = t2 * t;
+                const mt = 1 - t;
+                const mt2 = mt * mt;
+                const mt3 = mt2 * mt;
+
+                // 三次贝塞尔曲线公式
+                const newX = x * mt3 + controlPoint1X * 3 * mt2 * t + controlPoint2X * 3 * mt * t2 + targetX * t3;
+                const newY = y * mt3 + controlPoint1Y * 3 * mt2 * t + controlPoint2Y * 3 * mt * t2 + targetY * t3;
+
+                hankeySprite.x = newX;
+                hankeySprite.y = newY;
+
+                // 平滑的缩放动画
+                let scale;
+                if (progress < 0.3) {
+                    // 前30%：从1缩放到0.8
+                    const localProgress = progress / 0.3;
+                    scale = 1 - (localProgress * 0.2);
+                } else if (progress < 0.7) {
+                    // 30%-70%：保持0.8
+                    scale = 0.8;
+                } else {
+                    // 后30%：从0.8缩放到0.1
+                    const localProgress = (progress - 0.7) / 0.3;
+                    scale = 0.8 - (localProgress * 0.7);
+                }
+                hankeySprite.scale.set(scale);
+            }
+        });
     }
 
 
@@ -772,32 +797,23 @@ class GameApp {
         failSprite.alpha = 0;
         this.pixi.stage.addChild(failSprite);
 
-        // 淡入动画
-        let alpha = 0;
-        const fadeIn = () => {
-            alpha += 0.1;
-            failSprite.alpha = alpha;
-
-            if (alpha < 1) {
-                requestAnimationFrame(fadeIn);
-            } else {
-                // 1秒后淡出
-                setTimeout(() => {
-                    const fadeOut = () => {
-                        alpha -= 0.1;
-                        failSprite.alpha = alpha;
-
-                        if (alpha > 0) {
-                            requestAnimationFrame(fadeOut);
-                        } else {
-                            this.pixi.stage.removeChild(failSprite);
-                        }
-                    };
-                    fadeOut();
-                }, 1000);
+        // 使用GSAP创建淡入淡出动画
+        const timeline = gsap.timeline({
+            onComplete: () => {
+                this.pixi.stage.removeChild(failSprite);
             }
-        };
-        fadeIn();
+        });
+
+        timeline.to(failSprite, {
+            alpha: 1,
+            duration: 0.5,
+            ease: "power2.out"
+        }).to(failSprite, {
+            alpha: 0,
+            duration: 0.5,
+            ease: "power2.in",
+            delay: 1
+        });
     }
 
     showWinScreen() {
@@ -820,65 +836,64 @@ class GameApp {
             particle.alpha = 0;
             this.pixi.stage.addChild(particle);
 
-            // 粒子动画
+            // 使用GSAP创建粒子动画
             const angle = (Math.PI * 2 * i) / 20;
-            const speed = 3;
-            const vx = Math.cos(angle) * speed;
-            const vy = Math.sin(angle) * speed;
+            const distance = 100 + Math.random() * 50;
+            const targetX = this.pixi.screen.width * 0.5 + Math.cos(angle) * distance;
+            const targetY = this.pixi.screen.height * 0.5 + Math.sin(angle) * distance;
 
-            let alpha = 0;
-            const animate = () => {
-                alpha += 0.05;
-                particle.alpha = alpha;
-                particle.x += vx;
-                particle.y += vy;
-
-                if (alpha < 1) {
-                    requestAnimationFrame(animate);
-                } else {
-                    // 淡出
-                    const fadeOut = () => {
-                        alpha -= 0.02;
-                        particle.alpha = alpha;
-
-                        if (alpha > 0) {
-                            requestAnimationFrame(fadeOut);
-                        } else {
-                            this.pixi.stage.removeChild(particle);
-                        }
-                    };
-                    setTimeout(fadeOut, 1000);
+            const timeline = gsap.timeline({
+                onComplete: () => {
+                    this.pixi.stage.removeChild(particle);
                 }
-            };
-            setTimeout(animate, i * 100);
+            });
+
+            timeline.to(particle, {
+                alpha: 1,
+                duration: 0.3,
+                delay: i * 0.1,
+                ease: "power2.out"
+            }).to(particle, {
+                x: targetX,
+                y: targetY,
+                alpha: 0,
+                duration: 1.5,
+                ease: "power2.in"
+            });
         }
 
-        // 淡入动画
-        let alpha = 0;
-        const fadeIn = () => {
-            alpha += 0.05;
-            winSprite.alpha = alpha;
-
-            if (alpha < 1) {
-                requestAnimationFrame(fadeIn);
-            } else {
-                // 3秒后淡出
-                setTimeout(() => {
-                    const fadeOut = () => {
-                        alpha -= 0.05;
-                        winSprite.alpha = alpha;
-
-                        if (alpha > 0) {
-                            requestAnimationFrame(fadeOut);
-                        } else {
-                            this.pixi.stage.removeChild(winSprite);
-                        }
-                    };
-                    fadeOut();
-                }, 3000);
+        // 使用GSAP创建胜利图片动画
+        const timeline = gsap.timeline({
+            onComplete: () => {
+                this.pixi.stage.removeChild(winSprite);
             }
-        };
-        fadeIn();
+        });
+
+        timeline.to(winSprite, {
+            alpha: 1,
+            duration: 0.8,
+            ease: "back.out(1.7)",
+            onUpdate: () => {
+                // 手动处理scale属性 - 从1缩放到1.2
+                const progress = timeline.progress();
+                const scale = 1 + (progress * 0.2);
+                winSprite.scale.set(scale);
+            }
+        }).to(winSprite, {
+            duration: 0.3,
+            ease: "power2.out",
+            onUpdate: () => {
+                // 手动处理scale属性 - 从1.2缩放到1
+                const progress = timeline.progress();
+                const scale = 1.2 - (progress * 0.2);
+                winSprite.scale.set(scale);
+            }
+        }).to(winSprite, {
+            alpha: 0,
+            duration: 0.5,
+            ease: "power2.in",
+            delay: 2
+        });
     }
 
     isColliding(rect1, rect2) {
@@ -935,6 +950,12 @@ class GameApp {
         if (this.pixi) {
             this.pixi.destroy(true);
         }
+        // 清理星星容器
+        if (this.starContainer) {
+            this.starContainer.destroy({ children: true });
+        }
+        // 清理所有GSAP动画
+        gsap.killTweensOf("*");
     }
 }
 

@@ -310,7 +310,7 @@ class Obstacle {
 class GameApp {
     constructor() {
         this.pixi = null;
-        this.currentLevel = 4;
+        this.currentLevel = 0;
         this.score = 0;
         this.gameState = "waiting"; // "waiting", "playing", "gameover", "win"
 

@@ -41,7 +41,7 @@ const routesArray = [
   { id: "d-puzzle", title: "d-拼图演示", comp: ShowVideo, link: 'video/puzzle.mp4' },
   { id: "d-ice", title: "d-冰块演示", comp: ShowVideo, link: 'video/ice.mp4' },
   { id: "d-door", title: "d-传送门", comp: ShowVideo, link: 'video/door.mp4' },
-  { id: "BallGame", title: "小球碰撞游戏", comp: BallGame },
+  { id: "BallGame", title: "抓住狗屎运", comp: BallGame },
   { id: "CurveRope", title: "曲线绳子(Three)", comp: CurveRope },
   { id: "CurveRopePixi", title: "曲线绳子(Pixi)", comp: CurveRopePixi },
   { id: "PixiHello", title: "PixiHello", comp: PixiHello },

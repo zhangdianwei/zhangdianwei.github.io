@@ -25,7 +25,7 @@ const AllLevelConfig = [
             interval: 2000,
             types: ["hankey", "hankey", "bomb"] // 70% 狗屎, 30% 炸弹
         },
-        playerSpeed: 0.006
+        playerSpeed: 0.012
     },
     {
         name: "弯道挑战",
@@ -43,7 +43,7 @@ const AllLevelConfig = [
             interval: 1800,
             types: ["hankey", "hankey", "hankey", "bomb"] // 75% 狗屎, 25% 炸弹
         },
-        playerSpeed: 0.007
+        playerSpeed: 0.014
     },
     {
         name: "波浪之旅",
@@ -60,7 +60,7 @@ const AllLevelConfig = [
             interval: 1600,
             types: ["hankey", "hankey", "bomb", "bomb"] // 50% 狗屎, 50% 炸弹
         },
-        playerSpeed: 0.008
+        playerSpeed: 0.016
     },
     {
         name: "环形赛道",
@@ -75,7 +75,7 @@ const AllLevelConfig = [
             interval: 1400,
             types: ["hankey", "bomb", "bomb"] // 33% 狗屎, 67% 炸弹
         },
-        playerSpeed: 0.009
+        playerSpeed: 0.018
     },
     {
         name: "终极挑战",
@@ -92,7 +92,7 @@ const AllLevelConfig = [
             interval: 1200,
             types: ["hankey", "bomb", "bomb", "bomb"] // 25% 狗屎, 75% 炸弹
         },
-        playerSpeed: 0.015
+        playerSpeed: 0.03
     }
 ];
 
@@ -263,7 +263,7 @@ class Obstacle {
         this.sprite = null;
         this.x = x;
         this.y = y;
-        this.speed = 4;
+        this.speed = 8;
 
         this.init();
     }

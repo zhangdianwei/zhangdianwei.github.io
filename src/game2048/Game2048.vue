@@ -189,7 +189,7 @@ function handleKeyDown(e) {
 }
 </script>
 
-<style>
+<style scoped>
 html,
 body {
     margin: 0;

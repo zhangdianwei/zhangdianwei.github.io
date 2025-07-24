@@ -128,15 +128,22 @@ function onClickItem(routeData) {
       <h2 style="margin-bottom: 16px;">{{ cat.name }}</h2>
       <Row :gutter="16">
         <Col v-for="routeData in cat.children" :key="routeData.id" :span="4" :xs="12" :sm="8" :md="6" :lg="4" :xl="4">
-        <Card :bordered="false"
-          style="margin-bottom: 24px; cursor: pointer; min-height: 220px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box;"
-          @click.native="onClickItem(routeData)">
-          <div style="text-align:center; width: 100%;">
-            <div style="font-size: 18px; font-weight: 500; margin-bottom: 8px;">{{ routeData.title }}</div>
-            <img v-if="routeData.img" :src="routeData.img" alt=""
-              style="width: 100%; height: auto; object-fit: contain; margin-bottom: 0; border: 2px solid #e5e6eb; border-radius: 16px; box-sizing: border-box; background: #fafbfc;" />
-          </div>
-        </Card>
+        <template v-if="routeData.img">
+          <Card :bordered="false"
+            style="margin-bottom: 24px; cursor: pointer; min-height: 220px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box;"
+            @click.native="onClickItem(routeData)">
+            <div style="text-align:center; width: 100%;">
+              <div style="font-size: 18px; font-weight: 500; margin-bottom: 8px;">{{ routeData.title }}</div>
+              <img v-if="routeData.img" :src="routeData.img" alt=""
+                style="width: 100%; height: auto; object-fit: contain; margin-bottom: 0; border: 2px solid #e5e6eb; border-radius: 16px; box-sizing: border-box; background: #fafbfc;" />
+            </div>
+          </Card>
+        </template>
+        <template v-else>
+          <Button long @click="onClickItem(routeData)" style="margin-bottom: 24px; font-size: 16px; min-height: 60px;">
+            {{ routeData.title }}
+          </Button>
+        </template>
         </Col>
       </Row>
     </div>

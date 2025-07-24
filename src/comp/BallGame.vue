@@ -1002,24 +1002,22 @@ class GameApp {
 const gameApp = new GameApp();
 const pixiContainer = ref(null);
 
+const handleClick = () => {
+    gameApp.handleClick();
+};
+
 onMounted(async () => {
     gsap.registerPlugin(PixiPlugin);
     PixiPlugin.registerPIXI(PIXI);
     await gameApp.init();
     gameApp.initGame();
-
-    // 添加点击事件
-    const handleClick = () => {
-        gameApp.handleClick();
-    };
-
     document.addEventListener('click', handleClick);
+});
 
-    // 清理事件监听器
-    onUnmounted(() => {
-        document.removeEventListener('click', handleClick);
-        gameApp.destroy();
-    });
+// 清理事件监听器
+onUnmounted(() => {
+    document.removeEventListener('click', handleClick);
+    gameApp.destroy();
 });
 </script>
 

@@ -46,12 +46,11 @@ const categoryRoutes = [
     ]
   },
   {
-    name: "特效合集",
+    name: "Blender建模展示",
     children: [
-      { id: "heart", title: "跳动的爱心", comp: EasyLink, link: 'webui/heart.html' },
-      { id: "d-puzzle", title: "d-拼图演示", comp: ShowVideo, link: 'video/puzzle.mp4' },
-      { id: "d-ice", title: "d-冰块演示", comp: ShowVideo, link: 'video/ice.mp4' },
-      { id: "d-door", title: "d-传送门", comp: ShowVideo, link: 'video/door.mp4' },
+      { id: "d-puzzle", title: "拼图演示", comp: ShowVideo, link: 'video/puzzle.mp4' },
+      { id: "d-ice", title: "冰块演示", comp: ShowVideo, link: 'video/ice.mp4' },
+      { id: "d-door", title: "传送门", comp: ShowVideo, link: 'video/door.mp4' },
     ]
   },
   {

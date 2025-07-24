@@ -23,24 +23,26 @@ import Shooter from "../shooter/Shooter.vue"
 import GameMatch from "../match/GameMatch.vue"
 import { Row, Col, Card, Divider, Button } from 'view-ui-plus'
 
-const imageRoutes = [
-  { id: "CoinKnight", title: "金币骑士", comp: EasyLink, link: 'CoinKnight/index.html', img: "preview/CoinKnight.png" },
-  { id: "FarmMine", title: "田园扫雷", comp: EasyLink, link: 'FarmMine/index.html', img: "preview/FarmMine.png" },
-  { id: "jigsaw", title: "拼图游戏", comp: EasyLink, link: 'jigsaw/index.html', img: "preview/jigsaw.png" },
-  { id: "tetris", title: "俄罗斯方块", comp: EasyLink, link: 'tetris/index.html', img: "preview/tetris.png" },
-  { id: "BallGame", title: "抓住狗屎运", comp: BallGame, img: "preview/BallGame.png" },
-  { id: "Game2048", title: "Game2048", comp: Game2048, img: "preview/Game2048.png" },
-  { id: "GameMatch", title: "GameMatch", comp: GameMatch, img: "preview/GameMatch.png" },
-  { id: "Shooter", title: "Shooter", comp: Shooter, img: "preview/Shooter.png" },
-  { id: "TankMain", title: "坦克大战", comp: TankMain, img: "preview/TankMain.png" },
-]
-
 const categoryRoutes = [
+  {
+    name: "游戏/应用",
+    children: [
+      { id: "CoinKnight", title: "金币骑士", comp: EasyLink, link: 'CoinKnight/index.html', img: "preview/CoinKnight.png" },
+      { id: "FarmMine", title: "田园扫雷", comp: EasyLink, link: 'FarmMine/index.html', img: "preview/FarmMine.png" },
+      { id: "jigsaw", title: "拼图游戏", comp: EasyLink, link: 'jigsaw/index.html', img: "preview/jigsaw.png" },
+      { id: "tetris", title: "俄罗斯方块", comp: EasyLink, link: 'tetris/index.html', img: "preview/tetris.png" },
+      { id: "BallGame", title: "抓住狗屎运", comp: BallGame, img: "preview/BallGame.png" },
+      { id: "Game2048", title: "Game2048", comp: Game2048, img: "preview/Game2048.png" },
+      { id: "GameMatch", title: "GameMatch", comp: GameMatch, img: "preview/GameMatch.png" },
+      { id: "Shooter", title: "Shooter", comp: Shooter, img: "preview/Shooter.png" },
+      { id: "TankMain", title: "坦克大战", comp: TankMain, img: "preview/TankMain.png" },
+    ]
+  },
   {
     name: "工具合集",
     children: [
-      { id: "TrigoCalc", title: "三角函数计算器", comp: TrigoCalc },
-      { id: "SplitImage", title: "SplitImage", comp: SplitImage },
+      { id: "TrigoCalc", title: "三角函数计算器", comp: TrigoCalc, img: "preview/TrigoCalc.png" },
+      { id: "SplitImage", title: "SplitImage", comp: SplitImage, img: "preview/SplitImage.png" },
     ]
   },
   {
@@ -85,10 +87,6 @@ const categoryRoutes = [
   }
 ]
 
-const otherRoutes = [
-
-];
-
 const curPath = ref(window.location.hash.slice(1))
 window.addEventListener('hashchange', () => {
   curPath.value = window.location.hash.slice(1)
@@ -97,7 +95,6 @@ window.addEventListener('hashchange', () => {
 
 // 统一所有路由，便于查找
 const allRoutes = [
-  ...imageRoutes,
   ...categoryRoutes.flatMap(cat => cat.children)
 ];
 
@@ -127,30 +124,19 @@ function onClickItem(routeData) {
 
   <!-- 首页内容 -->
   <div v-else style="padding: 24px;">
-    <h2 style="margin-bottom: 16px;">游戏/应用</h2>
-    <Row :gutter="16">
-      <Col v-for="routeData in imageRoutes" :key="routeData.id" :span="4" :xs="12" :sm="8" :md="6" :lg="4" :xl="4">
-      <Card :bordered="true"
-        style="margin-bottom: 24px; cursor: pointer; min-height: 260px; padding: 32px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #e5e6eb; box-sizing: border-box;"
-        @click.native="onClickItem(routeData)">
-        <div style="text-align:center; width: 100%;">
-          <div style="font-size: 20px; font-weight: 500; margin-bottom: 8px;">{{ routeData.title }}</div>
-          <img v-if="routeData.img" :src="routeData.img" alt=""
-            style="width: 100%; max-width: 220px; height: auto; aspect-ratio: 1/1; object-fit: contain; margin-bottom: 0;" />
-        </div>
-      </Card>
-      </Col>
-    </Row>
-
-    <Divider />
-
     <div v-for="cat in categoryRoutes" :key="cat.name" style="margin-top: 32px;">
       <h2 style="margin-bottom: 16px;">{{ cat.name }}</h2>
       <Row :gutter="16">
         <Col v-for="routeData in cat.children" :key="routeData.id" :span="4" :xs="12" :sm="8" :md="6" :lg="4" :xl="4">
-        <Button long @click="onClickItem(routeData)" style="margin-bottom: 16px; font-size: 15px;">
-          {{ routeData.title }}
-        </Button>
+        <Card :bordered="false"
+          style="margin-bottom: 24px; cursor: pointer; min-height: 220px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box;"
+          @click.native="onClickItem(routeData)">
+          <div style="text-align:center; width: 100%;">
+            <div style="font-size: 18px; font-weight: 500; margin-bottom: 8px;">{{ routeData.title }}</div>
+            <img v-if="routeData.img" :src="routeData.img" alt=""
+              style="width: 100%; height: auto; object-fit: contain; margin-bottom: 0; border: 2px solid #e5e6eb; border-radius: 16px; box-sizing: border-box; background: #fafbfc;" />
+          </div>
+        </Card>
         </Col>
       </Row>
     </div>

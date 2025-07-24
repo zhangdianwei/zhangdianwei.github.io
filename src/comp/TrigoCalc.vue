@@ -98,15 +98,23 @@ onMounted(() => {
 </script>
 
 <template>
-    <Row>
-        <Col :span="4" :offset="10">
-        <h1>三角函数计算器</h1>
-        <Input type="number" v-model="data_angle"><template #prepend>角度</template></Input>
-        <Input type="number" v-model="data_radian"><template #prepend>弧度</template></Input>
-        <Input type="number" v-model="data_sin"><template #prepend>正弦</template></Input>
-        <Input type="number" v-model="data_cos"><template #prepend>余弦</template></Input>
-        <Input type="number" v-model="data_tan"><template #prepend>正切</template></Input>
-        <Input type="number" v-model="data_cot"><template #prepend>余切</template></Input>
+    <Row justify="center">
+        <Col :xs="24" :sm="16" :md="10" :lg="8" :xl="6">
+        <div
+            style="margin-top:32px; padding:24px 12px; background:#fff; border-radius:12px; box-shadow:0 2px 8px #f0f1f2;">
+            <h1 style="text-align:center;">三角函数计算器</h1>
+            <Input type="number" v-model="data_angle" style="margin-bottom: 12px;"><template
+                #prepend>角度</template></Input>
+            <Input type="number" v-model="data_radian" style="margin-bottom: 12px;"><template
+                #prepend>弧度</template></Input>
+            <Input type="number" v-model="data_sin" style="margin-bottom: 12px;"><template
+                #prepend>正弦</template></Input>
+            <Input type="number" v-model="data_cos" style="margin-bottom: 12px;"><template
+                #prepend>余弦</template></Input>
+            <Input type="number" v-model="data_tan" style="margin-bottom: 12px;"><template
+                #prepend>正切</template></Input>
+            <Input type="number" v-model="data_cot"><template #prepend>余切</template></Input>
+        </div>
         </Col>
     </Row>
 </template>

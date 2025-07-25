@@ -7,7 +7,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import * as PIXI from 'pixi.js';
-import { initDom, createPixi } from '../pixi/PixiHelper';
+import { initDom, createPixi, isMobile } from '../pixi/PixiHelper';
 import TWEEN from '@tweenjs/tween.js';
 import PixiLoader from '../pixi/PixiLoader.vue';
 
@@ -1010,8 +1010,7 @@ class GameApp {
         circle.alpha = 1;
         circle.radius = 10; // 加一个自定义属性方便动画
         this.pixi.stage.addChild(circle);
-        // tween.js 动画
-        const tween = new TWEEN.Tween({ radius: 10, alpha: 1 })
+        new TWEEN.Tween({ radius: 10, alpha: 1 })
             .to({ radius: 80, alpha: 0 }, 500)
             .onUpdate(obj => {
                 circle.clear();
@@ -1043,7 +1042,7 @@ const onLoadProgress = (progressData) => {
 // 纹理加载完成回调
 const onTexturesLoaded = async (textures) => {
     console.log('所有纹理加载完成');
-    const options = { designWidth: 1080, designHeight: 1920, scale: 1 };
+    const options = { designWidth: 1080, designHeight: 1920 };
     initDom(pixiContainer.value, options);
     gameApp = new GameApp();
     await gameApp.init();

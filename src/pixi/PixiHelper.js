@@ -1,17 +1,20 @@
 import * as PIXI from 'pixi.js';
 
+export function isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 export function initDom(domElement, options = {}) {
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); // 判断是否为移动设备
 
     let width = 0;
     let height = 0;
-    if (isMobile) {
+    if (isMobile()) {
         const window_width_height_ratio = windowWidth / windowHeight;
         const design_width_height_ratio = options.designWidth / options.designHeight;
         if (window_width_height_ratio > design_width_height_ratio) {
-            height = height;
+            height = options.designHeight;
             width = height * window_width_height_ratio;
         } else {
             width = options.designWidth;
@@ -28,6 +31,7 @@ export function initDom(domElement, options = {}) {
     domElement.style.height = height + 'px';
     domElement.style.transform = `scale(${scale})`;
     domElement.style.transformOrigin = 'center';
+
 }
 
 export function createPixi(domElement) {

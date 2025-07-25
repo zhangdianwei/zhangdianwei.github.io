@@ -6,9 +6,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import * as PIXI from 'pixi.js';
-import { gsap } from 'gsap';
 import { initDom, createPixi } from '../pixi/PixiHelper';
-import { PixiPlugin } from "gsap/PixiPlugin";
+import TWEEN from '@tweenjs/tween.js';
 
 // 关卡配置
 const AllLevelConfig = [
@@ -47,12 +46,12 @@ const AllLevelConfig = [
     },
     {
         name: "波浪之旅",
-        targetScore: 12,
+        targetScore: 10,
         path: {
             type: "sin",
             start: { x: 0.1, y: 0.7 },
             end: { x: 0.9, y: 0.7 },
-            amplitude: 0.08,
+            amplitude: 0.04,
             frequency: 2,
             width: 0.06
         },
@@ -64,7 +63,7 @@ const AllLevelConfig = [
     },
     {
         name: "环形赛道",
-        targetScore: 15,
+        targetScore: 10,
         path: {
             type: "circle",
             center: { x: 0.5, y: 0.7 },
@@ -73,13 +72,13 @@ const AllLevelConfig = [
         },
         obstacles: {
             interval: 1400,
-            types: ["hankey", "bomb", "bomb"] // 33% 狗屎, 67% 炸弹
+            types: ["hankey", "bomb"]
         },
-        playerSpeed: 0.018
+        playerSpeed: 0.010
     },
     {
         name: "终极挑战",
-        targetScore: 20,
+        targetScore: 10,
         path: {
             type: "wave",
             start: { x: 0.1, y: 0.7 },
@@ -90,7 +89,7 @@ const AllLevelConfig = [
         },
         obstacles: {
             interval: 1200,
-            types: ["hankey", "bomb", "bomb", "bomb"] // 25% 狗屎, 75% 炸弹
+            types: ["hankey", "bomb"]
         },
         playerSpeed: 0.03
     }
@@ -343,10 +342,13 @@ class GameApp {
     }
 
     async init() {
-        const options = { designWidth: 1080, designHeight: 1920, scale: 1 };
-        initDom(pixiContainer.value, options);
         this.pixi = createPixi(pixiContainer.value);
         this.pixi.gameApp = this; // 让pixi实例可以访问gameApp
+
+        // 设置舞台事件监听
+        this.pixi.stage.eventMode = 'static';
+        this.pixi.stage.hitArea = this.pixi.screen;
+        this.pixi.stage.on('pointerdown', this.handleClick.bind(this));
 
         // 加载资源
         await this.loadResources();
@@ -795,18 +797,22 @@ class GameApp {
         explosion.endFill();
         explosion.x = x;
         explosion.y = y;
+        explosion.alpha = 1;
+        explosion.scale.set(1);
         this.pixi.stage.addChild(explosion);
-
-        // 使用GSAP + PixiPlugin创建爆炸动画
-        gsap.to(explosion, {
-            alpha: 0,
-            pixi: { scale: 2 }, // 使用PixiPlugin的scale属性
-            duration: 0.8,
-            ease: "power2.out",
-            onComplete: () => {
+        // tween.js动画：scale 1->2, alpha 1->0
+        const obj = { scale: 1, alpha: 1 };
+        new TWEEN.Tween(obj)
+            .to({ scale: 2, alpha: 0 }, 800)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .onUpdate(() => {
+                explosion.alpha = obj.alpha;
+                explosion.scale.set(obj.scale);
+            })
+            .onComplete(() => {
                 this.pixi.stage.removeChild(explosion);
-            }
-        });
+            })
+            .start();
     }
 
     createHankeyFlyEffect(x, y) {
@@ -815,28 +821,26 @@ class GameApp {
         hankeySprite.anchor.set(0.5);
         hankeySprite.x = x;
         hankeySprite.y = y;
+        hankeySprite.scale.set(1);
         this.pixi.stage.addChild(hankeySprite);
-
         // 目标位置（分数显示区域）
         const targetX = this.scoreText.x - this.scoreText.width / 2;
         const targetY = this.scoreText.y;
-
-        gsap.to(hankeySprite, {
-            pixi: {
-                x: targetX,
-                y: targetY,
-                scale: 0.5
-            },
-            duration: 0.6,
-            ease: "power2.inOut",
-            onComplete: () => {
+        const obj = { x, y, scale: 1 };
+        new TWEEN.Tween(obj)
+            .to({ x: targetX, y: targetY, scale: 0.5 }, 600)
+            .easing(TWEEN.Easing.Quadratic.InOut)
+            .onUpdate(() => {
+                hankeySprite.x = obj.x;
+                hankeySprite.y = obj.y;
+                hankeySprite.scale.set(obj.scale);
+            })
+            .onComplete(() => {
                 this.pixi.stage.removeChild(hankeySprite);
-                this.updateUI(); // 更新分数显示
-            }
-        });
+                this.updateUI();
+            })
+            .start();
     }
-
-
 
     showFailScreen() {
         // 创建失败图片
@@ -846,24 +850,27 @@ class GameApp {
         failSprite.y = this.pixi.screen.height * 0.5;
         failSprite.alpha = 0;
         this.pixi.stage.addChild(failSprite);
-
-        // 使用GSAP创建淡入淡出动画
-        const timeline = gsap.timeline({
-            onComplete: () => {
-                this.pixi.stage.removeChild(failSprite);
-            }
-        });
-
-        timeline.to(failSprite, {
-            alpha: 1,
-            duration: 0.5,
-            ease: "power2.out"
-        }).to(failSprite, {
-            alpha: 0,
-            duration: 0.5,
-            ease: "power2.in",
-            delay: 1
-        });
+        // tween.js动画：alpha 0->1->0
+        const obj = { alpha: 0 };
+        new TWEEN.Tween(obj)
+            .to({ alpha: 1 }, 500)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .onUpdate(() => {
+                failSprite.alpha = obj.alpha;
+            })
+            .chain(
+                new TWEEN.Tween(obj)
+                    .to({ alpha: 0 }, 500)
+                    .delay(1000)
+                    .easing(TWEEN.Easing.Quadratic.In)
+                    .onUpdate(() => {
+                        failSprite.alpha = obj.alpha;
+                    })
+                    .onComplete(() => {
+                        this.pixi.stage.removeChild(failSprite);
+                    })
+            )
+            .start();
     }
 
     showWinScreen() {
@@ -873,9 +880,9 @@ class GameApp {
         winSprite.x = this.pixi.screen.width * 0.5;
         winSprite.y = this.pixi.screen.height * 0.5;
         winSprite.alpha = 0;
+        winSprite.scale.set(1);
         this.pixi.stage.addChild(winSprite);
-
-        // 创建庆祝粒子效果
+        // 粒子动画
         for (let i = 0; i < 20; i++) {
             const particle = new PIXI.Graphics();
             particle.beginFill(0xFFFF00, 0.8);
@@ -885,55 +892,64 @@ class GameApp {
             particle.y = this.pixi.screen.height * 0.5;
             particle.alpha = 0;
             this.pixi.stage.addChild(particle);
-
-            // 使用GSAP创建粒子动画
             const angle = (Math.PI * 2 * i) / 20;
             const distance = 100 + Math.random() * 50;
             const targetX = this.pixi.screen.width * 0.5 + Math.cos(angle) * distance;
             const targetY = this.pixi.screen.height * 0.5 + Math.sin(angle) * distance;
-
-            const timeline = gsap.timeline({
-                onComplete: () => {
-                    this.pixi.stage.removeChild(particle);
-                }
-            });
-
-            timeline.to(particle, {
-                alpha: 1,
-                duration: 0.3,
-                delay: i * 0.1,
-                ease: "power2.out"
-            }).to(particle, {
-                x: targetX,
-                y: targetY,
-                alpha: 0,
-                duration: 1.5,
-                ease: "power2.in"
-            });
+            const obj = { x: particle.x, y: particle.y, alpha: 0 };
+            new TWEEN.Tween(obj)
+                .to({ alpha: 1 }, 300)
+                .delay(i * 100)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .onUpdate(() => {
+                    particle.alpha = obj.alpha;
+                })
+                .chain(
+                    new TWEEN.Tween(obj)
+                        .to({ x: targetX, y: targetY, alpha: 0 }, 1500)
+                        .easing(TWEEN.Easing.Quadratic.In)
+                        .onUpdate(() => {
+                            particle.x = obj.x;
+                            particle.y = obj.y;
+                            particle.alpha = obj.alpha;
+                        })
+                        .onComplete(() => {
+                            this.pixi.stage.removeChild(particle);
+                        })
+                )
+                .start();
         }
-
-        // 使用GSAP创建胜利图片动画
-        const timeline = gsap.timeline({
-            onComplete: () => {
-                this.pixi.stage.removeChild(winSprite);
-            }
-        });
-
-        timeline.to(winSprite, {
-            alpha: 1,
-            pixi: { scale: 1.2 }, // 使用PixiPlugin的scale属性
-            duration: 0.8,
-            ease: "back.out(1.7)"
-        }).to(winSprite, {
-            pixi: { scale: 1 }, // 使用PixiPlugin的scale属性
-            duration: 0.3,
-            ease: "power2.out"
-        }).to(winSprite, {
-            alpha: 0,
-            duration: 0.5,
-            ease: "power2.in",
-            delay: 2
-        });
+        // 胜利图片动画
+        const obj = { alpha: 0, scale: 1.2 };
+        winSprite.scale.set(obj.scale);
+        new TWEEN.Tween(obj)
+            .to({ alpha: 1, scale: 1.2 }, 800)
+            .easing(TWEEN.Easing.Back.Out)
+            .onUpdate(() => {
+                winSprite.alpha = obj.alpha;
+                winSprite.scale.set(obj.scale);
+            })
+            .chain(
+                new TWEEN.Tween(obj)
+                    .to({ scale: 1 }, 300)
+                    .easing(TWEEN.Easing.Quadratic.Out)
+                    .onUpdate(() => {
+                        winSprite.scale.set(obj.scale);
+                    })
+                    .chain(
+                        new TWEEN.Tween(obj)
+                            .to({ alpha: 0 }, 500)
+                            .delay(2000)
+                            .easing(TWEEN.Easing.Quadratic.In)
+                            .onUpdate(() => {
+                                winSprite.alpha = obj.alpha;
+                            })
+                            .onComplete(() => {
+                                this.pixi.stage.removeChild(winSprite);
+                            })
+                    )
+            )
+            .start();
     }
 
     isColliding(rect1, rect2) {
@@ -945,7 +961,7 @@ class GameApp {
 
     gameLoop() {
         const currentTime = Date.now();
-
+        TWEEN.update(); // 驱动tween.js动画
         if (this.gameState === "playing") {
             // 更新玩家
             if (this.player) {
@@ -977,7 +993,14 @@ class GameApp {
         requestAnimationFrame(() => this.gameLoop());
     }
 
-    handleClick() {
+    handleClick(event) {
+        // 获取点击位置（PIXI事件已经提供了正确的坐标）
+        const pos = {
+            x: event.global.x,
+            y: event.global.y
+        };
+        this.createSpreadCircle(pos);
+
         if (this.gameState === "waiting" || this.gameState === "gameover" || this.gameState === "win") {
             this.startGame();
         } else if (this.gameState === "playing") {
@@ -985,38 +1008,56 @@ class GameApp {
         }
     }
 
+    createSpreadCircle(pos) {
+        const circle = new PIXI.Graphics();
+        const color = 0x66ccff;
+        // 初始绘制
+        circle.beginFill(color, 1);
+        circle.drawCircle(0, 0, 10);
+        circle.endFill();
+        circle.x = pos.x;
+        circle.y = pos.y;
+        circle.alpha = 1;
+        circle.radius = 10; // 加一个自定义属性方便动画
+        this.pixi.stage.addChild(circle);
+        // tween.js 动画
+        const tween = new TWEEN.Tween({ radius: 10, alpha: 1 })
+            .to({ radius: 80, alpha: 0 }, 500)
+            .onUpdate(obj => {
+                circle.clear();
+                circle.beginFill(color, obj.alpha);
+                circle.drawCircle(0, 0, obj.radius);
+                circle.endFill();
+            })
+            .onComplete(() => {
+                circle.parent && circle.parent.removeChild(circle);
+                circle.destroy();
+            })
+            .start();
+    }
+
+
     destroy() {
-        this.cleanupLevel();
         if (this.pixi) {
             this.pixi.destroy(true);
+            this.pixi = null;
         }
-        // 清理星星容器
-        if (this.starContainer) {
-            this.starContainer.destroy({ children: true });
-        }
-        // 清理所有GSAP动画
-        gsap.killTweensOf("*");
     }
 }
 
-const gameApp = new GameApp();
+let gameApp = null;
 const pixiContainer = ref(null);
 
-const handleClick = () => {
-    gameApp.handleClick();
-};
-
 onMounted(async () => {
-    gsap.registerPlugin(PixiPlugin);
-    PixiPlugin.registerPIXI(PIXI);
+    const options = { designWidth: 1080, designHeight: 1920, scale: 1 };
+    initDom(pixiContainer.value, options);
+    gameApp = new GameApp();
     await gameApp.init();
     gameApp.initGame();
-    document.addEventListener('click', handleClick);
 });
 
 // 清理事件监听器
 onUnmounted(() => {
-    document.removeEventListener('click', handleClick);
     gameApp.destroy();
 });
 </script>

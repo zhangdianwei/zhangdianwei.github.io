@@ -16,7 +16,6 @@
     "bezier-js": "^6.1.4",
     "cannon-es": "^0.20.0",
     "codemirror": "^6.0.1",
-    "gsap": "^3.13.0",
     "intersects": "^2.7.2",
     "konva": "^9.3.12",
     "pixi.js": "^7.4.2",

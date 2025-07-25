@@ -25,7 +25,7 @@ import { Row, Col, Card, Divider, Button } from 'view-ui-plus'
 
 const categoryRoutes = [
   {
-    name: "游戏/应用",
+    name: "我的游戏",
     children: [
       { id: "CoinKnight", title: "金币骑士", comp: EasyLink, link: 'CoinKnight/index.html', img: "preview/CoinKnight.png" },
       { id: "FarmMine", title: "田园扫雷", comp: EasyLink, link: 'FarmMine/index.html', img: "preview/FarmMine.png" },

@@ -8,9 +8,11 @@ export function initDom(domElement, options = {}) {
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
 
+    const isFullScreen = options.isFullScreen || isMobile();
+
     let width = 0;
     let height = 0;
-    if (isMobile()) {
+    if (isFullScreen) {
         const window_width_height_ratio = windowWidth / windowHeight;
         const design_width_height_ratio = options.designWidth / options.designHeight;
         if (window_width_height_ratio > design_width_height_ratio) {
@@ -32,6 +34,7 @@ export function initDom(domElement, options = {}) {
     domElement.style.transform = `scale(${scale})`;
     domElement.style.transformOrigin = 'center';
 
+    console.log("initDom", width, height, domElement.clientWidth, domElement.clientHeight, domElement.style.transform, domElement.style.transformOrigin);
 }
 
 export function createPixi(domElement) {

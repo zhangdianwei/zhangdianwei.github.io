@@ -200,4 +200,81 @@ export default class FailScreen extends PIXI.Container {
         btn.on('pointertap', doRestart);
         btnText.on('pointertap', doRestart);
     }
+
+    createUI() {
+        const { width, height, onRestart, score = 0 } = this.options;
+        this.removeChildren();
+
+        // 计算整体内容高度
+        const titleFontSize = 100;
+        const scoreFontSize = 60;
+        const btnHeight = 110;
+        const btnMargin = 60;
+        const contentHeight = titleFontSize + scoreFontSize + btnHeight + btnMargin * 2;
+        let y = (height - contentHeight) / 2;
+
+        // 标题
+        const title = new PIXI.Text('游戏结束', {
+            fontFamily: 'Arial',
+            fontSize: titleFontSize,
+            fontWeight: 'bold',
+            fill: 0xff5e5e,
+            align: 'center',
+            dropShadow: true,
+            dropShadowColor: '#000',
+            dropShadowBlur: 10,
+            dropShadowDistance: 4
+        });
+        title.anchor.set(0.5, 0);
+        title.x = width / 2;
+        title.y = y;
+        this.addChild(title);
+        y += titleFontSize + btnMargin;
+
+        // 分数
+        const scoreText = new PIXI.Text(`分数：${score}`, {
+            fontFamily: 'Arial',
+            fontSize: scoreFontSize,
+            fill: 0xffe066,
+            fontWeight: 'bold',
+            align: 'center',
+            dropShadow: true,
+            dropShadowColor: '#000',
+            dropShadowBlur: 6,
+            dropShadowDistance: 2
+        });
+        scoreText.anchor.set(0.5, 0);
+        scoreText.x = width / 2;
+        scoreText.y = y;
+        this.addChild(scoreText);
+        y += scoreFontSize + btnMargin;
+
+        // 按钮
+        const btnWidth = 400;
+        const restartBtn = new PIXI.Graphics();
+        restartBtn.beginFill(0x4a90e2, 1);
+        restartBtn.drawRoundedRect(-btnWidth/2, 0, btnWidth, btnHeight, 40);
+        restartBtn.endFill();
+        restartBtn.x = width / 2;
+        restartBtn.y = y;
+        restartBtn.eventMode = 'static';
+        restartBtn.buttonMode = true;
+        restartBtn.on('pointertap', () => {
+            if (onRestart) onRestart();
+        });
+        this.addChild(restartBtn);
+
+        // 按钮文字
+        const btnText = new PIXI.Text('重新开始', {
+            fontFamily: 'Arial',
+            fontSize: 56,
+            fill: 0xffffff,
+            fontWeight: 'bold',
+            align: 'center',
+        });
+        btnText.anchor.set(0.5, 0.5);
+        btnText.x = width / 2;
+        btnText.y = y + btnHeight / 2;
+        this.addChild(btnText);
+    }
 }

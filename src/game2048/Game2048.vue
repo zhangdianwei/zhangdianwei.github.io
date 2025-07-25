@@ -1,9 +1,12 @@
 <template>
-    <div ref="pixiContainer" class="pixi-container"></div>
+    <div class="game-container">
+        <canvas ref="pixiContainer"></canvas>
+        <PixiLoader :textureUrls="textureUrls" @loaded="onTexturesLoaded" />
+    </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, reactive } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { GameApp, GameLayer, UIName } from './GameApp';
 import BgCircle from './BgCircle';
 import PlayerSnake from './PlayerSnake';
@@ -12,16 +15,32 @@ import Cube from './Cube';
 import { checkSnakeCollisions } from './collision';
 import FailScreen from './FailScreen';
 import StartScreen from './StartScreen';
+import { initDom } from '../pixi/PixiHelper';
+import PixiLoader from '../pixi/PixiLoader.vue';
 
 const pixiContainer = ref(null);
 const gameApp = GameApp.instance;
 let autoRemoveTimers = [];
 
-onMounted(() => {
-    gameApp.init(pixiContainer.value, { width: window.innerWidth, height: window.innerHeight });
+// 需要加载的纹理资源（请根据实际用到的图片补全）
+const textureUrls = [
+    'game2048/star_small.png',
+    'game2048/ship_E.png',
+    'game2048/player_blood_bg.png',
+    'game2048/player_blood_bar.png',
+    'game2048/enemy_B.png',
+    'game2048/bullet1.png'
+];
+
+// 纹理加载完成回调
+const onTexturesLoaded = async (textures) => {
+    console.log('所有纹理加载完成');
+    // 适配画布
+    initDom(pixiContainer.value, { designWidth: 1080, designHeight: 1920, isFullScreen: true });
+    gameApp.init(pixiContainer.value);
     createBgCircle();
     setGameState('init');
-});
+};
 
 onUnmounted(() => {
     clearGame();
@@ -63,14 +82,11 @@ function startGame() {
     autoRemoveTimers.push(setInterval(createEnermySnakes, 5000));
     gameApp.pixi.ticker.add(checkSnakeCollisions);
     gameApp.pixi.ticker.add(checkGameOver);
-    window.addEventListener('resize', handleResize);
     window.addEventListener('keydown', handleKeyDown);
-    handleResize();
     initCenterSnake();
 }
 
-function clearGame(){
-    window.removeEventListener('resize', handleResize);
+function clearGame() {
     window.removeEventListener('keydown', handleKeyDown);
     for (const timer of autoRemoveTimers) {
         clearInterval(timer);
@@ -128,7 +144,7 @@ function createPlayerSnake() {
     }
     const snake = new PlayerSnake();
     for (let i = 3; i > 0; i--) {
-        snake.addCube(2**i);
+        snake.addCube(2 ** i);
     }
     gameApp.addGameObject(snake, GameLayer.PlayerSnake);
 }
@@ -150,7 +166,7 @@ function createEnermySnakes() {
             ey = Math.random() * (gameApp.radius * 2) - gameApp.radius;
             const dx = ex - px;
             const dy = ey - py;
-            if (Math.sqrt(dx*dx + dy*dy) >= minDist) break;
+            if (Math.sqrt(dx * dx + dy * dy) >= minDist) break;
         }
         enemy.setPosition(ex, ey);
         gameApp.addGameObject(enemy, GameLayer.EnermySnake);
@@ -172,12 +188,6 @@ function ensureLooseCubes() {
     }
 }
 
-function handleResize() {
-    if (gameApp.resize) {
-        gameApp.resize(window.innerWidth, window.innerHeight);
-    }
-}
-
 function handleKeyDown(e) {
     if (e.key === 'k') {
         startGame();
@@ -188,33 +198,3 @@ function handleKeyDown(e) {
     }
 }
 </script>
-
-<style scoped>
-html,
-body {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    width: 100%;
-    height: 100%;
-    background-color: #000;
-}
-
-.pixi-container {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-
-.pixi-container>canvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-.fail-mask {
-    position: fixed;
-    left: 0; top: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 9999;
-}
-</style>

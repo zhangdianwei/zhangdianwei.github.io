@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import { createPixi } from '../pixi/PixiHelper';
 
 // 层级枚举
 export const GameLayer = {
@@ -23,7 +24,7 @@ export class GameApp {
     uiContainer = null;
 
     // 游戏对象全部通过分层容器统一管理
-    radius = 300;
+    radius = 1920;
     gameState = null; // 'init' | 'playing' | 'fail'
 
     // 恶搞型中文名字池
@@ -82,18 +83,10 @@ export class GameApp {
      * @param {HTMLElement} domElement - PIXI挂载点
      * @param {Object} options - 游戏配置参数
      */
-    init(domElement, options = {}) {
+    init(domElement) {
         if (this._inited) return;
         // 创建PIXI app
-        this.pixi = new PIXI.Application({
-            width: options.width || window.innerWidth,
-            height: options.height || window.innerHeight,
-            // backgroundAlpha: 0,
-            antialias: true,
-            resolution: window.devicePixelRatio || 1,
-            autoDensity: true
-        });
-        domElement.appendChild(this.pixi.view);
+        this.pixi = createPixi(domElement);
         this.ticker = this.pixi.ticker;
         // 分层容器
         this.gameContainer = new PIXI.Container();
@@ -106,7 +99,7 @@ export class GameApp {
         this.layerContainers.forEach(layer => this.gameContainer.addChild(layer));
         this.pixi.stage.addChild(this.gameContainer);
         this.gameContainer.position.set(this.pixi.screen.width / 2, this.pixi.screen.height / 2);
-        this.radius = Math.max(this.pixi.screen.width / 2, this.pixi.screen.height / 2);
+        // this.radius = Math.max(this.pixi.screen.width / 2, this.pixi.screen.height / 2);
 
         this.uiContainer = new PIXI.Container();
         this.pixi.stage.addChild(this.uiContainer);
@@ -142,15 +135,7 @@ export class GameApp {
         this.pixi = null;
         this.ticker = null;
         this._inited = false;
-        this._paused = false;
     }
-
-    resize(width, height) {
-        if (this.pixi) {
-            this.pixi.renderer.resize(width, height);
-        }
-    }
-
 
     getLayerContainer(layer) {
         return this.layerContainers[layer];

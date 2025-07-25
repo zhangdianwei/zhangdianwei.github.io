@@ -6,6 +6,8 @@ import DragManager from './DragManager.js';
 import UIManager from './UIManager.js';
 import RenderManager from './RenderManager.js';
 import SettlementManager from './SettlementManager.js';
+import { initDom, createPixi, isMobile } from '../pixi/PixiHelper';
+
 
 class GameApp {
 
@@ -112,7 +114,7 @@ class GameApp {
     // 物理更新循环
     updatePhysics() {
         // 更新物理世界
-        this.physicsWorld.step(1 / 60, 2, 1);
+        this.physicsWorld.step(1 / 60, 1, 0);
 
         // 更新所有Cell的图形
         this.renderManager.drawAllCellGraphics();
@@ -283,23 +285,7 @@ class GameApp {
     }
 
     initDom(domElement, options = {}) {
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
-
-        const scale = Math.min(windowWidth / options.designWidth, windowHeight / options.designHeight) * options.scale;
-        const width = options.designWidth * scale;
-        const height = options.designHeight * scale;
-        domElement.style.width = options.designWidth + 'px';
-        domElement.style.height = options.designHeight + 'px';
-        domElement.style.transform = `scale(${scale})`;
-
-        this.windowWidth = windowWidth; // 屏幕大小
-        this.windowHeight = windowHeight;
-        this.scale = scale;
-        this.designWidth = options.designWidth;
-        this.designHeight = options.designHeight;
-        this.width = options.designWidth;
-        this.height = options.designHeight;
+        initDom(domElement, options);
     }
 
     destroy() {

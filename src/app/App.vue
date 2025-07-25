@@ -30,10 +30,10 @@ const categoryRoutes = [
       { id: "CoinKnight", title: "金币骑士", comp: EasyLink, link: 'CoinKnight/index.html', img: "preview/CoinKnight.png" },
       { id: "FarmMine", title: "田园扫雷", comp: EasyLink, link: 'FarmMine/index.html', img: "preview/FarmMine.png" },
       { id: "jigsaw", title: "拼图游戏", comp: EasyLink, link: 'jigsaw/index.html', img: "preview/jigsaw.png" },
-      { id: "tetris", title: "俄罗斯方块", comp: EasyLink, link: 'tetris/index.html', img: "preview/tetris.png" },
       { id: "BallGame", title: "抓住狗屎运", comp: BallGame, img: "preview/BallGame.png" },
-      { id: "Game2048", title: "Game2048", comp: Game2048, img: "preview/Game2048.png" },
       { id: "GameMatch", title: "GameMatch", comp: GameMatch, img: "preview/GameMatch.png" },
+      { id: "Game2048", title: "Game2048", comp: Game2048, img: "preview/Game2048.png" },
+      { id: "tetris", title: "俄罗斯方块", comp: EasyLink, link: 'tetris/index.html', img: "preview/tetris.png" },
       { id: "Shooter", title: "Shooter", comp: Shooter, img: "preview/Shooter.png" },
       { id: "TankMain", title: "坦克大战", comp: TankMain, img: "preview/TankMain.png" },
     ]

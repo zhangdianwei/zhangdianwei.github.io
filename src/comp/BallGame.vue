@@ -13,12 +13,12 @@ import PixiLoader from '../pixi/PixiLoader.vue';
 
 // 纹理资源列表
 const textureUrls = [
-    '/ballgame/player_run.png',
-    '/ballgame/player_win.png',
-    '/ballgame/player_fail.png',
-    '/ballgame/bomb.png',
-    '/ballgame/hankey.png',
-    '/ballgame/star_small.png'
+    'ballgame/player_run.png',
+    'ballgame/player_win.png',
+    'ballgame/player_fail.png',
+    'ballgame/bomb.png',
+    'ballgame/hankey.png',
+    'ballgame/star_small.png'
 ];
 
 // 关卡配置
@@ -122,7 +122,7 @@ class Player {
 
     init() {
         // 加载玩家图片
-        this.sprite = new PIXI.Sprite(this.pixi.gameApp.textures['/ballgame/player_run.png']);
+        this.sprite = new PIXI.Sprite(this.pixi.gameApp.textures['ballgame/player_run.png']);
         this.sprite.anchor.set(0.5);
         this.pixi.stage.addChild(this.sprite);
 
@@ -280,7 +280,7 @@ class Obstacle {
     }
 
     init() {
-        const texturePath = this.type === "bomb" ? "/ballgame/bomb.png" : "/ballgame/hankey.png";
+        const texturePath = this.type === "bomb" ? "ballgame/bomb.png" : "ballgame/hankey.png";
         this.sprite = new PIXI.Sprite(this.pixi.gameApp.textures[texturePath]);
         this.sprite.anchor.set(0.5);
         this.sprite.x = this.x;
@@ -393,7 +393,7 @@ class GameApp {
     createBackground() {
         // 创建固定的星星背景
         for (let i = 0; i < 30; i++) {
-            const star = new PIXI.Sprite(this.textures['/ballgame/star_small.png']);
+            const star = new PIXI.Sprite(this.textures['ballgame/star_small.png']);
             star.anchor.set(0.5);
 
         // 随机位置
@@ -412,9 +412,9 @@ class GameApp {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
         // 预加载音效
-        this.loadSound('/ballgame/ball_click.mp3', 'click');
-        this.loadSound('/ballgame/ball_bomb.mp3', 'bomb');
-        this.loadSound('/ballgame/ball_collect.mp3', 'collect');
+        this.loadSound('ballgame/ball_click.mp3', 'click');
+        this.loadSound('ballgame/ball_bomb.mp3', 'bomb');
+        this.loadSound('ballgame/ball_collect.mp3', 'collect');
     }
 
     async loadSound(url, name) {
@@ -807,7 +807,7 @@ class GameApp {
 
     createHankeyFlyEffect(x, y) {
         // 创建狗屎精灵
-        const hankeySprite = new PIXI.Sprite(this.textures['/ballgame/hankey.png']);
+        const hankeySprite = new PIXI.Sprite(this.textures['ballgame/hankey.png']);
         hankeySprite.anchor.set(0.5);
         hankeySprite.x = x;
         hankeySprite.y = y;
@@ -834,7 +834,7 @@ class GameApp {
 
     showFailScreen() {
         // 创建失败图片
-        const failSprite = new PIXI.Sprite(this.textures['/ballgame/player_fail.png']);
+        const failSprite = new PIXI.Sprite(this.textures['ballgame/player_fail.png']);
         failSprite.anchor.set(0.5);
         failSprite.x = this.pixi.screen.width * 0.5;
         failSprite.y = this.pixi.screen.height * 0.5;
@@ -865,7 +865,7 @@ class GameApp {
 
     showWinScreen() {
         // 创建胜利图片
-        const winSprite = new PIXI.Sprite(this.textures['/ballgame/player_win.png']);
+        const winSprite = new PIXI.Sprite(this.textures['ballgame/player_win.png']);
         winSprite.anchor.set(0.5);
         winSprite.x = this.pixi.screen.width * 0.5;
         winSprite.y = this.pixi.screen.height * 0.5;

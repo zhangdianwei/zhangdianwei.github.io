@@ -1,6 +1,7 @@
 <template>
     <div class="game-container">
         <canvas ref="pixiContainer"></canvas>
+        <PixiLoader :textureUrls="textureUrls" @loaded="onTexturesLoaded" @progress="onLoadProgress" />
     </div>
 </template>
 <script setup>
@@ -8,6 +9,17 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import * as PIXI from 'pixi.js';
 import { initDom, createPixi } from '../pixi/PixiHelper';
 import TWEEN from '@tweenjs/tween.js';
+import PixiLoader from '../pixi/PixiLoader.vue';
+
+// 纹理资源列表
+const textureUrls = [
+    '/ballgame/player_run.png',
+    '/ballgame/player_win.png',
+    '/ballgame/player_fail.png',
+    '/ballgame/bomb.png',
+    '/ballgame/hankey.png',
+    '/ballgame/star_small.png'
+];
 
 // 关卡配置
 const AllLevelConfig = [
@@ -326,7 +338,7 @@ class GameApp {
         this.audioContext = null;
         this.sounds = {};
 
-        // 资源管理
+        // 资源管理 - 由PixiLoader提供
         this.textures = {};
         this.resourcesLoaded = false;
 
@@ -350,54 +362,32 @@ class GameApp {
         this.pixi.stage.hitArea = this.pixi.screen;
         this.pixi.stage.on('pointerdown', this.handleClick.bind(this));
 
-        // 加载资源
-        await this.loadResources();
-
         // 创建星星容器
         this.starContainer = new PIXI.Container();
         this.pixi.stage.addChildAt(this.starContainer, 0); // 放在最底层
 
-        // 添加背景装饰
-        this.createBackground();
-
         // 初始化音频
         this.initAudio();
-
-        // 初始化UI
-        this.initUI();
 
         // 开始游戏循环
         this.gameLoop();
     }
 
-    async loadResources() {
-        const resources = [
-            '/ballgame/player_run.png',
-            '/ballgame/player_win.png',
-            '/ballgame/player_fail.png',
-            '/ballgame/bomb.png',
-            '/ballgame/hankey.png',
-            '/ballgame/star_small.png'
-        ];
+    // 移除原有的loadResources方法
 
-        const loadPromises = resources.map(url => {
-            return new Promise((resolve, reject) => {
-                const texture = PIXI.Texture.from(url);
-                texture.baseTexture.on('loaded', () => {
-                    this.textures[url] = texture;
-                    resolve();
-                });
-                texture.baseTexture.on('error', reject);
-            });
-        });
+    // 设置纹理资源
+    setTextures(textures) {
+        this.textures = textures;
+        this.resourcesLoaded = true;
 
-        try {
-            await Promise.all(loadPromises);
-            this.resourcesLoaded = true;
-            console.log('所有资源加载完成');
-        } catch (error) {
-            console.error('资源加载失败:', error);
-        }
+        // 添加背景装饰
+        this.createBackground();
+
+        // 初始化UI
+        this.initUI();
+
+        // 初始化游戏
+        this.initGame();
     }
 
     createBackground() {
@@ -505,7 +495,7 @@ class GameApp {
         this.pixi.stage.addChild(this.instructionText);
 
         // 游戏说明
-        this.helpText = new PIXI.Text('收集狗屎得分，避开炸弹', {
+        this.helpText = new PIXI.Text('角色会自动跑\n点击屏幕反向运动', {
             ...this.baseFontStyle,
             fontSize: 50,
             fill: 0xB0E0E6,
@@ -705,7 +695,7 @@ class GameApp {
 
         if (this.gameState === "waiting") {
             this.instructionText.text = "点击屏幕开始游戏";
-            this.instructionText.visible = true;
+            this.instructionText.visible = false;
             this.helpText.visible = true;
         } else if (this.gameState === "playing") {
             this.instructionText.visible = false;
@@ -1045,20 +1035,29 @@ class GameApp {
     }
 }
 
-let gameApp = null;
-const pixiContainer = ref(null);
+// 加载进度回调
+const onLoadProgress = (progressData) => {
+    console.log(`加载进度: ${progressData.progress}% (${progressData.loaded}/${progressData.total})`);
+};
 
-onMounted(async () => {
+// 纹理加载完成回调
+const onTexturesLoaded = async (textures) => {
+    console.log('所有纹理加载完成');
     const options = { designWidth: 1080, designHeight: 1920, scale: 1 };
     initDom(pixiContainer.value, options);
     gameApp = new GameApp();
     await gameApp.init();
-    gameApp.initGame();
-});
+    gameApp.setTextures(textures);
+};
+
+let gameApp = null;
+const pixiContainer = ref(null);
 
 // 清理事件监听器
 onUnmounted(() => {
-    gameApp.destroy();
+    if (gameApp) {
+        gameApp.destroy();
+    }
 });
 </script>
 

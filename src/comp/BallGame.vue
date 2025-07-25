@@ -369,8 +369,8 @@ class GameApp {
         // 初始化音频
         this.initAudio();
 
-        // 开始游戏循环
-        this.gameLoop();
+        // 用 ticker 驱动 gameLoop（直接绑定 this）
+        this.pixi.ticker.add(this.gameLoop, this);
     }
 
     // 移除原有的loadResources方法
@@ -979,8 +979,6 @@ class GameApp {
             // 检查碰撞
             this.checkCollisions();
         }
-
-        requestAnimationFrame(() => this.gameLoop());
     }
 
     handleClick(event) {
@@ -1059,18 +1057,3 @@ onUnmounted(() => {
     }
 });
 </script>
-
-<style scoped>
-.game-container {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    width: 100vw;
-    height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-</style>

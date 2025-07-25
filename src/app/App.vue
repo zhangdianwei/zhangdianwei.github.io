@@ -148,3 +148,18 @@ function onClickItem(routeData) {
     </div>
   </div>
 </template>
+
+<style>
+.game-container {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+</style>

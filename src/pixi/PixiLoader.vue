@@ -54,6 +54,12 @@ const loadTextures = async () => {
             const texture = await new Promise((resolve, reject) => {
                 const pixiTexture = PIXI.Texture.from(url);
 
+                // 如果已经加载好，直接resolve
+                if (pixiTexture.baseTexture.valid) {
+                    resolve(pixiTexture);
+                    return;
+                }
+
                 pixiTexture.baseTexture.on('loaded', () => {
                     resolve(pixiTexture);
                 });

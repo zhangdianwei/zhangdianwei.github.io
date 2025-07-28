@@ -8,12 +8,8 @@ export const GameLayer = {
     LooseCube: 1,
     EnermySnake: 2,
     PlayerSnake: 3,
+    UI: 4, // 新增UI层
 };
-
-export const UIName = {
-    StartScreen: 'start-screen',
-    FailScreen: 'fail-screen',
-}
 
 export class GameApp {
     static _instance;
@@ -22,7 +18,6 @@ export class GameApp {
     pixi = null;
     gameContainer = null;
     ticker = null;
-    uiContainer = null;
 
     // 游戏对象全部通过分层容器统一管理
     radius = 1920;
@@ -65,7 +60,7 @@ export class GameApp {
     }
 
     // 分层容器（唯一游戏对象管理入口）
-    layerContainers = [null, null, null, null]; // [Bg, LooseCube, EnermySnake, PlayerSnake]
+    layerContainers = [null, null, null, null, null]; // [Bg, LooseCube, EnermySnake, PlayerSnake, UI]
 
     // 状态
     _inited = false;
@@ -96,15 +91,12 @@ export class GameApp {
             new PIXI.Container(), // LooseCube层
             new PIXI.Container(), // EnermySnake层
             new PIXI.Container(), // PlayerSnake层
+            new PIXI.Container(), // UI层
         ];
         this.layerContainers.forEach(layer => this.gameContainer.addChild(layer));
         this.pixi.stage.addChild(this.gameContainer);
         this.gameContainer.position.set(this.pixi.screen.width / 2, this.pixi.screen.height / 2);
         // this.radius = Math.max(this.pixi.screen.width / 2, this.pixi.screen.height / 2);
-
-        this.uiContainer = new PIXI.Container();
-        this.pixi.stage.addChild(this.uiContainer);
-        this.uiContainer.position.set(this.pixi.screen.width / 2, this.pixi.screen.height / 2);
 
         this.ticker.add(this.update, this);
 
@@ -138,7 +130,7 @@ export class GameApp {
             this.pixi.destroy(true, { children: true, texture: true, baseTexture: true });
         }
         this.gameContainer = null;
-        this.layerContainers = [null, null, null, null];
+        this.layerContainers = [null, null, null, null, null];
         this.pixi = null;
         this.ticker = null;
         this._inited = false;
@@ -177,19 +169,5 @@ export class GameApp {
     setObjectLayer(obj, layer) {
         this.removeGameObject(obj);
         this.addGameObject(obj, layer);
-    }
-
-    showUILayer(node, name){
-        if (this.getUILayer(name)) {
-            return;
-        }
-        node.name = name;
-        this.uiContainer.addChild(node);
-    }
-    removeUILayer(name){
-        this.uiContainer.removeChild(this.uiContainer.children.find(node => node.name === name));
-    }
-    getUILayer(name){
-        return this.uiContainer.children.find(node => node.name === name);
     }
 }

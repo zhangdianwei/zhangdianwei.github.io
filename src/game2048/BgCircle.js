@@ -43,9 +43,9 @@ export default class BgCircle extends PIXI.Container {
     _createStar(width, height) {
         const x = Math.random() * width - width/2;
         const y = Math.random() * height - height/2;
-        const scale = Math.random() * 0.4 + 0.2;
+        const scale = Math.random() * 0.4 + 0.4;
         const baseAlpha = Math.random() * 0.25 + 0.05; // 0.05~0.3，整体更暗
-        const star = PIXI.Sprite.from('shooter/star_small.png'); 
+        const star = PIXI.Sprite.from('game2048/star_small.png'); 
         star.x = x;
         star.y = y;
         star.anchor.set(0.5);

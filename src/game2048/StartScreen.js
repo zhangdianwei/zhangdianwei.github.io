@@ -7,7 +7,7 @@ export default class StartScreen extends PIXI.Container {
         super();
         this.eventMode = 'static';
         this.onStart = onStart;
-        this.counter = 1;
+        this.counter = 2;
         this.maxCounter = 128;
 
         this.createCard();
@@ -138,7 +138,7 @@ export default class StartScreen extends PIXI.Container {
 
         makeButton(startBtn, () => {
             this.removeFromParent();
-            if (this.onStart) this.onStart();
+            if (this.onStart) this.onStart(this.counter);
         });
     }
 

@@ -48,7 +48,7 @@ export default class Cube extends PIXI.Container {
         this.y = initialY;
         
         // 确保资源已加载
-        const texture = PIXI.Texture.from('shooter/ship_E.png');
+        const texture = PIXI.Texture.from('game2048/ship_E.png');
         if (!texture) {
             console.error('Ship_E texture not found. Make sure it is loaded.');
             // 可以添加一个占位符图形

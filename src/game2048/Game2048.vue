@@ -7,7 +7,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import { GameApp, GameLayer, UIName } from './GameApp';
+import { GameApp, GameLayer } from './GameApp';
 import BgCircle from './BgCircle';
 import PlayerSnake from './PlayerSnake';
 import EnermySnake from './EnermySnake';
@@ -47,7 +47,7 @@ onUnmounted(() => {
     gameApp.destroy();
 });
 
-function setGameState(state){
+function setGameState(state, initialValue = 2) {
     if(gameApp.gameState === state){
         return;
     }
@@ -55,27 +55,25 @@ function setGameState(state){
     if (state === 'init') {
         showStartScreen();
     }else if (state === 'playing') {
-        startGame();
+        startGame(initialValue);
     }else if (state === 'fail') {
         setTimeout(showFailScreen, 500);
     }
 }
 
 function showStartScreen() {
-    gameApp.showUILayer(new StartScreen({
-        width: gameApp.pixi.screen.width,
-        height: gameApp.pixi.screen.height,
+    gameApp.addGameObject(new StartScreen({
         onStart: onClickStart
-    }), UIName.StartScreen);
+    }), GameLayer.UI);
 }
 
-function onClickStart() {
-    setGameState('playing');
+function onClickStart(initialValue) {
+    setGameState('playing', initialValue);
 }
 
-function startGame() {
+function startGame(initialValue = 2) {
     clearGame();
-    createPlayerSnake();
+    createPlayerSnake(initialValue);
     ensureLooseCubes();
     autoRemoveTimers.push(setInterval(ensureLooseCubes, 5000));
     createEnermySnakes();
@@ -104,11 +102,11 @@ function checkGameOver() {
 }
 
 function showFailScreen() {
-    gameApp.showUILayer(new FailScreen({
+    gameApp.addGameObject(new FailScreen({
         width: gameApp.pixi.screen.width,
         height: gameApp.pixi.screen.height,
         onRestart: onClickStart
-    }), UIName.FailScreen);
+    }), GameLayer.UI);
 }
 
 
@@ -135,7 +133,7 @@ function createBgCircle() {
     gameApp.addGameObject(circle, GameLayer.BgLayer);
 }
 
-function createPlayerSnake() {
+function createPlayerSnake(initialValue = 2) {
     if (gameApp.playerSnake) {
         gameApp.gameContainer.removeChild(gameApp.playerSnake);
         if (typeof gameApp.playerSnake.destroy === 'function') {
@@ -143,9 +141,8 @@ function createPlayerSnake() {
         }
     }
     const snake = new PlayerSnake();
-    for (let i = 3; i > 0; i--) {
-        snake.addCube(2 ** i);
-    }
+    // 使用initialValue作为蛇头的初始值
+    snake.addCube(initialValue);
     gameApp.addGameObject(snake, GameLayer.PlayerSnake);
 }
 

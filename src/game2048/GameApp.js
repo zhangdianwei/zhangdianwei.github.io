@@ -108,7 +108,8 @@ export class GameApp {
     }
 
     update(delta){
-        TWEEN.update(delta);
+        // 使用时间戳更新TWEEN，这样更可靠
+        TWEEN.update();
     }
 
     get bgCircle(){

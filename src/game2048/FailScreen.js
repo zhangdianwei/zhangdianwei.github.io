@@ -1,5 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { GameApp } from './GameApp.js';
+import { makeButton } from '../pixi/PixiUI.js';
+import { disappear, appear } from '../pixi/PixiAction.js';
 
 export default class FailScreen extends PIXI.Container {
     constructor({ onRestart = null } = {}) {
@@ -159,8 +161,6 @@ export default class FailScreen extends PIXI.Container {
         btn.endFill();
         btn.x = 0;
         btn.y = btnY + this.btnHeightVal/2;
-        btn.eventMode = 'static';
-        btn.cursor = 'pointer';
         this.content.addChild(btn);
 
         const btnText = new PIXI.Text('重新开始', {
@@ -171,82 +171,20 @@ export default class FailScreen extends PIXI.Container {
         });
         btnText.anchor.set(0.5);
         btnText.x = 0;
-        btnText.y = btn.y;
-        btnText.eventMode = 'static';
-        btnText.cursor = 'pointer';
-        this.content.addChild(btnText);
+        btnText.y = 0;
+        btn.addChild(btnText);
 
-        // 重新开始按钮按下效果
-        const handleRestartPointerDown = () => {
-            btn.scale.set(0.95);
-            btnText.scale.set(0.95);
-        };
-        
-        const handleRestartPointerUp = () => {
-            btn.scale.set(1);
-            btnText.scale.set(1);
-        };
-        
-        btn.on('pointerdown', handleRestartPointerDown);
-        btn.on('pointerup', handleRestartPointerUp);
-        btn.on('pointerupoutside', handleRestartPointerUp);
-        btnText.on('pointerdown', handleRestartPointerDown);
-        btnText.on('pointerup', handleRestartPointerUp);
-        btnText.on('pointerupoutside', handleRestartPointerUp);
-
-        // 添加消失动画的点击事件
-        const doRestart = () => {
-            let disappearTicker = PIXI.Ticker.shared;
-            let disappearTime = 0;
-            const disappearDuration = 0.18;
-            const disappearStep = (delta) => {
-                disappearTime += disappearTicker.deltaMS / 1000;
-                let t = Math.min(disappearTime / disappearDuration, 1);
-                let s = 1 - this.easeInBack(t);
-                this.scale.set(Math.max(s, 0));
-                if (t >= 1) {
-                    disappearTicker.remove(disappearStep);
-                    this.scale.set(0);
-                    if (typeof this.onRestart === 'function') this.onRestart();
-                    this.visible = false;
-                    this.destroy({ children: true });
-                }
-            };
-            disappearTicker.add(disappearStep);
-        };
-        btn.on('click', doRestart);
-        btnText.on('click', doRestart);
+        // 使用makeButton简化按钮实现
+        makeButton(btn, async () => {
+            // 使用PixiAction的disappear动画
+            await disappear(this, 0.18);
+            if (typeof this.onRestart === 'function') this.onRestart();
+            this.removeFromParent();
+        });
     }
 
     setupAnimations() {
-        // backIn/backOut 缓动函数
-        this.easeOutBack = (t) => {
-            const c1 = 1.70158;
-            const c3 = c1 + 1;
-            return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
-        };
-        
-        this.easeInBack = (t) => {
-            const c1 = 1.70158;
-            const c3 = c1 + 1;
-            return c3 * t * t * t - c1 * t * t;
-        };
-
-        // appear动画（backOut）
-        this.scale.set(0);
-        let appearTicker = PIXI.Ticker.shared;
-        let appearTime = 0;
-        const appearDuration = 0.28;
-        const appearStep = (delta) => {
-            appearTime += appearTicker.deltaMS / 1000;
-            let t = Math.min(appearTime / appearDuration, 1);
-            let s = this.easeOutBack(t);
-            this.scale.set(s);
-            if (t >= 1) {
-                appearTicker.remove(appearStep);
-                this.scale.set(1);
-            }
-        };
-        appearTicker.add(appearStep);
+        // 使用PixiAction的appear动画
+        appear(this, 0.28);
     }
 }

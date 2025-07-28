@@ -1,10 +1,48 @@
 import * as TWEEN from '@tweenjs/tween.js';
 
+// 测试TWEEN是否工作的简单函数
+export function testTween(obj) {
+    console.log('测试TWEEN动画...');
+    return new Promise((resolve) => {
+        new TWEEN.Tween(obj.scale)
+            .to({ x: 2, y: 2 }, 1000)
+            .easing(TWEEN.Easing.Bounce.Out)
+            .onComplete(() => {
+                console.log('TWEEN测试完成');
+                resolve();
+            })
+            .start();
+    });
+}
+
 // 缩放动画
 export function scaleTo(obj, duration, targetScale, ease = TWEEN.Easing.Back.Out) {
     return new Promise((resolve) => {
         new TWEEN.Tween(obj.scale)
             .to({ x: targetScale, y: targetScale }, duration * 1000)
+            .easing(ease)
+            .onComplete(() => resolve())
+            .start();
+    });
+}
+
+// 消失动画（缩放到0）
+export function disappear(obj, duration = 0.18, ease = TWEEN.Easing.Back.In) {
+    return new Promise((resolve) => {
+        new TWEEN.Tween(obj.scale)
+            .to({ x: 0, y: 0 }, duration * 1000)
+            .easing(ease)
+            .onComplete(() => resolve())
+            .start();
+    });
+}
+
+// 出现动画（从0缩放到1）
+export function appear(obj, duration = 0.28, ease = TWEEN.Easing.Back.Out) {
+    return new Promise((resolve) => {
+        obj.scale.set(0);
+        new TWEEN.Tween(obj.scale)
+            .to({ x: 1, y: 1 }, duration * 1000)
             .easing(ease)
             .onComplete(() => resolve())
             .start();

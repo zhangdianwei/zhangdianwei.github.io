@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { createPixi } from '../pixi/PixiHelper';
+import * as TWEEN from '@tweenjs/tween.js';
 
 // 层级枚举
 export const GameLayer = {
@@ -105,7 +106,13 @@ export class GameApp {
         this.pixi.stage.addChild(this.uiContainer);
         this.uiContainer.position.set(this.pixi.screen.width / 2, this.pixi.screen.height / 2);
 
+        this.ticker.add(this.update, this);
+
         this._inited = true;
+    }
+
+    update(delta){
+        TWEEN.update(delta);
     }
 
     get bgCircle(){

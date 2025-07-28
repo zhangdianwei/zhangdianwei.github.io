@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
-import PlaneEightAnim from './StartScreen.PlaneEightAnim.js';
+import { makeButton } from '../pixi/PixiUI.js';
+import { scaleBounce } from '../pixi/PixiAction.js';
 
 export default class StartScreen extends PIXI.Container {
     constructor({ onStart = null } = {}) {
@@ -100,23 +101,12 @@ export default class StartScreen extends PIXI.Container {
                 this.counterText.text = this.counter.toString();
                 
                 // counter更新时的缩放效果
-                this.animateCounterUpdate();
+                // this.animateCounterUpdate();
+                scaleBounce(this.counterText, 0.2, 0.1);
             }
         };
-        
-        // 按钮按下效果（只需要处理父节点）
-        const handlePointerDown = () => {
-            descBtn.scale.set(0.95);
-        };
-        
-        const handlePointerUp = () => {
-            descBtn.scale.set(1);
-        };
-        
-        descBtn.on('click', handleClick);
-        descBtn.on('pointerdown', handlePointerDown);
-        descBtn.on('pointerup', handlePointerUp);
-        descBtn.on('pointerupoutside', handlePointerUp);
+
+        makeButton(descBtn, handleClick);
     }
 
     createStartButton() {
@@ -146,40 +136,10 @@ export default class StartScreen extends PIXI.Container {
         btnText.y = btnHeight / 2;
         startBtn.addChild(btnText);
 
-        // 开始按钮按下效果（只需要处理父节点）
-        const handleStartPointerDown = () => {
-            startBtn.scale.set(0.95);
-        };
-        
-        const handleStartPointerUp = () => {
-            startBtn.scale.set(1);
-        };
-        
-        startBtn.on('pointerdown', handleStartPointerDown);
-        startBtn.on('pointerup', handleStartPointerUp);
-        startBtn.on('pointerupoutside', handleStartPointerUp);
-
-        // 添加消失动画的点击事件
-        const doStart = () => {
-            let disappearTicker = PIXI.Ticker.shared;
-            let disappearTime = 0;
-            const disappearDuration = 0.18;
-            const disappearStep = (delta) => {
-                disappearTime += disappearTicker.deltaMS / 1000;
-                let t = Math.min(disappearTime / disappearDuration, 1);
-                let s = 1 - this.easeInBack(t);
-                this.scale.set(Math.max(s, 0));
-                if (t >= 1) {
-                    disappearTicker.remove(disappearStep);
-                    this.scale.set(0);
-                    if (typeof this.onStart === 'function') this.onStart();
-                    this.visible = false;
-                    this.destroy({ children: true });
-                }
-            };
-            disappearTicker.add(disappearStep);
-        };
-        startBtn.on('click', doStart);
+        makeButton(startBtn, () => {
+            this.removeFromParent();
+            if (this.onStart) this.onStart();
+        });
     }
 
     setupAnimations() {
@@ -212,32 +172,5 @@ export default class StartScreen extends PIXI.Container {
             }
         };
         appearTicker.add(appearStep);
-    }
-
-    animateCounterUpdate() {
-        // counter更新时的缩放动画
-        const originalScale = 1;
-        this.counterText.scale.set(originalScale * 1.1);
-        
-        // 使用Ticker创建动画
-        let ticker = PIXI.Ticker.shared;
-        let time = 0;
-        const duration = 0.2;
-        
-        const animate = (delta) => {
-            time += ticker.deltaMS / 1000;
-            let t = Math.min(time / duration, 1);
-            
-            // 使用easeOutBack缓动
-            let scale = originalScale * (1 + 0.3 * this.easeOutBack(1 - t));
-            this.counterText.scale.set(scale);
-            
-            if (t >= 1) {
-                ticker.remove(animate);
-                this.counterText.scale.set(originalScale);
-            }
-        };
-        
-        ticker.add(animate);
     }
 }

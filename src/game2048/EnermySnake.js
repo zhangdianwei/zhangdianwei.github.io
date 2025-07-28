@@ -1,6 +1,5 @@
 import { GameApp } from './GameApp.js';
 import Snake from './Snake.js';
-import * as PIXI from 'pixi.js';
 
 // 敌人蛇：每10秒闲逛，每10秒追踪玩家
 export default class EnermySnake extends Snake {

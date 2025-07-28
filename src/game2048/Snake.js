@@ -31,9 +31,6 @@ export default class Snake extends PIXI.Container {
 
     setBaseSpeed(speed){
         this.baseSpeed = speed;
-        if (/Mobi|Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(navigator.userAgent)) {
-            this.baseSpeed = this.baseSpeed / 2;
-        }
     }
 
     onAdd(){

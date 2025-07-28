@@ -2,75 +2,97 @@ import * as PIXI from 'pixi.js';
 import { GameApp } from './GameApp.js';
 
 export default class FailScreen extends PIXI.Container {
-    constructor({ width = 800, height = 600, onRestart = null } = {}) {
+    constructor({ onRestart = null } = {}) {
         super();
         this.eventMode = 'static';
-        this.width = width;
-        this.height = height;
         this.onRestart = onRestart;
+        this.rankList = GameApp.instance.rankList;
 
-        const rankList = GameApp.instance.rankList;
+        this.createMask();
+        this.createCard();
+        this.createTitle();
+        this.createRankList();
+        this.createRestartButton();
+        this.setupAnimations();
+    }
 
+    createMask() {
         // 半透明遮罩（全屏）
         const mask = new PIXI.Graphics();
         mask.beginFill(0x000000, 0.6);
-        mask.drawRect(-width/2, -height/2, width, height);
+        const screenWidth = GameApp.instance.pixi.screen.width;
+        const screenHeight = GameApp.instance.pixi.screen.height;
+        mask.drawRect(-screenWidth/2, -screenHeight/2, screenWidth, screenHeight);
         mask.endFill();
         this.addChild(mask);
+    }
 
-        // 卡片整体垂直居中
-        const rankCount = rankList.length;
-        const minCardHeight = 260;
-        const btnHeightVal = 60;
-        const rowHeight = 32;
-        const cardInnerPadding = 32;
-        const titleHeight = 54;
-        const rankTitleHeight = 28;
+    createCard() {
+        const rankCount = this.rankList.length;
+        const minCardHeight = 520; // 放大一倍
+        const btnHeightVal = 120; // 放大一倍
+        const rowHeight = 64; // 放大一倍
+        const cardInnerPadding = 64; // 放大一倍
+        const titleHeight = 108; // 放大一倍
+        const rankTitleHeight = 56; // 放大一倍
         const rankListHeight = rankCount > 0 ? rankCount * rowHeight : rowHeight;
-        const rankToBtnGap = 32;
-        const cardContentHeight = cardInnerPadding + titleHeight + 16 + rankTitleHeight + 16 + rankListHeight + rankToBtnGap + btnHeightVal + cardInnerPadding;
+        const rankToBtnGap = 64; // 放大一倍
+        const cardContentHeight = cardInnerPadding + titleHeight + 32 + rankTitleHeight + 32 + rankListHeight + rankToBtnGap + btnHeightVal + cardInnerPadding;
         const cardHeight = Math.max(minCardHeight, cardContentHeight);
-        const cardWidth = 420;
+        const cardWidth = 840; // 放大一倍
+        
         const card = new PIXI.Graphics();
         card.beginFill(0xffffff, 0.98);
-        card.drawRoundedRect(-cardWidth/2, -cardHeight/2, cardWidth, cardHeight, 32);
+        card.drawRoundedRect(-cardWidth/2, -cardHeight/2, cardWidth, cardHeight, 64); // 圆角也放大一倍
         card.endFill();
         card.x = 0;
         card.y = 0;
         this.addChild(card);
 
         // 卡片内容分层容器，便于整体居中
-        const content = new PIXI.Container();
-        content.x = 0;
-        content.y = -cardHeight/2;
-        this.addChild(content);
+        this.content = new PIXI.Container();
+        this.content.x = 0;
+        this.content.y = -cardHeight/2;
+        this.addChild(this.content);
 
+        this.cardHeight = cardHeight;
+        this.cardInnerPadding = cardInnerPadding;
+        this.titleHeight = titleHeight;
+        this.rankTitleHeight = rankTitleHeight;
+        this.rowHeight = rowHeight;
+        this.btnHeightVal = btnHeightVal;
+        this.rankToBtnGap = rankToBtnGap;
+    }
+
+    createTitle() {
         // 失败大标题
         const title = new PIXI.Text('GAME OVER', {
             fontFamily: 'Arial Black, Arial, sans-serif',
-            fontSize: 48,
+            fontSize: 96, // 放大一倍
             fill: 0x222222,
             align: 'center',
         });
         title.anchor.set(0.5, 0);
         title.x = 0;
-        title.y = cardInnerPadding;
-        content.addChild(title);
+        title.y = this.cardInnerPadding;
+        this.content.addChild(title);
 
         // 排行榜标题
         const rankTitle = new PIXI.Text('排行榜', {
             fontFamily: 'Arial Black, Arial, sans-serif',
-            fontSize: 24,
+            fontSize: 48, // 放大一倍
             fill: 0x666666,
             align: 'center',
         });
         rankTitle.anchor.set(0.5, 0);
         rankTitle.x = 0;
-        rankTitle.y = title.y + titleHeight + 16;
-        content.addChild(rankTitle);
+        rankTitle.y = title.y + this.titleHeight + 32; // 间距也放大一倍
+        this.content.addChild(rankTitle);
+        this.rankTitle = rankTitle;
+    }
 
-        // 排行榜内容
-        let rankListToShow = rankList.slice();
+    createRankList() {
+        let rankListToShow = this.rankList.slice();
         // 利用GameApp.instance.playerRank，确保玩家一定出现且高亮
         const playerRank = GameApp.instance.playerRank;
         // 检查是否已在榜单（避免重复）
@@ -80,63 +102,70 @@ export default class FailScreen extends PIXI.Container {
         }
         // 排序并保留前5
         rankListToShow.sort((a, b) => b.value - a.value);
+        
         // 三列布局：排名、名字、分数
-        const colRankX = -90;
+        const colRankX = -180; // 放大一倍
         const colNameX = 0;
-        const colValueX = 90;
+        const colValueX = 180; // 放大一倍
+        
         rankListToShow.forEach((item, i) => {
             const isPlayer = item.name === playerRank.name;
             // 排名
             const rankText = new PIXI.Text(`${i+1}`, {
                 fontFamily: 'Arial Black, Arial, sans-serif',
-                fontSize: 22,
+                fontSize: 44, // 放大一倍
                 fill: isPlayer ? 0xff6600 : 0x333333,
                 align: 'center',
             });
             rankText.anchor.set(0.5, 0);
             rankText.x = colRankX;
-            rankText.y = rankTitle.y + rankTitleHeight + 16 + i * rowHeight;
-            content.addChild(rankText);
+            rankText.y = this.rankTitle.y + this.rankTitleHeight + 32 + i * this.rowHeight; // 间距放大一倍
+            this.content.addChild(rankText);
+            
             // 名字
             const nameText = new PIXI.Text(item.name, {
                 fontFamily: 'Arial Black, Arial, sans-serif',
-                fontSize: 22,
+                fontSize: 44, // 放大一倍
                 fill: isPlayer ? 0xff6600 : 0x333333,
                 align: 'center',
             });
             nameText.anchor.set(0.5, 0);
             nameText.x = colNameX;
-            nameText.y = rankTitle.y + rankTitleHeight + 16 + i * rowHeight;
-            content.addChild(nameText);
+            nameText.y = this.rankTitle.y + this.rankTitleHeight + 32 + i * this.rowHeight; // 间距放大一倍
+            this.content.addChild(nameText);
+            
             // 分数
             const valueText = new PIXI.Text(`${item.value}`, {
                 fontFamily: 'Arial Black, Arial, sans-serif',
-                fontSize: 22,
+                fontSize: 44, // 放大一倍
                 fill: isPlayer ? 0xff6600 : 0x333333,
                 align: 'center',
             });
             valueText.anchor.set(0.5, 0);
             valueText.x = colValueX;
-            valueText.y = rankTitle.y + rankTitleHeight + 16 + i * rowHeight;
-            content.addChild(valueText);
+            valueText.y = this.rankTitle.y + this.rankTitleHeight + 32 + i * this.rowHeight; // 间距放大一倍
+            this.content.addChild(valueText);
         });
+    }
 
-        // 重新开始按钮
-        const btnWidth = 180;
-        const btnY = rankTitle.y + rankTitleHeight + 16 + rankListHeight + rankToBtnGap;
+    createRestartButton() {
+        const btnWidth = 360; // 放大一倍
+        const rankListHeight = this.rankList.length > 0 ? this.rankList.length * this.rowHeight : this.rowHeight;
+        const btnY = this.rankTitle.y + this.rankTitleHeight + 32 + rankListHeight + this.rankToBtnGap; // 间距放大一倍
+        
         const btn = new PIXI.Graphics();
         btn.beginFill(0x2d8cf0, 1);
-        btn.drawRoundedRect(-btnWidth/2, -btnHeightVal/2, btnWidth, btnHeightVal, 18);
+        btn.drawRoundedRect(-btnWidth/2, -this.btnHeightVal/2, btnWidth, this.btnHeightVal, 36); // 圆角放大一倍
         btn.endFill();
         btn.x = 0;
-        btn.y = btnY + btnHeightVal/2;
+        btn.y = btnY + this.btnHeightVal/2;
         btn.eventMode = 'static';
         btn.cursor = 'pointer';
-        content.addChild(btn);
+        this.content.addChild(btn);
 
         const btnText = new PIXI.Text('重新开始', {
             fontFamily: 'Arial Black, Arial, sans-serif',
-            fontSize: 28,
+            fontSize: 56, // 放大一倍
             fill: 0xffffff,
             align: 'center',
         });
@@ -145,39 +174,27 @@ export default class FailScreen extends PIXI.Container {
         btnText.y = btn.y;
         btnText.eventMode = 'static';
         btnText.cursor = 'pointer';
-        content.addChild(btnText);
+        this.content.addChild(btnText);
 
-
-        // backIn/backOut 缓动函数
-        function easeOutBack(t) {
-            const c1 = 1.70158;
-            const c3 = c1 + 1;
-            return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
-        }
-        function easeInBack(t) {
-            const c1 = 1.70158;
-            const c3 = c1 + 1;
-            return c3 * t * t * t - c1 * t * t;
-        }
-
-        // appear动画（backOut）
-        this.scale.set(0);
-        let appearTicker = PIXI.Ticker.shared;
-        let appearTime = 0;
-        const appearDuration = 0.28;
-        const appearStep = (delta) => {
-            appearTime += appearTicker.deltaMS / 1000;
-            let t = Math.min(appearTime / appearDuration, 1);
-            let s = easeOutBack(t);
-            this.scale.set(s);
-            if (t >= 1) {
-                appearTicker.remove(appearStep);
-                this.scale.set(1);
-            }
+        // 重新开始按钮按下效果
+        const handleRestartPointerDown = () => {
+            btn.scale.set(0.95);
+            btnText.scale.set(0.95);
         };
-        appearTicker.add(appearStep);
+        
+        const handleRestartPointerUp = () => {
+            btn.scale.set(1);
+            btnText.scale.set(1);
+        };
+        
+        btn.on('pointerdown', handleRestartPointerDown);
+        btn.on('pointerup', handleRestartPointerUp);
+        btn.on('pointerupoutside', handleRestartPointerUp);
+        btnText.on('pointerdown', handleRestartPointerDown);
+        btnText.on('pointerup', handleRestartPointerUp);
+        btnText.on('pointerupoutside', handleRestartPointerUp);
 
-        // disappear动画（backIn）
+        // 添加消失动画的点击事件
         const doRestart = () => {
             let disappearTicker = PIXI.Ticker.shared;
             let disappearTime = 0;
@@ -185,7 +202,7 @@ export default class FailScreen extends PIXI.Container {
             const disappearStep = (delta) => {
                 disappearTime += disappearTicker.deltaMS / 1000;
                 let t = Math.min(disappearTime / disappearDuration, 1);
-                let s = 1 - easeInBack(t);
+                let s = 1 - this.easeInBack(t);
                 this.scale.set(Math.max(s, 0));
                 if (t >= 1) {
                     disappearTicker.remove(disappearStep);
@@ -197,84 +214,39 @@ export default class FailScreen extends PIXI.Container {
             };
             disappearTicker.add(disappearStep);
         };
-        btn.on('pointertap', doRestart);
-        btnText.on('pointertap', doRestart);
+        btn.on('click', doRestart);
+        btnText.on('click', doRestart);
     }
 
-    createUI() {
-        const { width, height, onRestart, score = 0 } = this.options;
-        this.removeChildren();
+    setupAnimations() {
+        // backIn/backOut 缓动函数
+        this.easeOutBack = (t) => {
+            const c1 = 1.70158;
+            const c3 = c1 + 1;
+            return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+        };
+        
+        this.easeInBack = (t) => {
+            const c1 = 1.70158;
+            const c3 = c1 + 1;
+            return c3 * t * t * t - c1 * t * t;
+        };
 
-        // 计算整体内容高度
-        const titleFontSize = 100;
-        const scoreFontSize = 60;
-        const btnHeight = 110;
-        const btnMargin = 60;
-        const contentHeight = titleFontSize + scoreFontSize + btnHeight + btnMargin * 2;
-        let y = (height - contentHeight) / 2;
-
-        // 标题
-        const title = new PIXI.Text('游戏结束', {
-            fontFamily: 'Arial',
-            fontSize: titleFontSize,
-            fontWeight: 'bold',
-            fill: 0xff5e5e,
-            align: 'center',
-            dropShadow: true,
-            dropShadowColor: '#000',
-            dropShadowBlur: 10,
-            dropShadowDistance: 4
-        });
-        title.anchor.set(0.5, 0);
-        title.x = width / 2;
-        title.y = y;
-        this.addChild(title);
-        y += titleFontSize + btnMargin;
-
-        // 分数
-        const scoreText = new PIXI.Text(`分数：${score}`, {
-            fontFamily: 'Arial',
-            fontSize: scoreFontSize,
-            fill: 0xffe066,
-            fontWeight: 'bold',
-            align: 'center',
-            dropShadow: true,
-            dropShadowColor: '#000',
-            dropShadowBlur: 6,
-            dropShadowDistance: 2
-        });
-        scoreText.anchor.set(0.5, 0);
-        scoreText.x = width / 2;
-        scoreText.y = y;
-        this.addChild(scoreText);
-        y += scoreFontSize + btnMargin;
-
-        // 按钮
-        const btnWidth = 400;
-        const restartBtn = new PIXI.Graphics();
-        restartBtn.beginFill(0x4a90e2, 1);
-        restartBtn.drawRoundedRect(-btnWidth/2, 0, btnWidth, btnHeight, 40);
-        restartBtn.endFill();
-        restartBtn.x = width / 2;
-        restartBtn.y = y;
-        restartBtn.eventMode = 'static';
-        restartBtn.buttonMode = true;
-        restartBtn.on('pointertap', () => {
-            if (onRestart) onRestart();
-        });
-        this.addChild(restartBtn);
-
-        // 按钮文字
-        const btnText = new PIXI.Text('重新开始', {
-            fontFamily: 'Arial',
-            fontSize: 56,
-            fill: 0xffffff,
-            fontWeight: 'bold',
-            align: 'center',
-        });
-        btnText.anchor.set(0.5, 0.5);
-        btnText.x = width / 2;
-        btnText.y = y + btnHeight / 2;
-        this.addChild(btnText);
+        // appear动画（backOut）
+        this.scale.set(0);
+        let appearTicker = PIXI.Ticker.shared;
+        let appearTime = 0;
+        const appearDuration = 0.28;
+        const appearStep = (delta) => {
+            appearTime += appearTicker.deltaMS / 1000;
+            let t = Math.min(appearTime / appearDuration, 1);
+            let s = this.easeOutBack(t);
+            this.scale.set(s);
+            if (t >= 1) {
+                appearTicker.remove(appearStep);
+                this.scale.set(1);
+            }
+        };
+        appearTicker.add(appearStep);
     }
 }

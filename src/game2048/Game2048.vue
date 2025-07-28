@@ -62,9 +62,9 @@ function setGameState(state, initialValue = 2) {
 }
 
 function showStartScreen() {
-    gameApp.addGameObject(new StartScreen({
+    gameApp.addUI(new StartScreen({
         onStart: onClickStart
-    }), GameLayer.UI);
+    }));
 }
 
 function onClickStart(initialValue) {
@@ -80,8 +80,8 @@ function startGame(initialValue = 2) {
     autoRemoveTimers.push(setInterval(createEnermySnakes, 5000));
     gameApp.pixi.ticker.add(checkSnakeCollisions);
     gameApp.pixi.ticker.add(checkGameOver);
+    gameApp.pixi.ticker.add(initCenterSnake);
     window.addEventListener('keydown', handleKeyDown);
-    initCenterSnake();
 }
 
 function clearGame() {
@@ -91,7 +91,10 @@ function clearGame() {
     }
     autoRemoveTimers = [];
     gameApp.pixi.ticker.remove(checkSnakeCollisions);
+    gameApp.pixi.ticker.remove(checkGameOver);
+    gameApp.pixi.ticker.remove(initCenterSnake);
     gameApp.clearAllGameObjects();
+    gameApp.clearUI();
 }
 
 
@@ -102,29 +105,28 @@ function checkGameOver() {
 }
 
 function showFailScreen() {
-    gameApp.addGameObject(new FailScreen({
-        width: gameApp.pixi.screen.width,
-        height: gameApp.pixi.screen.height,
-        onRestart: onClickStart
-    }), GameLayer.UI);
+    gameApp.addUI(new FailScreen({
+        onRestart: () => {
+            clearGame();
+            setGameState('init');
+        }
+    }));
 }
 
 
-function initCenterSnake() {
-    gameApp.pixi.ticker.add(() => {
-        if (gameApp.playerSnake && gameApp.playerSnake.head) {
-            const head = gameApp.playerSnake.head;
-            const root = gameApp.gameContainer;
-            // 画布中心
-            const cx = gameApp.pixi.screen.width / 2;
-            const cy = gameApp.pixi.screen.height / 2;
-            // 玩家蛇头相对gameContainer的坐标
-            const hx = head.x;
-            const hy = head.y;
-            // gameContainer位置调整，使玩家蛇头居中
-            root.position.set(cx - hx, cy - hy);
-        }
-    });
+function initCenterSnake(delta) {
+    if (gameApp.playerSnake && gameApp.playerSnake.head) {
+        const head = gameApp.playerSnake.head;
+        const root = gameApp.gameContainer;
+        // 画布中心
+        const cx = gameApp.pixi.screen.width / 2;
+        const cy = gameApp.pixi.screen.height / 2;
+        // 玩家蛇头相对gameContainer的坐标
+        const hx = head.x;
+        const hy = head.y;
+        // gameContainer位置调整，使玩家蛇头居中
+        root.position.set(cx - hx, cy - hy);
+    }
 }
 
 function createBgCircle() {

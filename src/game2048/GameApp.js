@@ -8,7 +8,6 @@ export const GameLayer = {
     LooseCube: 1,
     EnermySnake: 2,
     PlayerSnake: 3,
-    UI: 4, // 新增UI层
 };
 
 export class GameApp {
@@ -17,6 +16,7 @@ export class GameApp {
     // PIXI相关
     pixi = null;
     gameContainer = null;
+    uiContainer = null;
     ticker = null;
 
     // 游戏对象全部通过分层容器统一管理
@@ -59,8 +59,8 @@ export class GameApp {
         this.rankList = this.rankList.slice(0, 5);
     }
 
-    // 分层容器（唯一游戏对象管理入口）
-    layerContainers = [null, null, null, null, null]; // [Bg, LooseCube, EnermySnake, PlayerSnake, UI]
+    // 分层容器（游戏对象管理）
+    layerContainers = [null, null, null, null]; // [Bg, LooseCube, EnermySnake, PlayerSnake]
 
     // 状态
     _inited = false;
@@ -84,19 +84,23 @@ export class GameApp {
         // 创建PIXI app
         this.pixi = createPixi(domElement);
         this.ticker = this.pixi.ticker;
-        // 分层容器
+        
+        // 游戏容器
         this.gameContainer = new PIXI.Container();
         this.layerContainers = [
             new PIXI.Container(), // BgLayer
             new PIXI.Container(), // LooseCube层
             new PIXI.Container(), // EnermySnake层
             new PIXI.Container(), // PlayerSnake层
-            new PIXI.Container(), // UI层
         ];
         this.layerContainers.forEach(layer => this.gameContainer.addChild(layer));
         this.pixi.stage.addChild(this.gameContainer);
         this.gameContainer.position.set(this.pixi.screen.width / 2, this.pixi.screen.height / 2);
-        // this.radius = Math.max(this.pixi.screen.width / 2, this.pixi.screen.height / 2);
+
+        // UI容器（独立管理）
+        this.uiContainer = new PIXI.Container();
+        this.pixi.stage.addChild(this.uiContainer);
+        this.uiContainer.position.set(this.pixi.screen.width / 2, this.pixi.screen.height / 2);
 
         this.ticker.add(this.update, this);
 
@@ -130,7 +134,8 @@ export class GameApp {
             this.pixi.destroy(true, { children: true, texture: true, baseTexture: true });
         }
         this.gameContainer = null;
-        this.layerContainers = [null, null, null, null, null];
+        this.uiContainer = null;
+        this.layerContainers = [null, null, null, null];
         this.pixi = null;
         this.ticker = null;
         this._inited = false;
@@ -169,5 +174,30 @@ export class GameApp {
     setObjectLayer(obj, layer) {
         this.removeGameObject(obj);
         this.addGameObject(obj, layer);
+    }
+
+    // UI管理方法
+    addUI(uiElement) {
+        if (this.uiContainer) {
+            this.uiContainer.addChild(uiElement);
+            if (uiElement.onAdd) {
+                uiElement.onAdd();
+            }
+        }
+    }
+
+    removeUI(uiElement) {
+        if (this.uiContainer && uiElement.parent === this.uiContainer) {
+            this.uiContainer.removeChild(uiElement);
+            if (uiElement.onDestroy) {
+                uiElement.onDestroy();
+            }
+        }
+    }
+
+    clearUI() {
+        if (this.uiContainer) {
+            this.uiContainer.removeChildren();
+        }
     }
 }

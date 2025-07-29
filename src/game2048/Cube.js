@@ -47,6 +47,10 @@ export default class Cube extends PIXI.Container {
         this.x = initialX;
         this.y = initialY;
         
+        // Debug功能
+        this.debugMode = false;
+        this.debugGraphics = null;
+        
         // 确保资源已加载
         const texture = PIXI.Texture.from('game2048/ship_E.png');
         if (!texture) {
@@ -57,7 +61,7 @@ export default class Cube extends PIXI.Container {
             this.shipSprite = new PIXI.Sprite(texture);
         }
         
-        this.shipSprite.anchor.set(1, 0.5);
+        this.shipSprite.anchor.set(0.9, 0.5);
         this.addChild(this.shipSprite);
         this.shipSprite.tint = Cube.getLightColorByValue(this.currentValue);
 
@@ -108,9 +112,8 @@ export default class Cube extends PIXI.Container {
         if (val >= 2) {
             scale = 1 + 0.1 * (Math.log2(val) - 1);
         }
-        this.shipSprite.scale.set(scale);
-        // 数字不缩放，保持默认scale=1
-        if (this.valueText) this.valueText.scale.set(1);
+        // this.shipSprite.scale.set(scale);
+        this.scale.set(scale);
     }
 
     setValue(newValue) {
@@ -118,8 +121,9 @@ export default class Cube extends PIXI.Container {
         this.valueText.text = newValue.toString();
         const color = Cube.getColorByValue(newValue);
         this.valueText.style.fill = color;
-        this.valueText.x = -this.getSize()/2;
         this.updateScaleByValue(newValue);
+        this.valueText.x = -this.getSize()/2;
+        this.updateDebugGraphics();
     }
 
     get value() {
@@ -128,6 +132,36 @@ export default class Cube extends PIXI.Container {
 
     getSize() {
         // shipSprite.width是原始宽度，考虑scale
-        return this.shipSprite.width * this.shipSprite.scale.x;
+        return this.shipSprite.width * this.shipSprite.scale.x * 0.75 * this.scale.x;
+    }
+
+    toggleDebug() {
+        this.debugMode = !this.debugMode;
+        if (this.debugMode) {
+            this.updateDebugGraphics();
+        } else {
+            this.clearDebugGraphics();
+        }
+    }
+
+    updateDebugGraphics() {
+        if (!this.debugGraphics) {
+            this.debugGraphics = new PIXI.Graphics();
+            this.addChild(this.debugGraphics);
+        }
+        
+        this.debugGraphics.clear();
+        const size = this.getSize();
+        
+        // 以shipSprite的锚点(0.9, 0.5)为基准
+        // 锚点在右边缘中心，所以debug框应该从右边缘向左延伸
+        this.debugGraphics.lineStyle(2, 0xff0000);
+        this.debugGraphics.drawRect(-size, -size/2, size, size);
+    }
+
+    clearDebugGraphics() {
+        if (this.debugGraphics) {
+            this.debugGraphics.clear();
+        }
     }
 }

@@ -36,7 +36,7 @@ export default class Snake extends PIXI.Container {
         this.debugMode = false;
         this.debugGraphics = null;
 
-        this.toggleDebug();
+        // this.toggleDebug();
     }
 
     setBaseSpeed(speed){
@@ -149,15 +149,15 @@ export default class Snake extends PIXI.Container {
 
     update(delta) {
         this.updateNormalMovement(delta);
-        // if (this.pendingMerge) {
-        //     this.updateMergeAnimation(delta);
-        // } else if (this.mergeCooldown && this.mergeCooldown > 0) {
-        //     const dt = delta && delta.deltaMS ? delta.deltaMS : 16;
-        //     this.mergeCooldown -= dt;
-        //     if (this.mergeCooldown < 0) this.mergeCooldown = 0;
-        // } else {
-        //     this.mergeCubesIfPossible();
-        // }
+        if (this.pendingMerge) {
+            this.updateMergeAnimation(delta);
+        } else if (this.mergeCooldown && this.mergeCooldown > 0) {
+            const dt = delta && delta.deltaMS ? delta.deltaMS : 16;
+            this.mergeCooldown -= dt;
+            if (this.mergeCooldown < 0) this.mergeCooldown = 0;
+        } else {
+            this.mergeCubesIfPossible();
+        }
     }
 
     updateHeadDirectionStrategy(delta) { }
@@ -304,7 +304,7 @@ export default class Snake extends PIXI.Container {
             
             // 计算理想跟随距离：直接使用follower的大小
             const followerSize = follower.getSize();
-            const idealGap = followerSize * 0.7;
+            const idealGap = followerSize * 1;
             
             // 计算目标位置（在leader后方idealGap距离处）
             const targetX = leader.x - Math.cos(leader.rotation) * idealGap;

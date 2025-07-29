@@ -57,8 +57,9 @@ export default class Cube extends PIXI.Container {
             this.shipSprite = new PIXI.Sprite(texture);
         }
         
-        this.shipSprite.anchor.set(0.5);
+        this.shipSprite.anchor.set(1, 0.5);
         this.addChild(this.shipSprite);
+        this.shipSprite.tint = Cube.getLightColorByValue(this.currentValue);
 
         this.valueText = new PIXI.Text(this.currentValue.toString(), {
             fontFamily: 'Arial Black, Arial, Montserrat, Impact, sans-serif',
@@ -74,13 +75,12 @@ export default class Cube extends PIXI.Container {
             dropShadowDistance: 0
         });
         // 设置图片颜色（更浅）
-        this.shipSprite.tint = Cube.getLightColorByValue(this.currentValue);
         this.valueText.anchor.set(0.5);
-        this.valueText.y = 0; // 根据飞船图片调整文本位置，使其居中或合适位置
-        this.addChild(this.valueText);
+        this.shipSprite.addChild(this.valueText);
 
         // 初始化缩放：2的缩放为1，4为1.1，每翻倍加0.1
         this.updateScaleByValue(this.currentValue);
+        this.setValue(this.currentValue);
 
         // 初始化旋转，使其朝向右方 (如果图片默认朝右)
         // 如果图片默认朝上，则 this.shipSprite.rotation = -Math.PI / 2; this.rotation = 0;
@@ -118,15 +118,7 @@ export default class Cube extends PIXI.Container {
         this.valueText.text = newValue.toString();
         const color = Cube.getColorByValue(newValue);
         this.valueText.style.fill = color;
-        this.valueText.style.fontWeight = 'bold';
-        this.valueText.style.fontSize = 32;
-        this.valueText.style.stroke = 0x222222;
-        this.valueText.style.strokeThickness = 6;
-        this.valueText.style.dropShadow = true;
-        this.valueText.style.dropShadowColor = 0x000000;
-        this.valueText.style.dropShadowBlur = 4;
-        this.valueText.style.dropShadowDistance = 0;
-        this.shipSprite.tint = Cube.getLightColorByValue(newValue);
+        this.valueText.x = -this.getSize()/2;
         this.updateScaleByValue(newValue);
     }
 

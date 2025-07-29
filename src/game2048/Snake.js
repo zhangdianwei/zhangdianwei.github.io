@@ -27,6 +27,16 @@ export default class Snake extends PIXI.Container {
         this.setBaseSpeed(3);
         this.speedRatio = 1;
         this.pendingMerge = null;
+        
+        // 初始化方向属性，避免未定义错误
+        this.targetDirectionX = 1;
+        this.targetDirectionY = 0;
+        
+        // Debug功能：目标点绘制
+        this.debugMode = false;
+        this.debugGraphics = null;
+
+        this.toggleDebug();
     }
 
     setBaseSpeed(speed){
@@ -74,7 +84,7 @@ export default class Snake extends PIXI.Container {
         if (!this.nameTxt) {
             this.nameTxt = new PIXI.Text(this.name || '', {
                 fontFamily: 'Arial Black, Arial, sans-serif',
-                fontSize: 20,
+                fontSize: 40,
                 fill: 0xffff66, // 亮黄色
                 stroke: 0x222222, // 深色描边
                 strokeThickness: 5,
@@ -82,12 +92,13 @@ export default class Snake extends PIXI.Container {
             });
             this.nameTxt.anchor.set(0.5, 1);
             this.head.addChild(this.nameTxt);
+
+            this.nameTxt.x = 0;
+            this.nameTxt.y = 0;
+            this.nameTxt.rotation = Math.PI / 2; // 保持正向朝上
+            this.nameTxt.visible = !!this.name;
         }
         this.nameTxt.text = this.name || '';
-        this.nameTxt.x = 30;
-        this.nameTxt.y = 0;
-        this.nameTxt.rotation = Math.PI / 2; // 保持正向朝上
-        this.nameTxt.visible = !!this.name;
     }
 
     addCubes(values){
@@ -138,40 +149,15 @@ export default class Snake extends PIXI.Container {
 
     update(delta) {
         this.updateNormalMovement(delta);
-        if (this.pendingMerge) {
-            this.updateMergeAnimation(delta);
-        } else if (this.mergeCooldown && this.mergeCooldown > 0) {
-            const dt = delta && delta.deltaMS ? delta.deltaMS : 16;
-            this.mergeCooldown -= dt;
-            if (this.mergeCooldown < 0) this.mergeCooldown = 0;
-        } else {
-            this.mergeCubesIfPossible();
-        }
-    }
-
-    /**
-     * 通用推进与旋转工具
-     * @param {object} obj 需要移动的对象（cube/head）
-     * @param {number} targetX
-     * @param {number} targetY
-     * @param {number} speed
-     * @param {number} deltaTime
-     * @param {number} [rotationLerp=1] 插值因子，1为直接对齐
-     */
-    moveAndRotate(obj, targetX, targetY, speed, deltaTime, rotationLerp = 1) {
-        const dx = targetX - obj.x;
-        const dy = targetY - obj.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance > 0.01) {
-            const targetAngle = Math.atan2(dy, dx);
-            const angleDiff = shortestAngleDist(normalizeAnglePi(obj.rotation), targetAngle);
-            obj.rotation = normalizeAnglePi(obj.rotation + angleDiff * rotationLerp);
-        }
-        if (distance > 0.01) {
-            const moveDist = Math.min(speed * deltaTime, distance);
-            obj.x += (dx / distance) * moveDist;
-            obj.y += (dy / distance) * moveDist;
-        }
+        // if (this.pendingMerge) {
+        //     this.updateMergeAnimation(delta);
+        // } else if (this.mergeCooldown && this.mergeCooldown > 0) {
+        //     const dt = delta && delta.deltaMS ? delta.deltaMS : 16;
+        //     this.mergeCooldown -= dt;
+        //     if (this.mergeCooldown < 0) this.mergeCooldown = 0;
+        // } else {
+        //     this.mergeCubesIfPossible();
+        // }
     }
 
     updateHeadDirectionStrategy(delta) { }
@@ -195,16 +181,22 @@ export default class Snake extends PIXI.Container {
     updateHeadMovement(deltaTime){
         const headCube = this.head;
         
+        // 添加安全检查，确保方向属性存在
+        if (typeof this.targetDirectionX !== 'number' || typeof this.targetDirectionY !== 'number') {
+            this.targetDirectionX = 1;
+            this.targetDirectionY = 0;
+        }
+        
         const targetAngle = Math.atan2(this.targetDirectionY, this.targetDirectionX);
         const currentRotation = normalizeAnglePi(headCube.rotation);
         const angleDifference = shortestAngleDist(currentRotation, targetAngle);
-        const rotationLerpFactor = 0.15;
-        headCube.rotation += angleDifference * rotationLerpFactor;
+        const rotationLerpFactor = 0.1;
+        
+        headCube.rotation += angleDifference * rotationLerpFactor * deltaTime;
         headCube.rotation = normalizeAnglePi(headCube.rotation);
 
-        // 蛇头移动：按当前方向推进
-        headCube.x += this.targetDirectionX * this.finalSpeed * deltaTime;
-        headCube.y += this.targetDirectionY * this.finalSpeed * deltaTime;
+        headCube.x += Math.cos(headCube.rotation) * this.finalSpeed * deltaTime;
+        headCube.y += Math.sin(headCube.rotation) * this.finalSpeed * deltaTime;
 
         // 不要超出圆形区域
         if (this.gameApp && typeof this.gameApp.radius === 'number') {
@@ -216,10 +208,6 @@ export default class Snake extends PIXI.Container {
                 headCube.y = Math.sin(clampAngle) * maxRadius;
             }
         }
-
-        // if (this.constructor.name === 'EnermySnake') {
-        //     console.log('snake head pos', this.targetDirectionX, this.targetDirectionY);
-        // }
     }
 
     updateNormalMovement(delta) {
@@ -301,38 +289,80 @@ export default class Snake extends PIXI.Container {
 
     updateSnakeLogic(deltaTime, excludeIndex = -1) {
         if (this.cubes.length < 2) return;
+        
+        // 清除之前的debug图形
+        if (this.debugMode) {
+            this.debugGraphics.clear();
+        }
+        
+        // 从第二个cube开始，每个cube追逐前面的cube
         for (let i = 1; i < this.cubes.length; i++) {
             if (i === excludeIndex) continue;
-            const leader = this.cubes[i-1];
-            const cube = this.cubes[i];
-            const dx = leader.x - cube.x;
-            const dy = leader.y - cube.y;
-            const distanceToLeader = Math.sqrt(dx * dx + dy * dy);
-            const idealGap = (leader.getSize() + cube.getSize()) / 4;
-
-            if (distanceToLeader > idealGap) {
-                // 推进+旋转（插值推进，有追击感）
-                const targetX = leader.x - (dx / distanceToLeader) * idealGap;
-                const targetY = leader.y - (dy / distanceToLeader) * idealGap;
-                const speed = this.finalSpeed * cube.speedRatio;
-                this.moveAndRotate(cube, targetX, targetY, speed, deltaTime, 1.5);
-            } else if (distanceToLeader > 0.01) {
-                // 过近或重叠，直接对齐
-                const targetX = leader.x - (dx / distanceToLeader) * idealGap;
-                const targetY = leader.y - (dy / distanceToLeader) * idealGap;
-                cube.x = targetX;
-                cube.y = targetY;
-                cube.rotation = leader.rotation;
-            } else {
-                // 完全重叠
-                const targetX = leader.x - Math.cos(leader.rotation) * idealGap;
-                const targetY = leader.y - Math.sin(leader.rotation) * idealGap;
-                cube.x = targetX;
-                cube.y = targetY;
-                cube.rotation = leader.rotation;
+            
+            const follower = this.cubes[i];        // 当前cube（跟随者）
+            const leader = this.cubes[i - 1];      // 前面的cube（领导者）
+            
+            // 计算理想跟随距离：直接使用follower的大小
+            const followerSize = follower.getSize();
+            const idealGap = followerSize * 0.7;
+            
+            // 计算目标位置（在leader后方idealGap距离处）
+            const targetX = leader.x - Math.cos(leader.rotation) * idealGap;
+            const targetY = leader.y - Math.sin(leader.rotation) * idealGap;
+            
+            // Debug绘制：目标点和连线
+            if (this.debugMode) {
+                // 绘制目标点（红色）
+                this.drawTargetPoint(targetX, targetY, 0xff0000);
+                // 绘制从follower到目标点的连线（绿色）
+                this.drawLine(follower.x, follower.y, targetX, targetY, 0x00ff00);
+                // 绘制从leader到目标点的连线（蓝色）
+                this.drawLine(leader.x, leader.y, targetX, targetY, 0x0000ff);
+            }
+            
+            // 统一追逐策略，使用更温和的旋转参数减少摆头
+            const followSpeed = this.finalSpeed * follower.speedRatio * 1.5;
+            
+            // move and rotation
+            {
+                const dx = targetX - follower.x;
+                const dy = targetY - follower.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 3) {
+                    // 追逐状态：渐进追逐，朝向运动方向
+                    
+                    // 移动：渐进追逐目标点
+                    const moveDist = Math.min(followSpeed * deltaTime, distance);
+                    follower.x += (dx / distance) * moveDist;
+                    follower.y += (dy / distance) * moveDist;
+                    
+                    // 朝向：跟随运动方向
+                    const targetAngle = Math.atan2(dy, dx);
+                    const angleDiff = shortestAngleDist(normalizeAnglePi(follower.rotation), targetAngle);
+                    const rotationLerp = 0.1;
+                    const rotationDiff = angleDiff * rotationLerp;
+                    const rotation = normalizeAnglePi(follower.rotation + rotationDiff);
+                    follower.rotation = rotation;
+                } else {
+                    // 到达状态：直接设置到目标点，朝向leader方向
+                    
+                    // 移动：直接设置到目标点
+                    follower.x = targetX;
+                    follower.y = targetY;
+                    
+                    // 朝向：跟随leader方向
+                    const targetAngle = leader.rotation;
+                    const angleDiff = shortestAngleDist(normalizeAnglePi(follower.rotation), targetAngle);
+                    const rotationLerp = 0.1;
+                    const rotationDiff = angleDiff * rotationLerp;
+                    const rotation = normalizeAnglePi(follower.rotation + rotationDiff);
+                    follower.rotation = rotation;
+                }
             }
         }
     }
+
 
     updateCubeZOrder() {
         for (let i = 0; i < this.cubes.length; i++) {
@@ -350,5 +380,58 @@ export default class Snake extends PIXI.Container {
         if (index === 0) {
             gameApp.removeGameObject(this);
         }
+    }
+
+    /**
+     * 切换debug模式
+     */
+    toggleDebug() {
+        this.debugMode = !this.debugMode;
+        if (this.debugMode) {
+            this.initDebugGraphics();
+        } else {
+            this.clearDebugGraphics();
+        }
+    }
+
+    /**
+     * 初始化debug图形
+     */
+    initDebugGraphics() {
+        if (!this.debugGraphics) {
+            this.debugGraphics = new PIXI.Graphics();
+            this.addChild(this.debugGraphics);
+        }
+    }
+
+    /**
+     * 清除debug图形
+     */
+    clearDebugGraphics() {
+        if (this.debugGraphics) {
+            this.debugGraphics.clear();
+        }
+    }
+
+    /**
+     * 绘制目标点
+     */
+    drawTargetPoint(x, y, color = 0xff0000) {
+        if (!this.debugMode || !this.debugGraphics) return;
+        
+        this.debugGraphics.beginFill(color);
+        this.debugGraphics.drawCircle(x, y, 5);
+        this.debugGraphics.endFill();
+    }
+
+    /**
+     * 绘制连线
+     */
+    drawLine(fromX, fromY, toX, toY, color = 0x00ff00) {
+        if (!this.debugMode || !this.debugGraphics) return;
+        
+        this.debugGraphics.lineStyle(2, color);
+        this.debugGraphics.moveTo(fromX, fromY);
+        this.debugGraphics.lineTo(toX, toY);
     }
 }

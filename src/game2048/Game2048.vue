@@ -76,8 +76,8 @@ function startGame(initialValue = 2) {
     createPlayerSnake(initialValue);
     ensureLooseCubes();
     autoRemoveTimers.push(setInterval(ensureLooseCubes, 5000));
-    createEnermySnakes();
-    autoRemoveTimers.push(setInterval(createEnermySnakes, 5000));
+    // createEnermySnakes();
+    // autoRemoveTimers.push(setInterval(createEnermySnakes, 5000));
     gameApp.pixi.ticker.add(checkSnakeCollisions);
     gameApp.pixi.ticker.add(checkGameOver);
     gameApp.pixi.ticker.add(initCenterSnake);
@@ -188,12 +188,9 @@ function ensureLooseCubes() {
 }
 
 function handleKeyDown(e) {
-    if (e.key === 'k') {
-        startGame();
+    if (e.key === 'f') {
+        gameApp.playerSnake.addCube(2);
         return;
-    }
-    if (gameApp.handleKeyDown) {
-        gameApp.handleKeyDown(e);
     }
 }
 </script>

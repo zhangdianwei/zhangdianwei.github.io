@@ -123,6 +123,12 @@ export default class SpeedBoostUI extends PIXI.Container {
     
     startTimer() {
         this.timer = setInterval(() => {
+            // 检查游戏状态，只有在playing状态时才工作
+            const gameApp = GameApp.instance;
+            if (!gameApp || gameApp.gameState !== 'playing') {
+                return; // 只有在playing状态时才工作
+            }
+            
             if (!this.isActive) {
                 this.progress += 1; // 每100ms增加1%，10秒完成
                 

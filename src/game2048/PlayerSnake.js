@@ -19,17 +19,17 @@ export default class PlayerSnake extends Snake {
     onAdd() {
         super.onAdd();
         // 添加鼠标按下和松开事件监听
-        this.gameApp.pixi.view.addEventListener('mousedown', this.handleMouseDown.bind(this));
-        this.gameApp.pixi.view.addEventListener('mouseup', this.handleMouseUp.bind(this));
-        this.gameApp.pixi.view.addEventListener('mouseleave', this.handleMouseUp.bind(this));
+        // this.gameApp.pixi.view.addEventListener('mousedown', this.handleMouseDown.bind(this));
+        // this.gameApp.pixi.view.addEventListener('mouseup', this.handleMouseUp.bind(this));
+        // this.gameApp.pixi.view.addEventListener('mouseleave', this.handleMouseUp.bind(this));
     }
 
     onDestroy() {
         super.onDestroy();
         // 移除事件监听器
-        this.gameApp.pixi.view.removeEventListener('mousedown', this.handleMouseDown.bind(this));
-        this.gameApp.pixi.view.removeEventListener('mouseup', this.handleMouseUp.bind(this));
-        this.gameApp.pixi.view.removeEventListener('mouseleave', this.handleMouseUp.bind(this));
+        // this.gameApp.pixi.view.removeEventListener('mousedown', this.handleMouseDown.bind(this));
+        // this.gameApp.pixi.view.removeEventListener('mouseup', this.handleMouseUp.bind(this));
+        // this.gameApp.pixi.view.removeEventListener('mouseleave', this.handleMouseUp.bind(this));
     }
 
     handleMouseDown(event) {

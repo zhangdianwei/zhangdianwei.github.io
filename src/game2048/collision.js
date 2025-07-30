@@ -6,6 +6,7 @@
  * @param {GameApp} gameApp
  */
 import { GameApp } from './GameApp.js';
+import * as intersects from 'intersects';
 
 export function checkSnakeCollisions() {
     const gameApp = GameApp.instance;
@@ -17,22 +18,22 @@ export function checkSnakeCollisions() {
         const head = snake.head;
         const allCubes = getAllCubesExcludeSnake(snake);
         for (const cube of allCubes) {
-            // 计算实际的碰撞中心点
-            // 由于锚点在(1, 0.5)，需要调整碰撞中心
-            const cubeSize = cube.getSize();
-            const cubeCenterX = cube.x - cubeSize / 2; // 锚点在右边缘，向左偏移半个宽度
-            const cubeCenterY = cube.y; // 锚点在垂直中心，y坐标不变
+            // 使用getCollision方法获取碰撞体积
+            const headCollision = head.getCollision();
+            const cubeCollision = cube.getCollision();
             
-            const headSize = head.getSize();
-            const headCenterX = head.x - headSize / 2; // 同样调整head的中心
-            const headCenterY = head.y;
+            // 使用intersects库进行圆形碰撞检测
+            // 使用getCollision提供的中心点坐标
+            const intersected = intersects.circleCircle(
+                headCollision.centerX, 
+                headCollision.centerY, 
+                headCollision.radius,
+                cubeCollision.centerX, 
+                cubeCollision.centerY, 
+                cubeCollision.radius
+            );
             
-            const dx = headCenterX - cubeCenterX;
-            const dy = headCenterY - cubeCenterY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const minDist = (headSize + cubeSize) / 2; // 两个半径之和
-            
-            if (dist < minDist) {
+            if (intersected) {
                 if (!cube.snake) {
                     // 普通吃散块
                     if (head.currentValue >= cube.currentValue) {

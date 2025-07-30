@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import * as intersects from 'intersects';
 
 export default class Cube extends PIXI.Container {
     // 颜色列表，低级到高级
@@ -51,6 +52,9 @@ export default class Cube extends PIXI.Container {
         this.debugMode = false;
         this.debugGraphics = null;
         
+        // Anchor配置
+        this.anchorX = 0.85;
+        
         // 确保资源已加载
         const texture = PIXI.Texture.from('game2048/ship_E.png');
         if (!texture) {
@@ -61,7 +65,7 @@ export default class Cube extends PIXI.Container {
             this.shipSprite = new PIXI.Sprite(texture);
         }
         
-        this.shipSprite.anchor.set(0.9, 0.5);
+        this.shipSprite.anchor.set(this.anchorX, 0.5);
         this.addChild(this.shipSprite);
         this.shipSprite.tint = Cube.getLightColorByValue(this.currentValue);
 
@@ -123,7 +127,6 @@ export default class Cube extends PIXI.Container {
         this.valueText.style.fill = color;
         this.updateScaleByValue(newValue);
         this.valueText.x = -this.getSize()/2;
-        this.updateDebugGraphics();
     }
 
     get value() {
@@ -131,17 +134,22 @@ export default class Cube extends PIXI.Container {
     }
 
     getSize() {
-        // shipSprite.width是原始宽度，考虑scale
-        return this.shipSprite.width * this.shipSprite.scale.x * 0.75 * this.scale.x;
+        return this.shipSprite.width * this.shipSprite.scale.x * 0.7 * this.scale.x;
     }
 
-    toggleDebug() {
-        this.debugMode = !this.debugMode;
-        if (this.debugMode) {
-            this.updateDebugGraphics();
-        } else {
-            this.clearDebugGraphics();
-        }
+    getCollision() {
+        const size = this.getSize();
+
+        const centerOffsetX = (0.5 - this.anchorX) * this.shipSprite.width;
+        const centerOffsetY = 0;
+        
+        const globalPos = this.toGlobal(new PIXI.Point(centerOffsetX, centerOffsetY));
+        
+        return {
+            centerX: globalPos.x,
+            centerY: globalPos.y,
+            radius: size / 2
+        };
     }
 
     updateDebugGraphics() {
@@ -151,17 +159,36 @@ export default class Cube extends PIXI.Container {
         }
         
         this.debugGraphics.clear();
-        const size = this.getSize();
         
-        // 以shipSprite的锚点(0.9, 0.5)为基准
-        // 锚点在右边缘中心，所以debug框应该从右边缘向左延伸
+        const collision = this.getCollision();
+        
+        const localPos = this.toLocal(new PIXI.Point(collision.centerX, collision.centerY));
+        
+        const radius = collision.radius / this.scale.x;
         this.debugGraphics.lineStyle(2, 0xff0000);
-        this.debugGraphics.drawRect(-size, -size/2, size, size);
+        this.debugGraphics.drawCircle(localPos.x, localPos.y, radius);
+        
+        this.debugGraphics.beginFill(0x00ff00);
+        this.debugGraphics.drawCircle(localPos.x, localPos.y, 5);
+        this.debugGraphics.endFill();
+        
+        this.debugGraphics.beginFill(0x000000);
+        this.debugGraphics.drawCircle(0, 0, 5);
+        this.debugGraphics.endFill();
     }
 
     clearDebugGraphics() {
         if (this.debugGraphics) {
             this.debugGraphics.clear();
+        }
+    }
+
+    toggleDebug() {
+        this.debugMode = !this.debugMode;
+        if (this.debugMode) {
+            this.updateDebugGraphics();
+        } else {
+            this.clearDebugGraphics();
         }
     }
 }

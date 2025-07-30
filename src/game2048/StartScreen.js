@@ -65,7 +65,7 @@ export default class StartScreen extends PIXI.Container {
         this.addChild(descBtn);
 
         // 按钮文字（作为按钮的子节点）
-        const descBtnText = new PIXI.Text('爱', {
+        const descBtnText = new PIXI.Text('支持殿伟', {
             fontFamily: 'Arial',
             fontSize: 40,
             fill: 0x333333,

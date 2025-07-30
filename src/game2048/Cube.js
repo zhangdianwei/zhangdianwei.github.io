@@ -124,7 +124,7 @@ export default class Cube extends PIXI.Container {
         const color = Cube.getColorByValue(newValue);
         this.valueText.style.fill = color;
         this.updateScaleByValue(newValue);
-        this.valueText.x = this.getRealCenter().x;
+        this.valueText.x = -50;
         // this.updateDebugGraphics();
     }
 
@@ -139,7 +139,7 @@ export default class Cube extends PIXI.Container {
     }
 
     getSize() {
-        return this.shipSprite.width * this.shipSprite.scale.x * this.scale.x;
+        return this.shipSprite.width;
     }
 
     getCollision() {

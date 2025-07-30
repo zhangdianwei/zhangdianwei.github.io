@@ -15,12 +15,16 @@ import Cube from './Cube';
 import { checkSnakeCollisions } from './collision';
 import FailScreen from './FailScreen';
 import StartScreen from './StartScreen';
+import SpeedBoostUI from './SpeedBoostUI';
 import { initDom } from '../pixi/PixiHelper';
 import PixiLoader from '../pixi/PixiLoader.vue';
 
 const pixiContainer = ref(null);
 const gameApp = GameApp.instance;
 let autoRemoveTimers = [];
+
+// 速度提升管理器
+let speedBoostUI = null;
 
 // 需要加载的纹理资源（请根据实际用到的图片补全）
 const textureUrls = [
@@ -78,6 +82,13 @@ function startGame(initialValue = 2) {
     autoRemoveTimers.push(setInterval(ensureLooseCubes, 5000));
     createEnermySnakes();
     autoRemoveTimers.push(setInterval(createEnermySnakes, 5000));
+
+    // 创建速度提升UI
+    speedBoostUI = new SpeedBoostUI();
+    speedBoostUI.x = -speedBoostUI.getSize().width / 2;
+    speedBoostUI.y = gameApp.pixi.screen.height / 2 - 100;
+    gameApp.addUI(speedBoostUI);
+
     gameApp.pixi.ticker.add(checkSnakeCollisions);
     gameApp.pixi.ticker.add(checkGameOver);
     gameApp.pixi.ticker.add(initCenterSnake);
@@ -90,13 +101,19 @@ function clearGame() {
         clearInterval(timer);
     }
     autoRemoveTimers = [];
+
+    // 清理速度提升相关
+    if (speedBoostUI) {
+        speedBoostUI.destroy();
+        speedBoostUI = null;
+    }
+
     gameApp.pixi.ticker.remove(checkSnakeCollisions);
     gameApp.pixi.ticker.remove(checkGameOver);
     gameApp.pixi.ticker.remove(initCenterSnake);
     gameApp.clearAllGameObjects();
     gameApp.clearUI();
 }
-
 
 function checkGameOver() {
     if (!gameApp.playerSnake || !gameApp.playerSnake.cubes || gameApp.playerSnake.cubes.length === 0) {

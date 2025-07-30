@@ -302,9 +302,9 @@ export default class Snake extends PIXI.Container {
             const follower = this.cubes[i];        // 当前cube（跟随者）
             const leader = this.cubes[i - 1];      // 前面的cube（领导者）
             
-            // 计算理想跟随距离：直接使用follower的大小
-            const followerSize = follower.getSize();
-            const idealGap = followerSize * 1;
+            // 计算理想跟随距离：使用leader的大小，这样同一个leader的所有follower距离一致
+            const leaderSize = leader.getSize();
+            const idealGap = leaderSize * 0.7;
             
             // 计算目标位置（在leader后方idealGap距离处）
             const targetX = leader.x - Math.cos(leader.rotation) * idealGap;
@@ -321,7 +321,7 @@ export default class Snake extends PIXI.Container {
             }
             
             // 统一追逐策略，使用更温和的旋转参数减少摆头
-            const followSpeed = this.finalSpeed * follower.speedRatio * 1.5;
+            const followSpeed = this.finalSpeed * follower.speedRatio * 3;
             
             // move and rotation
             {

@@ -177,7 +177,7 @@ export default class FailScreen extends PIXI.Container {
         // 使用makeButton简化按钮实现
         makeButton(btn, async () => {
             // 使用PixiAction的disappear动画
-            await disappear(this, 0.18);
+            await disappear(this);
             if (typeof this.onRestart === 'function') this.onRestart();
             this.removeFromParent();
         });
@@ -185,6 +185,6 @@ export default class FailScreen extends PIXI.Container {
 
     setupAnimations() {
         // 使用PixiAction的appear动画
-        appear(this, 0.28);
+        appear(this);
     }
 }

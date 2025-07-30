@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { makeButton } from '../pixi/PixiUI.js';
-import { scaleBounce } from '../pixi/PixiAction.js';
+import { appear, disappear, scaleOnce } from '../pixi/PixiAction.js';
 
 export default class StartScreen extends PIXI.Container {
     constructor({ onStart = null } = {}) {
@@ -14,7 +14,7 @@ export default class StartScreen extends PIXI.Container {
         this.createTitle();
         this.createCounterButton();
         this.createStartButton();
-        this.setupAnimations();
+        appear(this);
     }
 
     createCard() {
@@ -89,8 +89,8 @@ export default class StartScreen extends PIXI.Container {
             dropShadowBlur: 6,
             dropShadowDistance: 2
         });
-        this.counterText.anchor.set(0, 0.5);
-        this.counterText.x = descBtn.x + descBtnWidth/2 + 24;
+        this.counterText.anchor.set(0.5, 0.5);
+        this.counterText.x = descBtn.x + descBtnWidth/2 + 40;
         this.counterText.y = descBtn.y;
         this.addChild(this.counterText);
 
@@ -99,10 +99,8 @@ export default class StartScreen extends PIXI.Container {
             if (this.counter < this.maxCounter) {
                 this.counter *= 2;
                 this.counterText.text = this.counter.toString();
-                
-                // counter更新时的缩放效果
-                // this.animateCounterUpdate();
-                scaleBounce(this.counterText, 0.2, 0.1);
+
+                scaleOnce(this.counterText);
             }
         };
 
@@ -136,41 +134,11 @@ export default class StartScreen extends PIXI.Container {
         btnText.y = btnHeight / 2;
         startBtn.addChild(btnText);
 
-        makeButton(startBtn, () => {
+        makeButton(startBtn, async () => {
+            await disappear(this);
             this.removeFromParent();
             if (this.onStart) this.onStart(this.counter);
         });
     }
 
-    setupAnimations() {
-        // backIn/backOut 缓动函数
-        this.easeOutBack = (t) => {
-            const c1 = 1.70158;
-            const c3 = c1 + 1;
-            return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
-        };
-        
-        this.easeInBack = (t) => {
-            const c1 = 1.70158;
-            const c3 = c1 + 1;
-            return c3 * t * t * t - c1 * t * t;
-        };
-
-        // appear动画（backOut）
-        this.scale.set(0);
-        let appearTicker = PIXI.Ticker.shared;
-        let appearTime = 0;
-        const appearDuration = 0.28;
-        const appearStep = (delta) => {
-            appearTime += appearTicker.deltaMS / 1000;
-            let t = Math.min(appearTime / appearDuration, 1);
-            let s = this.easeOutBack(t);
-            this.scale.set(s);
-            if (t >= 1) {
-                appearTicker.remove(appearStep);
-                this.scale.set(1);
-            }
-        };
-        appearTicker.add(appearStep);
-    }
 }

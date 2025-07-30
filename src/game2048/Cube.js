@@ -53,7 +53,7 @@ export default class Cube extends PIXI.Container {
         this.debugGraphics = null;
         
         // Anchor配置
-        this.anchorX = 0.85;
+        this.selfAnchorX = 1;
         
         // 确保资源已加载
         const texture = PIXI.Texture.from('game2048/ship_E.png');
@@ -65,7 +65,7 @@ export default class Cube extends PIXI.Container {
             this.shipSprite = new PIXI.Sprite(texture);
         }
         
-        this.shipSprite.anchor.set(this.anchorX, 0.5);
+        this.shipSprite.anchor.set(this.selfAnchorX, 0.5);
         this.addChild(this.shipSprite);
         this.shipSprite.tint = Cube.getLightColorByValue(this.currentValue);
 
@@ -110,14 +110,12 @@ export default class Cube extends PIXI.Container {
     }
 
     updateScaleByValue(val) {
-        // val: 2,4,8,16...
-        // scale = 1 + 0.1 * (log2(val) - 1)
         let scale = 1;
         if (val >= 2) {
             scale = 1 + 0.1 * (Math.log2(val) - 1);
         }
-        // this.shipSprite.scale.set(scale);
-        this.scale.set(scale);
+        this.shipSprite.scale.set(scale);
+        // this.scale.set(scale);
     }
 
     setValue(newValue) {
@@ -126,7 +124,14 @@ export default class Cube extends PIXI.Container {
         const color = Cube.getColorByValue(newValue);
         this.valueText.style.fill = color;
         this.updateScaleByValue(newValue);
-        this.valueText.x = -this.getSize()/2;
+        this.valueText.x = this.getRealCenter().x;
+        // this.updateDebugGraphics();
+    }
+
+    getRealCenter(){
+        const x = (0.5 - this.selfAnchorX) * this.shipSprite.width;
+        const y = 0;
+        return {x, y}
     }
 
     get value() {
@@ -134,16 +139,14 @@ export default class Cube extends PIXI.Container {
     }
 
     getSize() {
-        return this.shipSprite.width * this.shipSprite.scale.x * 0.7 * this.scale.x;
+        return this.shipSprite.width * this.shipSprite.scale.x * this.scale.x;
     }
 
     getCollision() {
         const size = this.getSize();
 
-        const centerOffsetX = (0.5 - this.anchorX) * this.shipSprite.width;
-        const centerOffsetY = 0;
-        
-        const globalPos = this.toGlobal(new PIXI.Point(centerOffsetX, centerOffsetY));
+        const {x, y} = this.getRealCenter();
+        const globalPos = this.toGlobal(new PIXI.Point(x, y));
         
         return {
             centerX: globalPos.x,
@@ -164,7 +167,7 @@ export default class Cube extends PIXI.Container {
         
         const localPos = this.toLocal(new PIXI.Point(collision.centerX, collision.centerY));
         
-        const radius = collision.radius / this.scale.x;
+        const radius = collision.radius / this.shipSprite.scale.x;
         this.debugGraphics.lineStyle(2, 0xff0000);
         this.debugGraphics.drawCircle(localPos.x, localPos.y, radius);
         

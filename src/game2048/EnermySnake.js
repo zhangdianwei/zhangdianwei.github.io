@@ -8,7 +8,7 @@ export default class EnermySnake extends Snake {
         super();
         this.state = 'wander'; // 'wander' or 'chase'
         this.stateTimer = 0;
-        this.stateInterval = 10000; // 10秒
+        this.stateInterval = 8000; // 10秒
         this.wanderTarget = { x: 0, y: 0 };
         this.setRandomWanderTarget();
         this.setName(GameApp.instance.randomName());

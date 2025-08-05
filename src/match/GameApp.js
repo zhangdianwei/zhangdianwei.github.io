@@ -56,9 +56,6 @@ class GameApp {
         this.pixi = new PIXI.Application({
             width: domElement.clientWidth,
             height: domElement.clientHeight,
-            antialias: true,
-            resolution: window.devicePixelRatio || 1,
-            autoDensity: true,
             view: domElement // 直接用 pixiContainer 作为 canvas
         });
 

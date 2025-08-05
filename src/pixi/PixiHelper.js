@@ -41,9 +41,8 @@ export function createPixi(domElement) {
     return new PIXI.Application({
         width: domElement.clientWidth,
         height: domElement.clientHeight,
-        antialias: true,
-        resolution: window.devicePixelRatio || 1,
-        autoDensity: true,
+        antialias: false,
+        autoDensity: false,
         view: domElement
     });
 }

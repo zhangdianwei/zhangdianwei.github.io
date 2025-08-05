@@ -30,10 +30,6 @@ let speedBoostUI = null;
 const textureUrls = [
     'game2048/star_small.png',
     'game2048/ship_E.png',
-    'game2048/player_blood_bg.png',
-    'game2048/player_blood_bar.png',
-    'game2048/enemy_B.png',
-    'game2048/bullet1.png'
 ];
 
 // 纹理加载完成回调

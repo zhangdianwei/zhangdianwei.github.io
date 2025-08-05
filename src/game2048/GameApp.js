@@ -20,7 +20,7 @@ export class GameApp {
     ticker = null;
 
     // 游戏对象全部通过分层容器统一管理
-    radius = 1920;
+    radius = 1920/2;
     gameState = null; // 'init' | 'playing' | 'fail'
 
     // 恶搞型中文名字池

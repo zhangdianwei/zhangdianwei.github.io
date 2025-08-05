@@ -84,7 +84,7 @@ export default class Snake extends PIXI.Container {
         if (!this.nameTxt) {
             this.nameTxt = new PIXI.Text(this.name || '', {
                 fontFamily: 'Arial Black, Arial, sans-serif',
-                fontSize: 40,
+                fontSize: 20,
                 fill: 0xffff66, // 亮黄色
                 stroke: 0x222222, // 深色描边
                 strokeThickness: 5,

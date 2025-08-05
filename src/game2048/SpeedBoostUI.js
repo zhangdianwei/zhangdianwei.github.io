@@ -160,7 +160,7 @@ export default class SpeedBoostUI extends PIXI.Container {
         
         // 设置玩家蛇速度为双倍
         if (this.playerSnake) {
-            this.playerSnake.speedRatio = 3;
+            this.playerSnake.speedRatio = 2;
         }
         
         // 更新进度条

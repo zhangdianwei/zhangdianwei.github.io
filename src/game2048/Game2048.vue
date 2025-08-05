@@ -36,7 +36,7 @@ const textureUrls = [
 const onTexturesLoaded = async (textures) => {
     console.log('所有纹理加载完成');
     // 适配画布
-    initDom(pixiContainer.value, { designWidth: 1080, designHeight: 1920, isFullScreen: true });
+    initDom(pixiContainer.value, { designWidth: 540, designHeight: 960, isFullScreen: true });
     gameApp.init(pixiContainer.value);
     createBgCircle();
     setGameState('init');

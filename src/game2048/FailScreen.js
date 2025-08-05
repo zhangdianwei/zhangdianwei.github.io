@@ -10,6 +10,11 @@ export default class FailScreen extends PIXI.Container {
         this.onRestart = onRestart;
         this.rankList = GameApp.instance.rankList;
 
+        // 创建根节点并设置缩放
+        this.root = new PIXI.Container();
+        this.root.scale.set(0.5);
+        this.addChild(this.root);
+
         this.createMask();
         this.createCard();
         this.createTitle();
@@ -26,7 +31,7 @@ export default class FailScreen extends PIXI.Container {
         const screenHeight = GameApp.instance.pixi.screen.height;
         mask.drawRect(-screenWidth/2, -screenHeight/2, screenWidth, screenHeight);
         mask.endFill();
-        this.addChild(mask);
+        this.root.addChild(mask);
     }
 
     createCard() {
@@ -49,13 +54,13 @@ export default class FailScreen extends PIXI.Container {
         card.endFill();
         card.x = 0;
         card.y = 0;
-        this.addChild(card);
+        this.root.addChild(card);
 
         // 卡片内容分层容器，便于整体居中
         this.content = new PIXI.Container();
         this.content.x = 0;
         this.content.y = -cardHeight/2;
-        this.addChild(this.content);
+        this.root.addChild(this.content);
 
         this.cardHeight = cardHeight;
         this.cardInnerPadding = cardInnerPadding;

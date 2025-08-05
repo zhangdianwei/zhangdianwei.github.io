@@ -10,6 +10,11 @@ export default class StartScreen extends PIXI.Container {
         this.counter = 2;
         this.maxCounter = 128;
 
+        // 创建根节点并设置缩放
+        this.root = new PIXI.Container();
+        this.root.scale.set(0.5);
+        this.addChild(this.root);
+
         this.createCard();
         this.createTitle();
         this.createCounterButton();
@@ -26,7 +31,7 @@ export default class StartScreen extends PIXI.Container {
         card.endFill();
         card.x = 0;
         card.y = 0;
-        this.addChild(card);
+        this.root.addChild(card);
         this.cardHeight = cardHeight;
     }
 
@@ -45,7 +50,7 @@ export default class StartScreen extends PIXI.Container {
         title.anchor.set(0.5, 0);
         title.x = 0;
         title.y = -this.cardHeight / 2 + 60;
-        this.addChild(title);
+        this.root.addChild(title);
     }
 
     createCounterButton() {
@@ -62,7 +67,7 @@ export default class StartScreen extends PIXI.Container {
         descBtn.eventMode = 'static';
         descBtn.cursor = 'pointer';
         descBtn.hitArea = new PIXI.Rectangle(-descBtnWidth/2 - 20, -descBtnHeight/2 - 20, descBtnWidth + 40, descBtnHeight + 40);
-        this.addChild(descBtn);
+        this.root.addChild(descBtn);
 
         // 按钮文字（作为按钮的子节点）
         const descBtnText = new PIXI.Text('支持殿伟', {
@@ -92,7 +97,7 @@ export default class StartScreen extends PIXI.Container {
         this.counterText.anchor.set(0.5, 0.5);
         this.counterText.x = descBtn.x + descBtnWidth/2 + 40;
         this.counterText.y = descBtn.y;
-        this.addChild(this.counterText);
+        this.root.addChild(this.counterText);
 
         // 按钮点击事件
         const handleClick = () => {
@@ -119,7 +124,7 @@ export default class StartScreen extends PIXI.Container {
         startBtn.y = this.cardHeight / 2 - btnHeight - 60;
         startBtn.eventMode = 'static';
         startBtn.cursor = 'pointer';
-        this.addChild(startBtn);
+        this.root.addChild(startBtn);
 
         // 按钮文字（作为按钮的子节点）
         const btnText = new PIXI.Text('开始游戏', {

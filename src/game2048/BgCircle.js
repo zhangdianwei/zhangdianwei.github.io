@@ -41,8 +41,8 @@ export default class BgCircle extends PIXI.Container {
 
     // 创建单个星星，加入 this.stars
     _createStar(width, height) {
-        const x = Math.random() * width - width/2;
-        const y = Math.random() * height - height/2;
+        const x = Math.random() * this.radius - this.radius/2;
+        const y = Math.random() * this.radius - this.radius/2;
         const scale = Math.random() * 0.4 + 0.4;
         const baseAlpha = Math.random() * 0.25 + 0.05; // 0.05~0.3，整体更暗
         const star = PIXI.Sprite.from('game2048/star_small.png'); 
@@ -62,9 +62,9 @@ export default class BgCircle extends PIXI.Container {
         this.stars.push(star);
     }
 
-    update(delta) {
-        this._updateStars(delta);
-    }
+    // update(delta) {
+    //     this._updateStars(delta);
+    // }
 
     _updateStars(delta) {
         const gameApp = GameApp.instance;

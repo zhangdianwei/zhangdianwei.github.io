@@ -1,16 +1,20 @@
 import * as PIXI from 'pixi.js';
+import { TankApp } from './TankApp.js';
 
 export default class MapRenderer {
-    constructor(textures) {
-        this.textures = textures;
+    constructor() {
+        this.tankApp = TankApp.instance;
         this.tileSize = 32;
         this.mapWidth = 26;
         this.mapHeight = 24;
     }
     
-    renderMap(levelData, renderLayers) {
+    renderMap() {
+        const levelData = this.tankApp.levelData;
+        const renderLayers = this.tankApp.renderLayers;
+        
         // 清除现有地图
-        this.clearMap(renderLayers);
+        this.clearMap();
         
         // 渲染地图
         for (let r = 0; r < this.mapHeight; r++) {
@@ -18,18 +22,22 @@ export default class MapRenderer {
                 const tileType = levelData.getTileType(r, c);
                 
                 if (tileType > 0) {
-                    this.renderTile(r, c, tileType, renderLayers);
+                    this.renderTile(r, c, tileType);
                 }
             }
         }
     }
     
-    clearMap(renderLayers) {
+    clearMap() {
+        const renderLayers = this.tankApp.renderLayers;
         renderLayers.tiles.removeChildren();
         renderLayers.grass.removeChildren();
     }
     
-    renderTile(row, col, tileType, renderLayers) {
+    renderTile(row, col, tileType) {
+        const renderLayers = this.tankApp.renderLayers;
+        const textures = this.tankApp.textures;
+        
         const x = col * this.tileSize;
         const y = row * this.tileSize;
         
@@ -47,15 +55,16 @@ export default class MapRenderer {
             case 6: textureName = 'tank2/bigtile_6.png'; break; // 基地
         }
         
-        if (textureName && this.textures[textureName]) {
-            const sprite = new PIXI.Sprite(this.textures[textureName]);
+        if (textureName && textures[textureName]) {
+            const sprite = new PIXI.Sprite(textures[textureName]);
             sprite.x = x;
             sprite.y = y;
             layer.addChild(sprite);
         }
     }
     
-    destroyTile(row, col, renderLayers) {
+    destroyTile(row, col) {
+        const renderLayers = this.tankApp.renderLayers;
         const x = col * this.tileSize;
         const y = row * this.tileSize;
         

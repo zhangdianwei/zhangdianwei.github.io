@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from "vue"
 import AppItem from './AppItem.vue'
-import TankMain from '../tank/TankMain.vue'
+import TankGame from '../tank2/TankGame.vue'
 import KonvaMain from '../konva/KonvaMain.vue'
 import EasyLink from '../easy_link/EasyLink.vue'
 import GridSquare from "../comp/GridSquare.vue"
@@ -34,7 +34,7 @@ const categoryRoutes = [
       { id: "Game2048", title: "Game2048", comp: Game2048, img: "preview/Game2048.png" },
       // { id: "tetris", title: "俄罗斯方块", comp: EasyLink, link: 'tetris/index.html', img: "preview/tetris.png" },
       // { id: "Shooter", title: "Shooter", comp: Shooter, img: "preview/Shooter.png" },
-      // { id: "TankMain", title: "坦克大战", comp: TankMain, img: "preview/TankMain.png" },
+      { id: "TankGame", title: "坦克大战", comp: TankGame, img: "preview/TankMain.png" },
     ]
   },
   {

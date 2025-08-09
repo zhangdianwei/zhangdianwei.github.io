@@ -88,12 +88,12 @@ export class GameLogic {
 
 ```vue
 <template>
-    <div>
+    <div class="game-container">
         <PixiLoader 
             :textureUrls="textureUrls" 
             @loaded="onTexturesLoaded"
         />
-        <div ref="gameContainer" v-show="texturesLoaded"></div>
+        <canvas ref="gameContainer" v-show="texturesLoaded"></canvas>
     </div>
 </template>
 

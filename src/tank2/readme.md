@@ -95,11 +95,15 @@
 - **出现动画**：`born_1.png` 到 `born_6.png`（6帧循环）
 - **爆炸动画**：`explode_1.png` 到 `explode_3.png`（3帧播放）
 
-## 代码结构
-
-
 ## 技术栈
 参考pixi/readme.md
 
+## 代码结构
+class SpriteSeqAnim extends pixi.Container
+    constructor(img_name, count)
+    这个类的作用是依次播放image_name_*.png。
+    可以用于出现动画和爆炸动画
 
+class RCHelper
+    参考pixi/RCHelper
 

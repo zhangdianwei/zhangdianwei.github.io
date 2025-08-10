@@ -36,15 +36,15 @@ export class TankLogic {
         this.tankApp.gameContainer = new PIXI.Container();
         this.tankApp.pixi.stage.addChild(this.tankApp.gameContainer);
         
-
-        
         // 创建渲染层
         this.createRenderLayers();
         
         // 创建管理器
-        this.mapRenderer = new MapRenderer();
         this.inputManager = new InputManager();
         this.enemySpawner = new EnemySpawner();
+        
+        // 创建关卡数据
+        this.tankApp.levelData = new TankLevelData();
         
         // 设置游戏循环
         this.tankApp.pixi.ticker.add(this.update.bind(this));
@@ -59,36 +59,19 @@ export class TankLogic {
 
 
     async startLevel() {
-        // 创建关卡数据并加载配置
-        if (!this.tankApp.levelData) {
-            this.tankApp.levelData = new TankLevelData();
-        }
+        // 加载关卡配置
         await this.tankApp.levelData.loadLevel(this.tankApp.levelData.level);
         
-        // 渲染地图
-        this.mapRenderer.renderMap();
+        // 地图瓦片已在TankLevelData中创建
         
         // 创建玩家坦克
         this.createPlayer();
     }
 
     createPlayer() {
-        this.tankApp.player = new Player(this.tankApp.textures);
-        this.tankApp.player.x = 416; // 地图中心
-        this.tankApp.player.y = 720; // 底部
-        
-        // 监听玩家事件
-        this.tankApp.player.on('destroyed', () => {
-            const remainingLives = this.tankApp.levelData.loseLife();
-            if (remainingLives <= 0) {
-                this.gameOver();
-            } else {
-                this.createPlayer();
-            }
-        });
-        
-        this.tankApp.player.spawn();
+        this.tankApp.player = new Player();
         this.tankApp.renderLayers.player.addChild(this.tankApp.player);
+        this.tankApp.player.spawn();
     }
 
     spawnEnemy() {
@@ -116,7 +99,7 @@ export class TankLogic {
         else if (random < rates.type1 + rates.type2 + rates.type3) enemyType = 3;
         else enemyType = 4;
         
-        const enemy = new Enemy(enemyType, this.tankApp.textures);
+        const enemy = new Enemy(enemyType);
         enemy.x = spawnPoint.x;
         enemy.y = spawnPoint.y;
         
@@ -138,7 +121,7 @@ export class TankLogic {
     }
 
     createPlayerBullet(direction) {
-        const bullet = new Bullet(this.tankApp.player, direction, 1);
+        const bullet = new Bullet(this.tankApp.player, direction);
         bullet.x = this.tankApp.player.x;
         bullet.y = this.tankApp.player.y;
         
@@ -153,7 +136,7 @@ export class TankLogic {
     }
 
     createEnemyBullet(enemy, direction) {
-        const bullet = new Bullet(enemy, direction, 1);
+        const bullet = new Bullet(enemy, direction);
         bullet.x = enemy.x;
         bullet.y = enemy.y;
         
@@ -253,7 +236,6 @@ export class TankLogic {
             if (row >= 0 && row < 24 && col >= 0 && col < 26) {
                 if (this.tankApp.levelData.isDestructible(row, col)) {
                     this.tankApp.levelData.setTileType(row, col, 0);
-                    this.mapRenderer.destroyTile(row, col);
                     bullet.destroy();
                 }
             }
@@ -314,10 +296,6 @@ export class TankLogic {
         this.startLevel();
     }
 
-    createGameObjects() {
-        // 游戏对象已在startLevel中创建
-    }
-
     destroy() {
         if (this.tankApp.pixi) {
             this.tankApp.pixi.destroy(true);
@@ -347,11 +325,4 @@ export class TankLogic {
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.grass);
     }
 
-    clearAllLayers() {
-        Object.values(this.tankApp.renderLayers).forEach(layer => {
-            if (layer) {
-                layer.removeChildren();
-            }
-        });
-    }
 } 

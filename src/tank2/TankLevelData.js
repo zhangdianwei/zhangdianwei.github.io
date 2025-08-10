@@ -1,22 +1,45 @@
+import Tile from './Tile.js';
+
 export default class TankLevelData {
     constructor() {
-        this.config = null;
-        this.currentMap = [];
+        this.tankApp = TankApp.instance;
+        
+        // === 基础属性 ===
         this.level = 1;
         this.lives = 3;
         this.score = 0;
+        
+        // === 地图配置 ===
+        this.config = null;
+        this.currentMap = [];
+        this.mapWidth = 26;
+        this.mapHeight = 24;
+        this.tileSize = 32;
+        
+        // === 瓦片管理 ===
+        this.tiles = [];
+        
+        // === 敌人状态 ===
         this.enemiesSpawned = 0;
         this.enemiesDestroyed = 0;
+        
+        // === 游戏状态 ===
         this.baseDestroyed = false;
+        
+        // === 道具效果 ===
         this.activeEffects = {
-            stop: 0,
-            shield: 0,
-            star: 0
+            stop: 0,    // 停止效果
+            shield: 0,  // 护盾效果
+            star: 0     // 星星效果
         };
+        
+        // === 统计信息 ===
         this.bonusesCollected = [];
         this.tilesDestroyed = 0;
     }
 
+    // === 关卡管理方法 ===
+    
     // 加载关卡配置
     async loadLevel(levelNumber) {
         try {
@@ -28,15 +51,29 @@ export default class TankLevelData {
             const levelConfig = await response.json();
             this.config = levelConfig;
             this.currentMap = [...levelConfig.map];
+            this.createTiles();
             return true;
         } catch (error) {
             console.error(`Error loading level ${levelNumber}:`, error);
             this.config = this.getDefaultLevelConfig();
             this.currentMap = [...this.config.map];
+            this.createTiles();
             return false;
         }
     }
 
+    // 设置关卡
+    setLevel(levelNumber) {
+        this.level = levelNumber;
+    }
+
+    // 下一关
+    nextLevel() {
+        this.level++;
+    }
+
+    // === 地图配置方法 ===
+    
     // 默认关卡配置
     getDefaultLevelConfig() {
         return {
@@ -122,6 +159,65 @@ export default class TankLevelData {
         return map;
     }
 
+    // === 瓦片管理方法 ===
+    
+    // 创建瓦片对象
+    createTiles() {
+        this.clearTiles();
+        
+        for (let r = 0; r < this.mapHeight; r++) {
+            this.tiles[r] = [];
+            for (let c = 0; c < this.mapWidth; c++) {
+                const tileType = this.getTileType(r, c);
+                if (tileType > 0) {
+                    const tile = new Tile(r, c, tileType);
+                    this.tiles[r][c] = tile;
+                    
+                    // 添加到对应的渲染层
+                    this.addTileToRenderLayer(tile, tileType);
+                } else {
+                    this.tiles[r][c] = null;
+                }
+            }
+        }
+    }
+
+    // 添加瓦片到渲染层
+    addTileToRenderLayer(tile, tileType) {
+        const renderLayers = this.tankApp.renderLayers;
+        
+        switch (tileType) {
+            case 1: // 砖块
+            case 2: // 铁块
+            case 3: // 水面
+            case 6: // 基地
+                renderLayers.tiles.addChild(tile);
+                break;
+            case 4: // 草地
+                renderLayers.grass.addChild(tile);
+                break;
+            case 5: // 老窝
+                renderLayers.tiles.addChild(tile);
+                break;
+        }
+    }
+
+    // 清除所有瓦片
+    clearTiles() {
+        this.tiles.forEach(row => {
+            if (row) {
+                row.forEach(tile => {
+                    if (tile && tile.parent) {
+                        tile.parent.removeChild(tile);
+                    }
+                });
+            }
+        });
+        this.tiles = [];
+    }
+
+    // === 地图查询方法 ===
+    
     // 获取当前地图状态
     getTileType(row, col) {
         const mapWidth = 26;
@@ -131,19 +227,42 @@ export default class TankLevelData {
 
     // 设置当前地图状态
     setTileType(row, col, type) {
-        const mapWidth = 26;
-        const index = row * mapWidth + col;
-        this.currentMap[index] = type;
-        
-        if (type === 0 && this.config.map[index] !== 0) {
-            this.tilesDestroyed++;
+        if (row >= 0 && row < this.mapHeight && col >= 0 && col < this.mapWidth) {
+            const index = row * this.mapWidth + col;
+            this.currentMap[index] = type;
+            
+            if (type === 0 && this.config.map[index] !== 0) {
+                this.tilesDestroyed++;
+            }
+            
+            // 更新瓦片对象
+            if (this.tiles[row] && this.tiles[row][col]) {
+                if (type === 0) {
+                    // 移除瓦片
+                    const tile = this.tiles[row][col];
+                    if (tile.parent) {
+                        tile.parent.removeChild(tile);
+                    }
+                    this.tiles[row][col] = null;
+                } else {
+                    // 更新瓦片类型
+                    this.tiles[row][col].setType(type);
+                }
+            } else if (type > 0) {
+                // 创建新瓦片
+                const tile = new Tile(row, col, type);
+                this.tiles[row][col] = tile;
+                this.addTileToRenderLayer(tile, type);
+            }
         }
     }
 
     // 检查位置是否可通行
-    isWalkable(row, col) {
+    isWalkable(worldX, worldY) {
+        const col = Math.floor(worldX / this.tileSize);
+        const row = Math.floor(worldY / this.tileSize);
         const tileType = this.getTileType(row, col);
-        return tileType === 0 || tileType === 3; // 空地或草地可通行
+        return tileType === 0 || tileType === 4; // 空地或草地可通行
     }
 
     // 检查位置是否可被摧毁
@@ -169,6 +288,8 @@ export default class TankLevelData {
         return true;
     }
 
+    // === 敌人管理方法 ===
+    
     // 生成敌人
     spawnEnemy() {
         if (this.enemiesSpawned < this.config.totalEnemies) {
@@ -194,6 +315,8 @@ export default class TankLevelData {
                this.getRemainingEnemies() === 0;
     }
 
+    // === 道具效果管理方法 ===
+    
     // 添加道具效果
     addEffect(type, duration) {
         this.activeEffects[type] = duration;
@@ -219,6 +342,8 @@ export default class TankLevelData {
         });
     }
 
+    // === 游戏状态管理方法 ===
+    
     // 增加分数
     addScore(points) {
         this.score += points;
@@ -235,16 +360,8 @@ export default class TankLevelData {
         this.lives++;
     }
 
-    // 下一关
-    nextLevel() {
-        this.level++;
-    }
-
-    // 设置关卡
-    setLevel(levelNumber) {
-        this.level = levelNumber;
-    }
-
+    // === 统计信息方法 ===
+    
     // 获取关卡统计信息
     getStats() {
         return {
@@ -258,6 +375,8 @@ export default class TankLevelData {
         };
     }
 
+    // === 重置方法 ===
+    
     // 重置关卡数据（用于重新开始）
     reset() {
         if (this.config) {
@@ -272,5 +391,8 @@ export default class TankLevelData {
         this.activeEffects = { stop: 0, shield: 0, star: 0 };
         this.bonusesCollected = [];
         this.tilesDestroyed = 0;
+        
+        // 重新创建瓦片
+        this.createTiles();
     }
 } 

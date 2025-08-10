@@ -50,7 +50,6 @@ const onTexturesLoaded = (textures) => {
     texturesLoaded.value = true;
     tankApp.textures = textures;
     tankApp.gameLogic.init(gameContainer.value);
-    tankApp.gameLogic.createGameObjects();
 };
 
 onUnmounted(() => {

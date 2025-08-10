@@ -1,11 +1,13 @@
 import * as PIXI from 'pixi.js';
 import SpriteSeqAnim from './SpriteSeqAnim.js';
+import { TankApp } from './TankApp.js';
 
 export default class Player extends PIXI.Container {
-    constructor(textures) {
+    constructor() {
         super();
         
-        this.textures = textures;
+        this.tankApp = TankApp.instance;
+        this.textures = this.tankApp.textures;
         this.speed = 2;
         this.direction = 0; // 0: 上, 1: 右, 2: 下, 3: 左
         this.isMoving = false;

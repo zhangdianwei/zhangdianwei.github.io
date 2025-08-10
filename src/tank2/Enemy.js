@@ -1,12 +1,14 @@
 import * as PIXI from 'pixi.js';
 import SpriteSeqAnim from './SpriteSeqAnim.js';
+import { TankApp } from './TankApp.js';
 
 export default class Enemy extends PIXI.Container {
-    constructor(type, textures) {
+    constructor(type) {
         super();
         
+        this.tankApp = TankApp.instance;
         this.type = type;
-        this.textures = textures;
+        this.textures = this.tankApp.textures;
         this.speed = 1;
         this.direction = 0; // 0: 上, 1: 右, 2: 下, 3: 左
         this.isMoving = false;

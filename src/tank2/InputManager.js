@@ -58,7 +58,7 @@ export default class InputManager {
             const newX = player.x + dx;
             const newY = player.y + dy;
             
-            if (this.tankApp.mapRenderer.isWalkable(newX, newY)) {
+            if (this.tankApp.levelData.isWalkable(newX, newY)) {
                 player.move(direction);
             } else {
                 player.setDirection(direction);

@@ -2,7 +2,6 @@ import * as PIXI from 'pixi.js';
 import { createPixi, initDom } from '../pixi/PixiHelper.js';
 import { TankApp } from './TankApp.js';
 import TankLevelData from './TankLevelData.js';
-import MapRenderer from './MapRenderer.js';
 import InputManager from './InputManager.js';
 import EnemySpawner from './EnemySpawner.js';
 import Player from './Player.js';

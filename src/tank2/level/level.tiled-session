@@ -1,0 +1,70 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "level1.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "fileStates": {
+        "brick.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "grass.tsx": {
+            "scaleInDock": 1
+        },
+        "iron.tsx": {
+            "scaleInDock": 1
+        },
+        "level1.tmx": {
+            "scale": 0.9716947115384615,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 408.5645370771229,
+                "y": 422.97235450553524
+            }
+        },
+        "level2.tmx": {
+            "scale": 0.8944,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 404.74060822898036,
+                "y": 390.20572450805014
+            }
+        },
+        "level3.tmx": {
+            "scale": 0.977403846153846,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 416.4092474176095,
+                "y": 416.4092474176095
+            }
+        },
+        "tile_brick.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "water.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        }
+    },
+    "last.imagePath": "/Users/zhangdianwei/Documents/tripeaks/zproj/zhangdianwei.github.io/public/tank2",
+    "map.height": 26,
+    "map.lastUsedFormat": "tmx",
+    "map.width": 26,
+    "openFiles": [
+        "level1.tmx"
+    ],
+    "project": "level.tiled-project",
+    "recentFiles": [
+        "level1.tmx",
+        "level2.tmx",
+        "water.tsx",
+        "brick.tsx",
+        "tile_brick.tsx"
+    ],
+    "tileset.lastUsedFormat": "tsx"
+}

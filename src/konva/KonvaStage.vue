@@ -1,6 +1,6 @@
 <script setup>
 import * as Konva from "konva";
-import { onMounted, defineModel, watch, onUnmounted, defineExpose, computed } from "vue";
+import { onMounted, defineModel, watch, onUnmounted, computed } from "vue";
 
 let _uuid = 0;
 function getUUID() {

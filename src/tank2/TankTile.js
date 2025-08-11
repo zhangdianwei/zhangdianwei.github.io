@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { TankApp } from './TankApp.js';
 
-export default class Tile extends PIXI.Container {
+export default class TankTile extends PIXI.Container {
     constructor(row, col, type) {
         super();
         

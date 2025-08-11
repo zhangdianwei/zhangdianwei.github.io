@@ -4,7 +4,6 @@ import { TankApp } from './TankApp.js';
 import TankLevelData from './TankLevelData.js';
 import InputManager from './InputManager.js';
 import EnemySpawner from './EnemySpawner.js';
-import Player from './Player.js';
 import Enemy from './Enemy.js';
 import Bullet from './Bullet.js';
 
@@ -55,22 +54,11 @@ export class TankLogic {
         this.startLevel();
     }
 
-
-
     async startLevel() {
         // 加载关卡配置
         await this.tankApp.levelData.loadLevel(this.tankApp.levelData.level);
         
-        // 地图瓦片已在TankLevelData中创建
-        
-        // 创建玩家坦克
-        this.createPlayer();
-    }
-
-    createPlayer() {
-        this.tankApp.player = new Player();
-        this.tankApp.renderLayers.player.addChild(this.tankApp.player);
-        this.tankApp.player.spawn();
+        // 地图瓦片、基地和玩家已在TankLevelData中创建
     }
 
     spawnEnemy() {

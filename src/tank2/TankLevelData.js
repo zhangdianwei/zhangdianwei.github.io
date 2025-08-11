@@ -1,4 +1,6 @@
-import Tile from './Tile.js';
+import TankTile from './TankTile.js';
+import Player from './Player.js';
+const allLevels = require('./level/levels.json');
 
 export default class TankLevelData {
     constructor() {
@@ -11,13 +13,16 @@ export default class TankLevelData {
         
         // === 地图配置 ===
         this.config = null;
-        this.currentMap = [];
         this.mapWidth = 26;
-        this.mapHeight = 24;
+        this.mapHeight = 26;
         this.tileSize = 32;
         
         // === 瓦片管理 ===
         this.tiles = [];
+        
+        // === 游戏对象 ===
+        this.player = null;
+        this.home = null;
         
         // === 敌人状态 ===
         this.enemiesSpawned = 0;
@@ -42,24 +47,12 @@ export default class TankLevelData {
     
     // 加载关卡配置
     async loadLevel(levelNumber) {
-        try {
-            const response = await fetch(`src/tank2/levels/level${levelNumber}.json`);
-            if (!response.ok) {
-                throw new Error(`Failed to load level ${levelNumber}`);
-            }
-            
-            const levelConfig = await response.json();
-            this.config = levelConfig;
-            this.currentMap = [...levelConfig.map];
-            this.createTiles();
-            return true;
-        } catch (error) {
-            console.error(`Error loading level ${levelNumber}:`, error);
-            this.config = this.getDefaultLevelConfig();
-            this.currentMap = [...this.config.map];
-            this.createTiles();
-            return false;
-        }
+        const levelConfig = allLevels[levelNumber];
+        this.config = levelConfig;
+        this.createTilesFromMap(levelConfig.map);
+        this.createHome();
+        this.createPlayer();
+        return true;
     }
 
     // 设置关卡
@@ -72,105 +65,117 @@ export default class TankLevelData {
         this.level++;
     }
 
-    // === 地图配置方法 ===
+    // === 游戏对象创建方法 ===
     
-    // 默认关卡配置
-    getDefaultLevelConfig() {
-        return {
-            map: this.generateDefaultMap(),
-            totalEnemies: 20,
-            maxEnemiesOnScreen: 4,
-            enemySpawnRates: {
-                type1: 0.4,
-                type2: 0.3,
-                type3: 0.2,
-                type4: 0.1
-            },
-            itemDropRates: {
-                life: 0.1,
-                stop: 0.15,
-                iron: 0.1,
-                bomb: 0.05,
-                star: 0.1,
-                shield: 0.1
+    // 创建玩家坦克
+    createPlayer() {
+        // 清除现有玩家
+        if (this.player) {
+            if (this.player.parent) {
+                this.player.parent.removeChild(this.player);
             }
-        };
+        }
+        
+        this.player = new Player();
+        this.tankApp.player = this.player;
+        this.tankApp.renderLayers.player.addChild(this.player);
+        
+        // 设置玩家初始位置（基地上方）
+        const playerRow = this.mapHeight - 3;
+        const playerCol = this.mapWidth / 2 - 1;
+        this.player.x = playerCol * this.tileSize + this.tileSize / 2;
+        this.player.y = playerRow * this.tileSize + this.tileSize / 2;
+        
+        this.player.spawn();
     }
-
-    // 生成默认地图
-    generateDefaultMap() {
-        const mapWidth = 26;
-        const mapHeight = 24;
-        const map = new Array(mapWidth * mapHeight).fill(0);
-        
-        // 创建边界墙
-        for (let c = 0; c < mapWidth; c++) {
-            map[c] = 2; // 顶部边界
-            map[(mapHeight - 1) * mapWidth + c] = 2; // 底部边界
-        }
-        
-        for (let r = 0; r < mapHeight; r++) {
-            map[r * mapWidth] = 2; // 左边界
-            map[r * mapWidth + mapWidth - 1] = 2; // 右边界
-        }
-        
-        // 创建基地
-        const baseCenterR = mapHeight - 2;
-        const baseCenterC = mapWidth / 2 - 1;
-        
-        map[baseCenterR * mapWidth + baseCenterC] = 6;
-        map[baseCenterR * mapWidth + baseCenterC + 1] = 6;
-        map[(baseCenterR + 1) * mapWidth + baseCenterC] = 6;
-        map[(baseCenterR + 1) * mapWidth + baseCenterC + 1] = 6;
-        
-        // 基地周围的保护墙
-        for (let r = baseCenterR - 1; r < baseCenterR + 3; r++) {
-            for (let c = baseCenterC - 1; c < baseCenterC + 3; c++) {
-                if (r >= 0 && r < mapHeight && c >= 0 && c < mapWidth) {
-                    const index = r * mapWidth + c;
-                    if (map[index] === 0) {
-                        map[index] = 2;
-                    }
-                }
+    
+    // 创建基地（老窝）
+    createHome() {
+        // 清除现有基地
+        if (this.home) {
+            if (this.home.parent) {
+                this.home.parent.removeChild(this.home);
             }
         }
         
-        // 添加一些砖块障碍物
-        const brickPatterns = [
-            { r: 2, c: 2, width: 4, height: 2 },
-            { r: 2, c: 8, width: 3, height: 2 },
-            { r: 8, c: 8, width: 2, height: 2 },
-            { r: 12, c: 12, width: 2, height: 2 },
+        // 基地固定创建在最下面一行的中心
+        const homeRow = this.mapHeight - 1;
+        const homeCol = this.mapWidth / 2 - 1;
+        
+        // 创建基地（使用一张2x2的大图）
+        this.home = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_6.png']);
+        this.home.width = this.tileSize * 2;  // 宽度为2个tile
+        this.home.height = this.tileSize * 2; // 高度为2个tile
+        this.home.anchor.set(0, 0);
+        
+        // 设置位置（左上角对齐到第一个tile位置）
+        this.home.x = homeCol * this.tileSize;
+        this.home.y = (homeRow - 1) * this.tileSize; // 从上一行开始，因为要占2行
+        
+        // 添加到渲染层
+        this.tankApp.renderLayers.tiles.addChild(this.home);
+        
+        // 在tiles数组中标记这4个位置为基地类型
+        const homePositions = [
+            { row: homeRow, col: homeCol },
+            { row: homeRow, col: homeCol + 1 },
+            { row: homeRow - 1, col: homeCol },
+            { row: homeRow - 1, col: homeCol + 1 }
         ];
         
-        brickPatterns.forEach(pattern => {
-            for (let r = pattern.r; r < pattern.r + pattern.height; r++) {
-                for (let c = pattern.c; c < pattern.c + pattern.width; c++) {
-                    if (r >= 0 && r < mapHeight && c >= 0 && c < mapWidth) {
-                        const index = r * mapWidth + c;
-                        if (map[index] === 0) {
-                            map[index] = 1;
-                        }
+        homePositions.forEach(pos => {
+            if (!this.tiles[pos.row]) {
+                this.tiles[pos.row] = [];
+            }
+            // 标记为基地类型，但不创建实际的TankTile对象
+            this.tiles[pos.row][pos.col] = { type: 6, isHome: true };
+        });
+        
+        // 基地周围的保护墙
+        const wallPositions = [
+            { row: homeRow - 2, col: homeCol - 1 },
+            { row: homeRow - 2, col: homeCol },
+            { row: homeRow - 2, col: homeCol + 1 },
+            { row: homeRow - 2, col: homeCol + 2 },
+            { row: homeRow - 1, col: homeCol - 1 },
+            { row: homeRow - 1, col: homeCol + 2 },
+            { row: homeRow, col: homeCol - 1 },
+            { row: homeRow, col: homeCol + 2 },
+            { row: homeRow + 1, col: homeCol - 1 },
+            { row: homeRow + 1, col: homeCol },
+            { row: homeRow + 1, col: homeCol + 1 },
+            { row: homeRow + 1, col: homeCol + 2 }
+        ];
+        
+        wallPositions.forEach(pos => {
+            if (pos.row >= 0 && pos.row < this.mapHeight && pos.col >= 0 && pos.col < this.mapWidth) {
+                // 检查是否已有瓦片
+                if (!this.tiles[pos.row] || !this.tiles[pos.row][pos.col]) {
+                    const wallTile = new TankTile(pos.row, pos.col, 2); // 2表示铁块
+                    if (!this.tiles[pos.row]) {
+                        this.tiles[pos.row] = [];
                     }
+                    this.tiles[pos.row][pos.col] = wallTile;
+                    this.tankApp.renderLayers.tiles.addChild(wallTile);
                 }
             }
         });
-        
-        return map;
     }
 
     // === 瓦片管理方法 ===
     
-    // 创建瓦片对象
-    createTiles() {
+    // 根据地图数据创建瓦片对象
+    createTilesFromMap(mapData) {
         this.clearTiles();
         
         for (let r = 0; r < this.mapHeight; r++) {
             this.tiles[r] = [];
             for (let c = 0; c < this.mapWidth; c++) {
-                const tileType = this.getTileType(r, c);
+                const index = r * this.mapWidth + c;
+                const tileType = mapData[index] || 0;
+                
                 if (tileType > 0) {
-                    const tile = new Tile(r, c, tileType);
+                    const tile = new TankTile(r, c, tileType);
                     this.tiles[r][c] = tile;
                     
                     // 添加到对应的渲染层
@@ -218,41 +223,50 @@ export default class TankLevelData {
 
     // === 地图查询方法 ===
     
-    // 获取当前地图状态
+    // 获取指定位置的瓦片类型
     getTileType(row, col) {
-        const mapWidth = 26;
-        const index = row * mapWidth + col;
-        return this.currentMap[index] || 0;
+        if (row >= 0 && row < this.mapHeight && col >= 0 && col < this.mapWidth) {
+            const tile = this.tiles[row] && this.tiles[row][col];
+            if (tile) {
+                // 如果是home的特殊标记，返回基地类型
+                if (tile.isHome) {
+                    return tile.type;
+                }
+                // 如果是TankTile对象，返回其类型
+                return tile.type;
+            }
+        }
+        return 0;
     }
 
-    // 设置当前地图状态
+    // 设置指定位置的瓦片类型
     setTileType(row, col, type) {
         if (row >= 0 && row < this.mapHeight && col >= 0 && col < this.mapWidth) {
-            const index = row * this.mapWidth + col;
-            this.currentMap[index] = type;
-            
-            if (type === 0 && this.config.map[index] !== 0) {
-                this.tilesDestroyed++;
-            }
-            
-            // 更新瓦片对象
-            if (this.tiles[row] && this.tiles[row][col]) {
-                if (type === 0) {
-                    // 移除瓦片
+            if (type === 0) {
+                // 移除瓦片
+                if (this.tiles[row] && this.tiles[row][col]) {
                     const tile = this.tiles[row][col];
                     if (tile.parent) {
                         tile.parent.removeChild(tile);
                     }
                     this.tiles[row][col] = null;
-                } else {
-                    // 更新瓦片类型
-                    this.tiles[row][col].setType(type);
+                    this.tilesDestroyed++;
                 }
-            } else if (type > 0) {
-                // 创建新瓦片
-                const tile = new Tile(row, col, type);
-                this.tiles[row][col] = tile;
-                this.addTileToRenderLayer(tile, type);
+            } else {
+                // 创建或更新瓦片
+                if (!this.tiles[row]) {
+                    this.tiles[row] = [];
+                }
+                
+                if (this.tiles[row][col]) {
+                    // 更新现有瓦片
+                    this.tiles[row][col].setType(type);
+                } else {
+                    // 创建新瓦片
+                    const tile = new TankTile(row, col, type);
+                    this.tiles[row][col] = tile;
+                    this.addTileToRenderLayer(tile, type);
+                }
             }
         }
     }
@@ -273,7 +287,7 @@ export default class TankLevelData {
 
     // 检查基地是否被摧毁
     isBaseDestroyed() {
-        const baseCenterR = 22;
+        const baseCenterR = 24;
         const baseCenterC = 12;
         
         for (let r = baseCenterR; r < baseCenterR + 2; r++) {
@@ -380,7 +394,9 @@ export default class TankLevelData {
     // 重置关卡数据（用于重新开始）
     reset() {
         if (this.config) {
-            this.currentMap = [...this.config.map];
+            this.createTilesFromMap(this.config.map);
+            this.createHome();
+            this.createPlayer();
         }
         this.level = 1;
         this.lives = 3;
@@ -391,8 +407,5 @@ export default class TankLevelData {
         this.activeEffects = { stop: 0, shield: 0, star: 0 };
         this.bonusesCollected = [];
         this.tilesDestroyed = 0;
-        
-        // 重新创建瓦片
-        this.createTiles();
     }
 } 

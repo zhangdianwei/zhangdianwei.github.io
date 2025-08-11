@@ -25,14 +25,17 @@ export class TankLogic {
     init(domElement) {
         // 初始化DOM尺寸
         initDom(domElement, {
-            designWidth: 1920,
-            designHeight: 1080,
-            isFullScreen: true
+            designWidth: 1920/2,
+            designHeight: 1080/2,
+            isFullScreen: false
         });
         
         this.tankApp.pixi = createPixi(domElement);
         this.tankApp.gameContainer = new PIXI.Container();
         this.tankApp.pixi.stage.addChild(this.tankApp.gameContainer);
+
+        const sprite = PIXI.Sprite.from('tank2/bigtile_6.png');
+        this.tankApp.pixi.stage.addChildAt(sprite, 0);
         
         // 创建渲染层
         this.createRenderLayers();
@@ -51,14 +54,7 @@ export class TankLogic {
         this.inputManager.setupInput();
         
         // 开始游戏
-        this.startLevel();
-    }
-
-    async startLevel() {
-        // 加载关卡配置
-        await this.tankApp.levelData.loadLevel(this.tankApp.levelData.level);
-        
-        // 地图瓦片、基地和玩家已在TankLevelData中创建
+        this.tankApp.levelData.startLevel();
     }
 
     spawnEnemy() {

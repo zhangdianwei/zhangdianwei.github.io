@@ -1,13 +1,15 @@
 import TankTile from './TankTile.js';
 import Player from './Player.js';
-const allLevels = require('./level/levels.json');
+import { TankApp } from './TankApp.js';
+import allLevels from './level/levels.json' with { type: 'json' };
+import * as PIXI from 'pixi.js';
 
 export default class TankLevelData {
     constructor() {
         this.tankApp = TankApp.instance;
         
         // === 基础属性 ===
-        this.level = 1;
+        this.levelId = 0;
         this.lives = 3;
         this.score = 0;
         
@@ -44,10 +46,14 @@ export default class TankLevelData {
     }
 
     // === 关卡管理方法 ===
+
+    startLevel(){
+        this.loadLevel(this.levelId);
+    }
     
     // 加载关卡配置
-    async loadLevel(levelNumber) {
-        const levelConfig = allLevels[levelNumber];
+    loadLevel(levelId) {
+        const levelConfig = allLevels[levelId];
         this.config = levelConfig;
         this.createTilesFromMap(levelConfig.map);
         this.createHome();
@@ -56,13 +62,13 @@ export default class TankLevelData {
     }
 
     // 设置关卡
-    setLevel(levelNumber) {
-        this.level = levelNumber;
+    setLevel(levelId) {
+        this.levelId = levelId;
     }
 
     // 下一关
     nextLevel() {
-        this.level++;
+        this.levelId++;
     }
 
     // === 游戏对象创建方法 ===
@@ -166,7 +172,7 @@ export default class TankLevelData {
     
     // 根据地图数据创建瓦片对象
     createTilesFromMap(mapData) {
-        this.clearTiles();
+        this.clearAll();
         
         for (let r = 0; r < this.mapHeight; r++) {
             this.tiles[r] = [];
@@ -219,6 +225,29 @@ export default class TankLevelData {
             }
         });
         this.tiles = [];
+    }
+
+    // 清除所有游戏对象（瓦片、玩家、基地）
+    clearAll() {
+        // 清除瓦片
+        this.clearTiles();
+        
+        // 清除玩家
+        if (this.player) {
+            if (this.player.parent) {
+                this.player.parent.removeChild(this.player);
+            }
+            this.player = null;
+            this.tankApp.player = null;
+        }
+        
+        // 清除基地
+        if (this.home) {
+            if (this.home.parent) {
+                this.home.parent.removeChild(this.home);
+            }
+            this.home = null;
+        }
     }
 
     // === 地图查询方法 ===
@@ -379,7 +408,7 @@ export default class TankLevelData {
     // 获取关卡统计信息
     getStats() {
         return {
-            level: this.level,
+            level: this.levelId,
             lives: this.lives,
             score: this.score,
             enemiesSpawned: this.enemiesSpawned,
@@ -398,7 +427,7 @@ export default class TankLevelData {
             this.createHome();
             this.createPlayer();
         }
-        this.level = 1;
+        this.levelId = 1;
         this.lives = 3;
         this.score = 0;
         this.enemiesSpawned = 0;

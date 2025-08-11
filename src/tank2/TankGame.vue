@@ -1,10 +1,7 @@
 <template>
     <div class="game-container">
-        <PixiLoader 
-            :textureUrls="textureUrls" 
-            @loaded="onTexturesLoaded"
-        />
-        <canvas ref="gameContainer" v-show="texturesLoaded"></canvas>
+        <PixiLoader :textureUrls="textureUrls" @loaded="onTexturesLoaded" />
+        <canvas ref="gameContainer"></canvas>
     </div>
 </template>
 

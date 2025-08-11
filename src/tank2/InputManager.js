@@ -9,28 +9,28 @@ export default class InputManager {
     }
 
     setupInput() {
-        window.addEventListener('keydown', (e) => {
-            this.keys[e.code] = true;
+        // window.addEventListener('keydown', (e) => {
+        //     this.keys[e.code] = true;
             
-            switch (e.code) {
-                case 'Space':
-                    e.preventDefault();
-                    this.shoot();
-                    break;
-                case 'KeyP':
-                    e.preventDefault();
-                    this.tankApp.inputManager.togglePause();
-                    break;
-                case 'KeyR':
-                    e.preventDefault();
-                    this.tankApp.inputManager.restart();
-                    break;
-            }
-        });
+        //     switch (e.code) {
+        //         case 'Space':
+        //             e.preventDefault();
+        //             this.shoot();
+        //             break;
+        //         case 'KeyP':
+        //             e.preventDefault();
+        //             this.togglePause();
+        //             break;
+        //         case 'KeyR':
+        //             e.preventDefault();
+        //             this.restart();
+        //             break;
+        //     }
+        // });
         
-        window.addEventListener('keyup', (e) => {
-            this.keys[e.code] = false;
-        });
+        // window.addEventListener('keyup', (e) => {
+        //     this.keys[e.code] = false;
+        // });
     }
 
     updatePlayerInput() {
@@ -77,7 +77,7 @@ export default class InputManager {
         
         this.lastShootTime = now;
         
-        this.tankApp.inputManager.createPlayerBullet(player.direction);
+        this.createPlayerBullet(player.direction);
     }
 
     destroy() {

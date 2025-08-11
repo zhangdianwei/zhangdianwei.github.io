@@ -11,7 +11,6 @@ export default class EnemySpawner {
         this.spawnTimer += deltaTime;
         if (this.spawnTimer >= this.spawnInterval) {
             this.spawnTimer = 0;
-            this.tankApp.enemySpawner.spawnEnemy();
         }
     }
 

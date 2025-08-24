@@ -27,16 +27,13 @@ export class TankLogic {
         initDom(domElement, {
             designWidth: 1920/2,
             designHeight: 1080/2,
-            isFullScreen: false
+            isFullScreen: true
         });
         
         this.tankApp.pixi = createPixi(domElement);
         this.tankApp.gameContainer = new PIXI.Container();
         this.tankApp.pixi.stage.addChild(this.tankApp.gameContainer);
 
-        const sprite = PIXI.Sprite.from('tank2/bigtile_6.png');
-        this.tankApp.pixi.stage.addChildAt(sprite, 0);
-        
         // 创建渲染层
         this.createRenderLayers();
         

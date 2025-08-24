@@ -19,19 +19,19 @@ export default class TankTile extends PIXI.Container {
         // 根据类型创建不同的精灵
         switch (this.type) {
             case 1: // 砖块
-                this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_1.png']);
+                this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_1_tile_1.png']);
                 break;
             case 2: // 铁块
-                this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_2.png']);
+                this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_2_tile_1.png']);
                 break;
-            case 3: // 水面
-                this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_3.png']);
+            case 3: // 草地
+                this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_3_tile_1.png']);
                 break;
-            case 4: // 草地
-                this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_4.png']);
+            case 4: // 水面
+                this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_4_tile_1.png']);
                 break;
-            case 5: // 老窝
-                this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_5.png']);
+            case 5: // 水面
+                this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_5_tile_1.png']);
                 break;
             case 6: // 基地
                 this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_6.png']);

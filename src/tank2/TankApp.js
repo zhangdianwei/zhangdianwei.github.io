@@ -19,8 +19,7 @@ export class TankApp {
         this.renderLayers = {
             background: null,
             tiles: null,
-            enemies: null,
-            player: null,
+            tank: null,        // 合并的坦克层（包含玩家、敌人、基地）
             bullets: null,
             grass: null
         };

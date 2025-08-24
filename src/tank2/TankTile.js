@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { TankApp } from './TankApp.js';
+import { TileType } from './TileType.js';
 
 export default class TankTile extends PIXI.Container {
     constructor(row, col, type) {
@@ -18,22 +19,22 @@ export default class TankTile extends PIXI.Container {
     createSprite() {
         // 根据类型创建不同的精灵
         switch (this.type) {
-            case 1: // 砖块
+            case TileType.BRICK: // 砖块
                 this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_1_tile_1.png']);
                 break;
-            case 2: // 铁块
+            case TileType.IRON: // 铁块
                 this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_2_tile_1.png']);
                 break;
-            case 3: // 草地
+            case TileType.WATER: // 水面
                 this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_3_tile_1.png']);
                 break;
-            case 4: // 水面
+            case TileType.GRASS: // 草地
                 this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_4_tile_1.png']);
                 break;
-            case 5: // 水面
+            case TileType.NEST: // 老窝
                 this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_5_tile_1.png']);
                 break;
-            case 6: // 基地
+            case TileType.BASE: // 基地
                 this.sprite = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_6.png']);
                 break;
             default:
@@ -69,17 +70,17 @@ export default class TankTile extends PIXI.Container {
     
     // 检查是否可通行
     isWalkable() {
-        return this.type === 0 || this.type === 4; // 空地或草地可通行
+        return this.type === TileType.EMPTY || this.type === TileType.GRASS; // 空地或草地可通行
     }
     
     // 检查是否可破坏
     isDestructible() {
-        return this.type === 1; // 只有砖块可破坏
+        return this.type === TileType.BRICK; // 只有砖块可破坏
     }
     
     // 检查是否是基地
     isBase() {
-        return this.type === 6;
+        return this.type === TileType.BASE;
     }
     
     // 销毁瓦片

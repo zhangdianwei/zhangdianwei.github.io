@@ -6,6 +6,7 @@ import InputManager from './InputManager.js';
 import EnemySpawner from './EnemySpawner.js';
 import Enemy from './Enemy.js';
 import Bullet from './Bullet.js';
+import { TileType } from './TileType.js';
 
 export class TankLogic {
     constructor() {
@@ -88,7 +89,7 @@ export class TankLogic {
             levelData.enemyDestroyed();
             levelData.addScore(100);
             this.tankApp.enemies = this.tankApp.enemies.filter(e => e !== enemy);
-            this.tankApp.renderLayers.enemies.removeChild(enemy);
+            this.tankApp.renderLayers.tank.removeChild(enemy);
         });
         
         enemy.on('shoot', (direction) => {
@@ -97,7 +98,7 @@ export class TankLogic {
         
         enemy.spawn();
         this.tankApp.enemies.push(enemy);
-        this.tankApp.renderLayers.enemies.addChild(enemy);
+        this.tankApp.renderLayers.tank.addChild(enemy);
     }
 
     createPlayerBullet(direction) {
@@ -196,7 +197,7 @@ export class TankLogic {
 
 
     isWalkable(worldX, worldY) {
-        const { row, col } = this.mapRenderer.worldToGrid(worldX, worldY);
+        const { row, col } = this.tankApp.levelData.worldToGrid(worldX, worldY);
         
         if (row < 0 || row >= 24 || col < 0 || col >= 26) {
             return false;
@@ -211,11 +212,19 @@ export class TankLogic {
         
         // 子弹与地图碰撞
         bullets.forEach(bullet => {
-            const { row, col } = this.mapRenderer.worldToGrid(bullet.x, bullet.y);
+            // 检查与基地碰撞
+            if (this.tankApp.levelData.checkBaseCollision(bullet.x, bullet.y)) {
+                this.tankApp.levelData.destroyBase();
+                bullet.destroy();
+                return;
+            }
+            
+            // 检查与瓦片碰撞
+            const { row, col } = this.tankApp.levelData.worldToGrid(bullet.x, bullet.y);
             
             if (row >= 0 && row < 24 && col >= 0 && col < 26) {
                 if (this.tankApp.levelData.isDestructible(row, col)) {
-                    this.tankApp.levelData.setTileType(row, col, 0);
+                    this.tankApp.levelData.setTileType(row, col, TileType.EMPTY);
                     bullet.destroy();
                 }
             }
@@ -285,23 +294,20 @@ export class TankLogic {
     }
 
     createRenderLayers() {
-        // 按照文档要求的渲染层级
+        // 按照新的渲染层级
         this.tankApp.renderLayers.background = new PIXI.Container(); // RenderLayer1: 空地背景
-        this.tankApp.renderLayers.tiles = new PIXI.Container();      // RenderLayer2: 砖块、铁块、水面、老窝
-        this.tankApp.renderLayers.enemies = new PIXI.Container();    // RenderLayer3: 敌人坦克
-        this.tankApp.renderLayers.player = new PIXI.Container();     // RenderLayer4: 玩家坦克
-        this.tankApp.renderLayers.bullets = new PIXI.Container();    // RenderLayer5: 子弹层
-        this.tankApp.renderLayers.grass = new PIXI.Container();      // RenderLayer6: 草地（装饰层）
+        this.tankApp.renderLayers.tiles = new PIXI.Container();      // RenderLayer2: 砖块、铁块、水面等小方块
+        this.tankApp.renderLayers.tank = new PIXI.Container();       // RenderLayer3: 坦克层（玩家、敌人、基地）
+        this.tankApp.renderLayers.bullets = new PIXI.Container();    // RenderLayer4: 子弹层
+        this.tankApp.renderLayers.grass = new PIXI.Container();      // RenderLayer5: 草地（装饰层）
         
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.background);
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.tiles);
-        this.tankApp.renderLayers.enemies.zIndex = 3;
-        this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.enemies);
-        this.tankApp.renderLayers.player.zIndex = 4;
-        this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.player);
-        this.tankApp.renderLayers.bullets.zIndex = 5;
+        this.tankApp.renderLayers.tank.zIndex = 3;
+        this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.tank);
+        this.tankApp.renderLayers.bullets.zIndex = 4;
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.bullets);
-        this.tankApp.renderLayers.grass.zIndex = 6;
+        this.tankApp.renderLayers.grass.zIndex = 5;
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.grass);
     }
 

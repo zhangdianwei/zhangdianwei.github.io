@@ -3,6 +3,7 @@ import Player from './Player.js';
 import { TankApp } from './TankApp.js';
 import allLevels from './level/levels.json' with { type: 'json' };
 import * as PIXI from 'pixi.js';
+import { TileType } from './TileType.js';
 
 export default class TankLevelData {
     constructor() {
@@ -84,11 +85,13 @@ export default class TankLevelData {
         
         this.player = new Player();
         this.tankApp.player = this.player;
-        this.tankApp.renderLayers.player.addChild(this.player);
+        this.tankApp.renderLayers.tank.addChild(this.player);
         
-        // 设置玩家初始位置（基地上方）
-        const playerRow = this.mapHeight - 3;
-        const playerCol = this.mapWidth / 2 - 1;
+        // 设置玩家初始位置（基地左边3个格子）
+        const baseRow = this.mapHeight - 1;
+        const baseCol = this.mapWidth / 2 - 1;  // 基地的左上角列位置
+        const playerRow = baseRow;              // 与基地同一行
+        const playerCol = baseCol - 3;          // 基地左边3个格子
         this.player.x = playerCol * this.tileSize + this.tileSize / 2;
         this.player.y = playerRow * this.tileSize + this.tileSize / 2;
         
@@ -118,58 +121,10 @@ export default class TankLevelData {
         this.home.x = homeCol * this.tileSize;
         this.home.y = (homeRow - 1) * this.tileSize; // 从上一行开始，因为要占2行
         
-        // 添加到渲染层
-        this.tankApp.renderLayers.tiles.addChild(this.home);
-        
-        // 在tiles数组中标记这4个位置为基地类型
-        const homePositions = [
-            { row: homeRow, col: homeCol },
-            { row: homeRow, col: homeCol + 1 },
-            { row: homeRow - 1, col: homeCol },
-            { row: homeRow - 1, col: homeCol + 1 }
-        ];
-        
-        homePositions.forEach(pos => {
-            if (!this.tiles[pos.row]) {
-                this.tiles[pos.row] = [];
-            }
-            // 标记为基地类型，但不创建实际的TankTile对象
-            this.tiles[pos.row][pos.col] = { type: 6, isHome: true };
-        });
-        
-        // 基地周围的保护墙
-        const wallPositions = [
-            { row: homeRow - 2, col: homeCol - 1 },
-            { row: homeRow - 2, col: homeCol },
-            { row: homeRow - 2, col: homeCol + 1 },
-            { row: homeRow - 2, col: homeCol + 2 },
-            { row: homeRow - 1, col: homeCol - 1 },
-            { row: homeRow - 1, col: homeCol + 2 },
-            { row: homeRow, col: homeCol - 1 },
-            { row: homeRow, col: homeCol + 2 },
-            { row: homeRow + 1, col: homeCol - 1 },
-            { row: homeRow + 1, col: homeCol },
-            { row: homeRow + 1, col: homeCol + 1 },
-            { row: homeRow + 1, col: homeCol + 2 }
-        ];
-        
-        wallPositions.forEach(pos => {
-            if (pos.row >= 0 && pos.row < this.mapHeight && pos.col >= 0 && pos.col < this.mapWidth) {
-                // 检查是否已有瓦片
-                if (!this.tiles[pos.row] || !this.tiles[pos.row][pos.col]) {
-                    const wallTile = new TankTile(pos.row, pos.col, 2); // 2表示铁块
-                    if (!this.tiles[pos.row]) {
-                        this.tiles[pos.row] = [];
-                    }
-                    this.tiles[pos.row][pos.col] = wallTile;
-                    this.tankApp.renderLayers.tiles.addChild(wallTile);
-                }
-            }
-        });
+        // 添加到tank渲染层（而不是tiles层）
+        this.tankApp.renderLayers.tank.addChild(this.home);
     }
 
-    // === 瓦片管理方法 ===
-    
     // 根据地图数据创建瓦片对象
     createTilesFromMap(mapData) {
         this.clearAll();
@@ -178,9 +133,9 @@ export default class TankLevelData {
             this.tiles[r] = [];
             for (let c = 0; c < this.mapWidth; c++) {
                 const index = r * this.mapWidth + c;
-                const tileType = mapData[index] || 0;
+                const tileType = mapData[index] || TileType.EMPTY;
                 
-                if (tileType > 0) {
+                if (tileType > TileType.EMPTY) {
                     const tile = new TankTile(r, c, tileType);
                     this.tiles[r][c] = tile;
                     
@@ -198,16 +153,16 @@ export default class TankLevelData {
         const renderLayers = this.tankApp.renderLayers;
         
         switch (tileType) {
-            case 1: // 砖块
-            case 2: // 铁块
-            case 3: // 水面
-            case 6: // 基地
+            case TileType.BRICK: // 砖块
+            case TileType.IRON: // 铁块
+            case TileType.WATER: // 水面
+            case TileType.BASE: // 基地
                 renderLayers.tiles.addChild(tile);
                 break;
-            case 4: // 草地
+            case TileType.GRASS: // 草地
                 renderLayers.grass.addChild(tile);
                 break;
-            case 5: // 老窝
+            case TileType.NEST: // 老窝
                 renderLayers.tiles.addChild(tile);
                 break;
         }
@@ -265,13 +220,13 @@ export default class TankLevelData {
                 return tile.type;
             }
         }
-        return 0;
+        return TileType.EMPTY;
     }
 
     // 设置指定位置的瓦片类型
     setTileType(row, col, type) {
         if (row >= 0 && row < this.mapHeight && col >= 0 && col < this.mapWidth) {
-            if (type === 0) {
+            if (type === TileType.EMPTY) {
                 // 移除瓦片
                 if (this.tiles[row] && this.tiles[row][col]) {
                     const tile = this.tiles[row][col];
@@ -305,30 +260,54 @@ export default class TankLevelData {
         const col = Math.floor(worldX / this.tileSize);
         const row = Math.floor(worldY / this.tileSize);
         const tileType = this.getTileType(row, col);
-        return tileType === 0 || tileType === 4; // 空地或草地可通行
+        return tileType === TileType.EMPTY || tileType === TileType.GRASS; // 空地或草地可通行
     }
 
     // 检查位置是否可被摧毁
     isDestructible(row, col) {
         const tileType = this.getTileType(row, col);
-        return tileType === 1; // 砖块可被摧毁
+        return tileType === TileType.BRICK; // 砖块可被摧毁
     }
 
     // 检查基地是否被摧毁
     isBaseDestroyed() {
-        const baseCenterR = 24;
-        const baseCenterC = 12;
-        
-        for (let r = baseCenterR; r < baseCenterR + 2; r++) {
-            for (let c = baseCenterC; c < baseCenterC + 2; c++) {
-                if (this.getTileType(r, c) === 6) {
-                    return false;
-                }
-            }
+        // 直接检查home对象是否还存在于渲染层中
+        if (this.home && this.home.parent) {
+            return false;
         }
         
         this.baseDestroyed = true;
         return true;
+    }
+    
+    // 摧毁基地（被子弹击中时调用）
+    destroyBase() {
+        if (this.home && this.home.parent) {
+            this.home.parent.removeChild(this.home);
+        }
+        this.baseDestroyed = true;
+    }
+    
+    // 检查基地碰撞（子弹与基地的碰撞检测）
+    checkBaseCollision(x, y) {
+        if (!this.home || !this.home.parent) {
+            return false;
+        }
+        
+        // 检查点是否在基地范围内
+        const homeLeft = this.home.x;
+        const homeRight = this.home.x + this.home.width;
+        const homeTop = this.home.y;
+        const homeBottom = this.home.y + this.home.height;
+        
+        return x >= homeLeft && x <= homeRight && y >= homeTop && y <= homeBottom;
+    }
+    
+    // 世界坐标转换为网格坐标
+    worldToGrid(worldX, worldY) {
+        const col = Math.floor(worldX / this.tileSize);
+        const row = Math.floor(worldY / this.tileSize);
+        return { row, col };
     }
 
     // === 敌人管理方法 ===

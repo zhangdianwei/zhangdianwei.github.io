@@ -21,7 +21,8 @@ export class TankApp {
             tiles: null,
             tank: null,        // 合并的坦克层（包含玩家、敌人、基地）
             bullets: null,
-            grass: null
+            grass: null,
+            effect: null
         };
         
 

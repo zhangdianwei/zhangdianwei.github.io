@@ -7,6 +7,7 @@ import EnemySpawner from './EnemySpawner.js';
 import Enemy from './Enemy.js';
 import Bullet from './Bullet.js';
 import { TileType } from './TileType.js';
+import {createSpriteSeqAnim} from './SpriteSeqAnim.js';
 
 export class TankLogic {
     constructor() {
@@ -18,7 +19,6 @@ export class TankLogic {
         
         // 管理器
         this.levelData = null;
-        this.mapRenderer = null;
         this.inputManager = null;
         this.enemySpawner = null;
     }
@@ -26,23 +26,22 @@ export class TankLogic {
     init(domElement) {
         // 初始化DOM尺寸
         initDom(domElement, {
-            designWidth: 1920/2,
-            designHeight: 1080/2,
-            isFullScreen: true
+            designWidth: 1920,
+            designHeight: 1080,
+            isFullScreen: false
         });
         
         this.tankApp.pixi = createPixi(domElement);
         this.tankApp.gameContainer = new PIXI.Container();
         this.tankApp.pixi.stage.addChild(this.tankApp.gameContainer);
+        // this.tankApp.gameContainer.alpha = 0.05;
 
         // 创建渲染层
         this.createRenderLayers();
-        
+
         // 创建管理器
         this.inputManager = new InputManager();
         this.enemySpawner = new EnemySpawner();
-        
-        // 创建关卡数据
         this.tankApp.levelData = new TankLevelData();
         
         // 设置游戏循环
@@ -52,7 +51,14 @@ export class TankLogic {
         this.inputManager.setupInput();
         
         // 开始游戏
-        this.tankApp.levelData.startLevel();
+        // this.tankApp.levelData.loadLevel(0);
+
+        {
+            const effectNode = createSpriteSeqAnim("tankAppear", ()=>{
+                console.log("xxx")
+            });
+            this.tankApp.renderLayers.effect.addChild(effectNode);
+        }
     }
 
     spawnEnemy() {
@@ -168,6 +174,10 @@ export class TankLogic {
 
 
     update(deltaTime) {
+        for (let i = 0; i < this.tankApp.renderLayers.effect.children.length; i++) {
+            this.tankApp.renderLayers.effect.children[i].update(deltaTime);
+        }
+
         if (this.isPaused || this.isGameOver) return;
         
         const dt = deltaTime / this.tankApp.pixi.ticker.FPS;
@@ -300,6 +310,7 @@ export class TankLogic {
         this.tankApp.renderLayers.tank = new PIXI.Container();       // RenderLayer3: 坦克层（玩家、敌人、基地）
         this.tankApp.renderLayers.bullets = new PIXI.Container();    // RenderLayer4: 子弹层
         this.tankApp.renderLayers.grass = new PIXI.Container();      // RenderLayer5: 草地（装饰层）
+        this.tankApp.renderLayers.effect = new PIXI.Container();     // RenderLayer6: 效果层
         
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.background);
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.tiles);
@@ -309,6 +320,16 @@ export class TankLogic {
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.bullets);
         this.tankApp.renderLayers.grass.zIndex = 5;
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.grass);
+        this.tankApp.renderLayers.effect.zIndex = 6;
+        this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.effect);
+
+        {
+            this.tankApp.renderLayers.background.alpha = 0.1;
+            this.tankApp.renderLayers.tiles.alpha = 0.1;
+            this.tankApp.renderLayers.tank.alpha = 0.1;
+            this.tankApp.renderLayers.bullets.alpha = 0.1;
+            this.tankApp.renderLayers.grass.alpha = 0.1;
+        }
     }
 
 } 

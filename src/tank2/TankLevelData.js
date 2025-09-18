@@ -333,8 +333,10 @@ export default class TankLevelData {
 
     // 检查关卡是否完成
     isLevelComplete() {
-        return this.enemiesSpawned >= this.config.totalEnemies && 
-               this.getRemainingEnemies() === 0;
+        if(!this.config){
+            return false;
+        }
+        return this.enemiesSpawned >= this.config.totalEnemies && this.getRemainingEnemies() === 0;
     }
 
     // === 道具效果管理方法 ===

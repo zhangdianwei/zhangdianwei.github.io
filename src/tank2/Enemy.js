@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import SpriteSeqAnim from './SpriteSeqAnim.js';
+import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
 import { TankApp } from './TankApp.js';
 
 export default class Enemy extends PIXI.Container {
@@ -29,17 +29,15 @@ export default class Enemy extends PIXI.Container {
         this.tankSprite.visible = false;
         this.addChild(this.tankSprite);
         
-        // 创建出现动画
-        this.bornAnim = new SpriteSeqAnim('born', 6);
-        this.bornAnim.setOnComplete(() => {
+        // 创建出现动画（预设：tankAppear）
+        this.bornAnim = createSpriteSeqAnim('tankAppear', () => {
             this.bornAnim.visible = false;
             this.tankSprite.visible = true;
         });
         this.addChild(this.bornAnim);
         
-        // 创建爆炸动画
-        this.explodeAnim = new SpriteSeqAnim('explode', 3);
-        this.explodeAnim.setOnComplete(() => {
+        // 创建爆炸动画（预设：tankExplode）
+        this.explodeAnim = createSpriteSeqAnim('tankExplode', () => {
             this.emit('destroyed');
         });
         this.addChild(this.explodeAnim);

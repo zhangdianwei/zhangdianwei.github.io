@@ -1,11 +1,12 @@
 import * as PIXI from 'pixi.js';
+import { TankApp } from './TankApp.js';
 
 const gAnimDef = {
     "tankAppear": {
         "pattern": "born_",
         "frameCount": 6,
         "totalCount": 3,
-        "frameRate": 0.1
+        "frameRate": 8
     },
     "tankExplode": {
         "pattern": "explode_",
@@ -45,6 +46,11 @@ export class SpriteSeqAnim extends PIXI.Container {
         
         // 默认隐藏所有精灵
         this.visible = false;
+
+        // 绑定全局 ticker
+        this.tankApp = TankApp.instance;
+        this._tickId = null;
+        this._onTick = (dt) => this.update(dt);
     }
     
     createSprites() {
@@ -65,12 +71,21 @@ export class SpriteSeqAnim extends PIXI.Container {
         this.playedRounds = 0;
         this.visible = true;
         this.updateFrame();
+        // 注册到全局 ticker（每帧回调，绑定自身，移除时自动取消）
+        if (this.tankApp && this.tankApp.ticker && !this._tickId) {
+            this._tickId = this.tankApp.ticker.tick(this._onTick, 0, this);
+        }
     }
     
     stop() {
         this.isPlaying = false;
         this.visible = false;
         this.hideAllSprites();
+        // 取消 ticker 注册
+        if (this.tankApp && this.tankApp.ticker && this._tickId) {
+            this.tankApp.ticker.removeTick(this._tickId);
+            this._tickId = null;
+        }
     }
     
     update(deltaTime) {
@@ -91,7 +106,6 @@ export class SpriteSeqAnim extends PIXI.Container {
                 if (this.playedRounds >= this.totalCount) {
                     this.stop();
                     if (typeof this.onComplete === 'function') {
-                        this.removeFromParent();
                         this.onComplete();
                     }
                     return;

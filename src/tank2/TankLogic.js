@@ -7,7 +7,8 @@ import EnemySpawner from './EnemySpawner.js';
 import Enemy from './Enemy.js';
 import Bullet from './Bullet.js';
 import { TileType } from './TileType.js';
-import {createSpriteSeqAnim} from './SpriteSeqAnim.js';
+import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
+import Ticker from './Ticker.js';
 
 export class TankLogic {
     constructor() {
@@ -44,8 +45,9 @@ export class TankLogic {
         this.enemySpawner = new EnemySpawner();
         this.tankApp.levelData = new TankLevelData();
         
-        // 设置游戏循环
-        this.tankApp.pixi.ticker.add(this.update.bind(this));
+        // 设置统一的全局时钟（基于 PIXI.Ticker.shared）
+        this.tankApp.ticker = new Ticker();
+        this._gameTickId = this.tankApp.ticker.tick((dt) => this.update(dt), 0);
         
         // 设置输入监听
         this.inputManager.setupInput();
@@ -173,14 +175,9 @@ export class TankLogic {
 
 
 
-    update(deltaTime) {
-        for (let i = 0; i < this.tankApp.renderLayers.effect.children.length; i++) {
-            this.tankApp.renderLayers.effect.children[i].update(deltaTime);
-        }
+    update(dt) {
 
         if (this.isPaused || this.isGameOver) return;
-        
-        const dt = deltaTime / this.tankApp.pixi.ticker.FPS;
         
         // 更新玩家输入
         this.inputManager.updatePlayerInput();
@@ -296,10 +293,14 @@ export class TankLogic {
     }
 
     destroy() {
+        if (this.tankApp.ticker) {
+            // 停止并清空所有调度
+            this.tankApp.ticker.clear();
+            this.tankApp.ticker = null;
+        }
         if (this.tankApp.pixi) {
             this.tankApp.pixi.destroy(true);
         }
-        
         this.inputManager.destroy();
     }
 

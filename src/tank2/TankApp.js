@@ -6,6 +6,9 @@ export class TankApp {
         this.gameContainer = null;
         this.textures = {};
 
+        // 全局时钟（在 TankLogic 中初始化）
+        this.ticker = null;
+        
         
         // 游戏对象
         this.player = null;

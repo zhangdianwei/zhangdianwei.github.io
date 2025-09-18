@@ -131,13 +131,7 @@ export default class Player extends PIXI.Container {
             this.alpha = 1;
         }
         
-        // 更新动画
-        if (this.bornAnim) {
-            this.bornAnim.update(deltaTime);
-        }
-        if (this.explodeAnim) {
-            this.explodeAnim.update(deltaTime);
-        }
+        // SpriteSeqAnim 基于全局 ticker 自更新，无需手动调用 update()
     }
     
     getBounds() {

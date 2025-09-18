@@ -27,20 +27,6 @@ export default class Player extends PIXI.Container {
         this.tankSprite.anchor.set(0.5);
         this.tankSprite.visible = false;
         this.addChild(this.tankSprite);
-        
-        // 创建出现动画（预设：tankAppear）
-        this.bornAnim = createSpriteSeqAnim('tankAppear', () => {
-            this.bornAnim.visible = false;
-            this.tankSprite.visible = true;
-            this.isInvincible = false;
-        });
-        this.addChild(this.bornAnim);
-        
-        // 创建爆炸动画（预设：tankExplode）
-        this.explodeAnim = createSpriteSeqAnim('tankExplode', () => {
-            this.emit('destroyed');
-        });
-        this.addChild(this.explodeAnim);
     }
     
     setupAnimations() {
@@ -48,14 +34,21 @@ export default class Player extends PIXI.Container {
     }
     
     spawn() {
-        this.bornAnim.play();
+        // 无敌时间仍由 Player 控制，出现动画逻辑已移至 TankLevelData
         this.isInvincible = true;
         this.invincibleTime = 3; // 3秒无敌时间
     }
     
     explode() {
         this.tankSprite.visible = false;
-        this.explodeAnim.play();
+        // 使用临时变量创建并播放爆炸动画，播放完成后触发销毁事件并移除自身
+        const explodeAnim = createSpriteSeqAnim('tankExplode', () => {
+            this.emit('destroyed');
+            if (explodeAnim.parent) {
+                explodeAnim.parent.removeChild(explodeAnim);
+            }
+        });
+        this.addChild(explodeAnim);
     }
     
     setDirection(direction) {
@@ -142,4 +135,4 @@ export default class Player extends PIXI.Container {
             height: 32
         };
     }
-} 
+}

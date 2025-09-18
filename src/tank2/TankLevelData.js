@@ -1,6 +1,7 @@
 import TankTile from './TankTile.js';
 import Player from './Player.js';
 import { TankApp } from './TankApp.js';
+import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
 import allLevels from './level/levels.json' with { type: 'json' };
 import * as PIXI from 'pixi.js';
 import { TileType } from './TileType.js';
@@ -90,12 +91,28 @@ export default class TankLevelData {
         // 设置玩家初始位置（基地左边3个格子）
         const baseRow = this.mapHeight - 1;
         const baseCol = this.mapWidth / 2 - 1;  // 基地的左上角列位置
-        const playerRow = baseRow;              // 与基地同一行
-        const playerCol = baseCol - 3;          // 基地左边3个格子
-        this.player.x = playerCol * this.tileSize + this.tileSize / 2;
-        this.player.y = playerRow * this.tileSize + this.tileSize / 2;
+        let playerRow = baseRow;              // 与基地同一行
+        let playerCol = baseCol - 3;          // 基地左边3个格子
+        this.player.x = playerCol * this.tileSize;
+        this.player.y = playerRow * this.tileSize;
         
+        // 触发玩家进入无敌与出现动画
         this.player.spawn();
+        const appearAnim = createSpriteSeqAnim('tankAppear', () => {
+            // 动画结束：隐藏动画、显示玩家精灵、结束无敌、并移除动画
+            appearAnim.visible = false;
+            if (this.player && this.player.tankSprite) {
+                this.player.tankSprite.visible = true;
+            }
+            if (this.player) {
+                this.player.isInvincible = false;
+            }
+            if (appearAnim.parent) {
+                appearAnim.parent.removeChild(appearAnim);
+            }
+        });
+        // 把出现动画挂到玩家容器上，这样位置和层级随玩家
+        this.player.addChild(appearAnim);
     }
     
     // 创建基地（老窝）

@@ -53,14 +53,7 @@ export class TankLogic {
         this.inputManager.setupInput();
         
         // 开始游戏
-        // this.tankApp.levelData.loadLevel(0);
-
-        {
-            const effectNode = createSpriteSeqAnim("tankAppear", ()=>{
-                console.log("xxx")
-            });
-            this.tankApp.renderLayers.effect.addChild(effectNode);
-        }
+        this.tankApp.levelData.loadLevel(0);
     }
 
     spawnEnemy() {

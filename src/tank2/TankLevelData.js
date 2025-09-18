@@ -4,7 +4,7 @@ import { TankApp } from './TankApp.js';
 import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
 import allLevels from './level/levels.json' with { type: 'json' };
 import * as PIXI from 'pixi.js';
-import { TileType } from './TileType.js';
+import { TileType, Dir } from './TileType.js';
 
 export default class TankLevelData {
     constructor() {
@@ -98,6 +98,7 @@ export default class TankLevelData {
         
         // 触发玩家进入无敌与出现动画
         this.player.spawn();
+        this.player.setDirection(Dir.UP);
         const appearAnim = createSpriteSeqAnim('tankAppear', () => {
             // 动画结束：隐藏动画、显示玩家精灵、结束无敌、并移除动画
             appearAnim.visible = false;

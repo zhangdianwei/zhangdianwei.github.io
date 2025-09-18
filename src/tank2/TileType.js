@@ -13,6 +13,17 @@ export const TileType = {
 };
 
 /**
+ * 方向枚举
+ * 上/右/下/左 分别为 0/1/2/3
+ */
+export const Dir = {
+    UP: 0,
+    RIGHT: 1,
+    DOWN: 2,
+    LEFT: 3
+};
+
+/**
  * 获取瓦片类型名称
  * @param {number} type - 瓦片类型值
  * @returns {string} 瓦片类型名称

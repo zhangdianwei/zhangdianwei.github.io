@@ -6,31 +6,41 @@ export default class InputManager {
         this.keys = {};
         this.lastShootTime = 0;
         this.shootCooldown = 0.3;
+        this.logic = null; // 由 TankLogic 绑定
+        this._onKeyDown = null;
+        this._onKeyUp = null;
     }
 
     setupInput() {
-        // window.addEventListener('keydown', (e) => {
-        //     this.keys[e.code] = true;
-            
-        //     switch (e.code) {
-        //         case 'Space':
-        //             e.preventDefault();
-        //             this.shoot();
-        //             break;
-        //         case 'KeyP':
-        //             e.preventDefault();
-        //             this.togglePause();
-        //             break;
-        //         case 'KeyR':
-        //             e.preventDefault();
-        //             this.restart();
-        //             break;
-        //     }
-        // });
-        
-        // window.addEventListener('keyup', (e) => {
-        //     this.keys[e.code] = false;
-        // });
+        if (!this._onKeyDown) {
+            this._onKeyDown = (e) => {
+                this.keys[e.code] = true;
+                switch (e.code) {
+                    case 'Space':
+                        e.preventDefault();
+                        this.shoot();
+                        break;
+                    case 'KeyP':
+                        e.preventDefault();
+                        if (this.logic && typeof this.logic.togglePause === 'function') {
+                            this.logic.togglePause();
+                        }
+                        break;
+                }
+            };
+        }
+        if (!this._onKeyUp) {
+            this._onKeyUp = (e) => {
+                this.keys[e.code] = false;
+            };
+        }
+        window.addEventListener('keydown', this._onKeyDown);
+        window.addEventListener('keyup', this._onKeyUp);
+    }
+
+    // 由 TankLogic 在 init 时绑定逻辑对象
+    bindLogic(logic) {
+        this.logic = logic;
     }
 
     updatePlayerInput() {
@@ -39,13 +49,13 @@ export default class InputManager {
         
         let direction = -1;
         
-        if (this.keys['ArrowUp']) {
+        if (this.keys['ArrowUp'] || this.keys['KeyW']) {
             direction = 0;
-        } else if (this.keys['ArrowRight']) {
+        } else if (this.keys['ArrowRight'] || this.keys['KeyD']) {
             direction = 1;
-        } else if (this.keys['ArrowDown']) {
+        } else if (this.keys['ArrowDown'] || this.keys['KeyS']) {
             direction = 2;
-        } else if (this.keys['ArrowLeft']) {
+        } else if (this.keys['ArrowLeft'] || this.keys['KeyA']) {
             direction = 3;
         }
         
@@ -76,12 +86,19 @@ export default class InputManager {
         if (now - this.lastShootTime < this.shootCooldown) return;
         
         this.lastShootTime = now;
-        
-        this.createPlayerBullet(player.direction);
+        if (this.logic && typeof this.logic.createPlayerBullet === 'function') {
+            this.logic.createPlayerBullet(player.direction);
+        }
     }
 
     destroy() {
-        window.removeEventListener('keydown', this.setupInput);
-        window.removeEventListener('keyup', this.setupInput);
+        if (this._onKeyDown) {
+            window.removeEventListener('keydown', this._onKeyDown);
+            this._onKeyDown = null;
+        }
+        if (this._onKeyUp) {
+            window.removeEventListener('keyup', this._onKeyUp);
+            this._onKeyUp = null;
+        }
     }
-} 
+}

@@ -5,7 +5,7 @@ const gAnimDef = {
     "tankAppear": {
         "pattern": "born_",
         "frameCount": 6,
-        "totalCount": 3,
+        "totalCount": 1,
         "frameRate": 8
     },
     "tankExplode": {

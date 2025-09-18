@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
 import { TankApp } from './TankApp.js';
+import { Dir } from './TileType.js';
 
 export default class Player extends PIXI.Container {
     constructor() {
@@ -53,6 +54,7 @@ export default class Player extends PIXI.Container {
     
     setDirection(direction) {
         this.direction = direction;
+        this.tankSprite.rotation = direction * (Math.PI / 2);
         this.updateSprite();
     }
     
@@ -124,7 +126,6 @@ export default class Player extends PIXI.Container {
             this.alpha = 1;
         }
         
-        // SpriteSeqAnim 基于全局 ticker 自更新，无需手动调用 update()
     }
     
     getBounds() {

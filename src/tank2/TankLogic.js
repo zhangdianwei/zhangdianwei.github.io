@@ -42,6 +42,8 @@ export class TankLogic {
 
         // 创建管理器
         this.inputManager = new InputManager();
+        // 让输入管理器持有逻辑引用，便于触发发射子弹/暂停/重开
+        this.inputManager.bindLogic(this);
         this.enemySpawner = new EnemySpawner();
         this.tankApp.levelData = new TankLevelData();
         
@@ -270,6 +272,10 @@ export class TankLogic {
     nextLevel() {
         this.tankApp.levelData.nextLevel();
         this.startLevel();
+    }
+
+    startLevel(){
+        
     }
 
     togglePause() {

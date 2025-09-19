@@ -17,8 +17,8 @@ export default class TankLevelData {
         
         // === 地图配置 ===
         this.config = null;
-        this.mapWidth = 26;
-        this.mapHeight = 26;
+        this.mapCols = 26;
+        this.mapRows = 26;
         this.tileSize = 32;
         
         // === 瓦片管理 ===
@@ -89,10 +89,10 @@ export default class TankLevelData {
         this.tankApp.renderLayers.tank.addChild(this.player);
         
         // 设置玩家初始位置（基地左边3个格子）
-        const baseRow = this.mapHeight - 1;
-        const baseCol = this.mapWidth / 2 - 1;  // 基地的左上角列位置
+        const baseRow = this.mapRows - 1;
+        const baseCol = this.mapCols / 2 - 1;  // 基地的左上角列位置
         let playerRow = baseRow;              // 与基地同一行
-        let playerCol = baseCol - 3;          // 基地左边3个格子
+        let playerCol = baseCol - 2;          // 基地左边3个格子
         this.player.x = playerCol * this.tileSize;
         this.player.y = playerRow * this.tileSize;
         
@@ -126,8 +126,8 @@ export default class TankLevelData {
         }
         
         // 基地固定创建在最下面一行的中心
-        const homeRow = this.mapHeight - 1;
-        const homeCol = this.mapWidth / 2 - 1;
+        const homeRow = this.mapRows - 1;
+        const homeCol = this.mapCols / 2 - 1;
         
         // 创建基地（使用一张2x2的大图）
         this.home = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_6.png']);
@@ -147,10 +147,10 @@ export default class TankLevelData {
     createTilesFromMap(mapData) {
         this.clearAll();
         
-        for (let r = 0; r < this.mapHeight; r++) {
+        for (let r = 0; r < this.mapRows; r++) {
             this.tiles[r] = [];
-            for (let c = 0; c < this.mapWidth; c++) {
-                const index = r * this.mapWidth + c;
+            for (let c = 0; c < this.mapCols; c++) {
+                const index = r * this.mapCols + c;
                 const tileType = mapData[index] || TileType.EMPTY;
                 
                 if (tileType > TileType.EMPTY) {
@@ -227,7 +227,7 @@ export default class TankLevelData {
     
     // 获取指定位置的瓦片类型
     getTileType(row, col) {
-        if (row >= 0 && row < this.mapHeight && col >= 0 && col < this.mapWidth) {
+        if (row >= 0 && row < this.mapRows && col >= 0 && col < this.mapCols) {
             const tile = this.tiles[row] && this.tiles[row][col];
             if (tile) {
                 // 如果是home的特殊标记，返回基地类型
@@ -243,7 +243,7 @@ export default class TankLevelData {
 
     // 设置指定位置的瓦片类型
     setTileType(row, col, type) {
-        if (row >= 0 && row < this.mapHeight && col >= 0 && col < this.mapWidth) {
+        if (row >= 0 && row < this.mapRows && col >= 0 && col < this.mapCols) {
             if (type === TileType.EMPTY) {
                 // 移除瓦片
                 if (this.tiles[row] && this.tiles[row][col]) {
@@ -279,6 +279,113 @@ export default class TankLevelData {
         const row = Math.floor(worldY / this.tileSize);
         const tileType = this.getTileType(row, col);
         return tileType === TileType.EMPTY || tileType === TileType.GRASS; // 空地或草地可通行
+    }
+
+    isRectWalkable(cx, cy, halfSize = 16) {
+        const left = cx - halfSize;
+        const right = cx + halfSize - 1;
+        const top = cy - halfSize;
+        const bottom = cy + halfSize - 1;
+        const colStart = Math.floor(left / this.tileSize);
+        const colEnd = Math.floor(right / this.tileSize);
+        const rowStart = Math.floor(top / this.tileSize);
+        const rowEnd = Math.floor(bottom / this.tileSize);
+        for (let r = rowStart; r <= rowEnd; r++) {
+            for (let c = colStart; c <= colEnd; c++) {
+                const t = this.getTileType(r, c);
+                if (!(t === TileType.EMPTY || t === TileType.GRASS)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    getMovableDistance(centerX, centerY, width, height, direction) {
+        let t = 4;
+        const srcPoses = [
+            { x: centerX - width/2, y: centerY - height/2 },
+            { x: centerX + width/2, y: centerY - height/2 },
+            { x: centerX - width/2, y: centerY + height/2 },
+            { x: centerX + width/2, y: centerY + height/2 }
+        ]
+        const thresPoses = [
+            { x: centerX - width/2 + t, y: centerY - height/2 + t },
+            { x: centerX + width/2 - t, y: centerY - height/2 + t },
+            { x: centerX - width/2 + t, y: centerY + height/2 - t },
+            { x: centerX + width/2 - t, y: centerY + height/2 - t }
+        ];
+        const standRCs = thresPoses.map(p => this.worldToGrid(p.x, p.y));
+        const nextRCs = standRCs.map(rc => this.findNextNotWalkRC(rc, direction));
+        const nextPoses = nextRCs.map(rc => this.gridToWorld(rc.row, rc.col));
+        const diffs = [];
+        for (let i = 0; i < srcPoses.length; i++) {
+            if (direction === 0) diffs.push(srcPoses[i].y - (nextPoses[i].y + this.tileSize));
+            else if (direction === 1) diffs.push(nextPoses[i].x - srcPoses[i].x);
+            else if (direction === 2) diffs.push(nextPoses[i].y - srcPoses[i].y);
+            else diffs.push(srcPoses[i].x - (nextPoses[i].x + this.tileSize));
+        }
+        return Math.min(...diffs);
+    }
+
+    findNextCanWalkRC(rc, direction) {
+        let r = rc.row;
+        let c = rc.col;
+        const passable = (row, col) => {
+            const t = this.getTileType(row, col);
+            return t === TileType.EMPTY || t === TileType.GRASS;
+        };
+        
+        if (direction === 0) {
+            // 向上移动，从当前位置开始搜索
+            while (r - 1 >= 0 && passable(r - 1, c)) r--;
+            return { row: r, col: c };
+        }
+        if (direction === 2) {
+            // 向下移动，从当前位置开始搜索
+            while (r + 1 < this.mapRows && passable(r + 1, c)) r++;
+            return { row: r, col: c };
+        }
+        if (direction === 1) {
+            // 向右移动，从当前位置开始搜索
+            while (c + 1 < this.mapCols && passable(r, c + 1)) c++;
+            return { row: r, col: c };
+        }
+        // 向左移动，从当前位置开始搜索
+        while (c - 1 >= 0 && passable(r, c - 1)) c--;
+        return { row: r, col: c };
+    }
+
+    passable(row, col) {
+        if (row < 0 || row >= this.mapRows || col < 0 || col >= this.mapCols) {
+            return false;
+        }
+        const t = this.getTileType(row, col);
+        return t === TileType.EMPTY || t === TileType.GRASS;
+    }
+
+    findNextNotWalkRC(rc, direction) {
+        let r = rc.row;
+        let c = rc.col;
+        
+        if (direction === 0) {
+            // 向上移动，从当前位置开始搜索
+            while (this.passable(r, c)) r--;
+            return { row: r, col: c };
+        }
+        if (direction === 2) {
+            // 向下移动，从当前位置开始搜索
+            while (this.passable(r, c)) r++;
+            return { row: r, col: c };
+        }
+        if (direction === 1) {
+            // 向右移动，从当前位置开始搜索
+            while (this.passable(r, c)) c++;
+            return { row: r, col: c };
+        }
+        // 向左移动，从当前位置开始搜索
+        while (this.passable(r, c)) c--;
+        return { row: r, col: c };
     }
 
     // 检查位置是否可被摧毁
@@ -326,6 +433,10 @@ export default class TankLevelData {
         const col = Math.floor(worldX / this.tileSize);
         const row = Math.floor(worldY / this.tileSize);
         return { row, col };
+    }
+
+    gridToWorld(row, col) {
+        return { x: col * this.tileSize, y: row * this.tileSize };
     }
 
     // === 敌人管理方法 ===

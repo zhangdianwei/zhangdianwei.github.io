@@ -60,19 +60,8 @@ export default class InputManager {
         }
         
         if (direction >= 0) {
-            const speed = player.speed;
-            const radians = (direction * 90) * Math.PI / 180;
-            const dx = Math.sin(radians) * speed;
-            const dy = -Math.cos(radians) * speed;
-            
-            const newX = player.x + dx;
-            const newY = player.y + dy;
-            
-            if (this.tankApp.levelData.isWalkable(newX, newY)) {
-                player.move(direction);
-            } else {
-                player.setDirection(direction);
-            }
+            player.setDirection(direction);
+            player.setMoving(true);
         } else {
             player.stop();
         }

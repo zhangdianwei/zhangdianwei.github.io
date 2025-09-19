@@ -58,6 +58,11 @@ export default class Player extends PIXI.Container {
         this.updateSprite();
     }
     
+    setMoving(moving) {
+        this.isMoving = moving;
+        this.updateSprite();
+    }
+    
     updateSprite() {
         const frame = this.isMoving ? this.currentFrame : 0;
         const textureName = `tank2/player1_run_${frame + 1}.png`;
@@ -68,7 +73,7 @@ export default class Player extends PIXI.Container {
     
     move(direction) {
         this.setDirection(direction);
-        this.isMoving = true;
+        this.setMoving(true);
         
         const radians = (direction * 90) * Math.PI / 180;
         const dx = Math.sin(radians) * this.speed;
@@ -79,7 +84,7 @@ export default class Player extends PIXI.Container {
     }
     
     stop() {
-        this.isMoving = false;
+        this.setMoving(false);
     }
     
     takeDamage(damage = 1) {
@@ -100,6 +105,26 @@ export default class Player extends PIXI.Container {
     }
     
     update(deltaTime) {
+        // 自动移动逻辑
+        if (this.isMoving) {
+            const size = 64;
+            const allowed = this.tankApp.levelData.getMovableDistance(this.x, this.y, size, size, this.direction);
+            const movable = Math.min(allowed, this.speed);
+
+            console.log(`allowed=${allowed}, movable=${movable}`);
+            
+            if (movable > 0) {
+                const radians = (this.direction * 90) * Math.PI / 180;
+                const dx = Math.sin(radians) * movable;
+                const dy = -Math.cos(radians) * movable;
+                this.x += dx;
+                this.y += dy;
+            } else {
+                // 如果无法移动，停止移动状态
+                this.setMoving(false);
+            }
+        }
+        
         // 更新动画
         if (this.isMoving) {
             this.animationTimer += deltaTime;

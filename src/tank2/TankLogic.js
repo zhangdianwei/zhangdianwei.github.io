@@ -8,6 +8,7 @@ import Enemy from './Enemy.js';
 import Bullet from './Bullet.js';
 import { TileType } from './TileType.js';
 import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
+import Player from './Player.js';
 import Ticker from './Ticker.js';
 
 export class TankLogic {
@@ -56,6 +57,15 @@ export class TankLogic {
         
         // 开始游戏
         this.tankApp.levelData.loadLevel(0);
+
+        // {
+        //     const player = new Player();
+        //     player.x = 0;
+        //     player.y = 0;
+        //     player.spawn();
+        //     player.tankSprite.visible = true;
+        //     this.tankApp.renderLayers.effect.addChild(player);
+        // }
     }
 
     spawnEnemy() {

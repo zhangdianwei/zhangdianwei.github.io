@@ -101,19 +101,15 @@ export class TankLogic {
         this.tankApp.renderLayers.tank.addChild(enemy);
     }
 
-    createPlayerBullet(direction) {
-        const bullet = new Bullet(this.tankApp.player, direction);
-        bullet.x = this.tankApp.player.x;
-        bullet.y = this.tankApp.player.y;
-        
-        // 监听子弹事件
-        bullet.on('destroyed', () => {
-            this.tankApp.bullets = this.tankApp.bullets.filter(b => b !== bullet);
-            this.tankApp.renderLayers.bullets.removeChild(bullet);
-        });
-        
+    addBullet(bullet) {
         this.tankApp.bullets.push(bullet);
         this.tankApp.renderLayers.bullets.addChild(bullet);
+    }
+    removeBullet(bullet) {
+        this.tankApp.renderLayers.bullets.removeChild(bullet);
+        let index = this.tankApp.bullets.indexOf(bullet);
+        if (index === -1) return;
+        this.tankApp.bullets.splice(index, 1);
     }
 
     createEnemyBullet(enemy, direction) {

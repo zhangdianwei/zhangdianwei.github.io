@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
 import { TankApp } from './TankApp.js';
 import { Dir } from './TileType.js';
+import Bullet from './Bullet.js';
 
 export default class TankBase extends PIXI.Container {
     constructor() {
@@ -91,7 +92,8 @@ export default class TankBase extends PIXI.Container {
     }
 
     createBullet(){
-        
+        const bullet = new Bullet(this);
+        return bullet;
     }
     
     takeDamage(damage = 1) {

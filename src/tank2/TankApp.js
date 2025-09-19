@@ -9,6 +9,7 @@ export class TankApp {
         // 全局时钟（在 TankLogic 中初始化）
         this.ticker = null;
         
+        this.logic = null;
         
         // 关卡游戏对象
         this.player = null;

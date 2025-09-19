@@ -1,16 +1,20 @@
 import * as PIXI from 'pixi.js';
+import { TankApp } from './TankApp.js';
 
 export default class Bullet extends PIXI.Container {
-    constructor(owner, direction, power = 1) {
+    constructor(owner) {
         super();
         
+        this.tankApp = TankApp.instance;
+
         this.owner = owner; // 发射者（玩家或敌人）
-        this.direction = direction; // 0: 上, 1: 右, 2: 下, 3: 左
-        this.power = power; // 子弹威力
+        this.direction = owner.direction; // 0: 上, 1: 右, 2: 下, 3: 左
+        this.power = 1; // 子弹威力
         this.speed = 4;
         this.isDestroyed = false;
         
         this.createSprite();
+        this.addToGame();
     }
     
     createSprite() {
@@ -27,6 +31,10 @@ export default class Bullet extends PIXI.Container {
         // 根据方向旋转子弹
         const rotation = (this.direction * 90) * Math.PI / 180;
         this.sprite.rotation = rotation;
+    }
+    
+    addToGame() {
+        this.tankApp.logic.addBullet(this);
     }
     
     update(deltaTime) {

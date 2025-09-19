@@ -40,14 +40,14 @@ const textureUrls = ref([
 ]);
 
 const tankApp = TankApp.instance;
-tankApp.gameLogic = new TankLogic();
+tankApp.logic = new TankLogic();
 
 const onTexturesLoaded = (textures) => {
     tankApp.textures = textures;
-    tankApp.gameLogic.init(gameContainer.value);
+    tankApp.logic.init(gameContainer.value);
 };
 
 onUnmounted(() => {
-    tankApp.gameLogic.destroy();
+    tankApp.logic.destroy();
 });
 </script> 

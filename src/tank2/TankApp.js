@@ -10,7 +10,7 @@ export class TankApp {
         this.ticker = null;
         
         
-        // 游戏对象
+        // 关卡游戏对象
         this.player = null;
         this.enemies = [];
         this.bullets = [];
@@ -22,7 +22,7 @@ export class TankApp {
         this.renderLayers = {
             background: null,
             tiles: null,
-            tank: null,        // 合并的坦克层（包含玩家、敌人、基地）
+            tank: null,
             bullets: null,
             grass: null,
             effect: null

@@ -174,7 +174,7 @@ export class TankLogic {
         if (this.isPaused || this.isGameOver) return;
         
         // 更新玩家输入
-        this.inputManager.updatePlayerInput();
+        this.inputManager.update(dt);
         
         // 更新游戏对象
         this.updateGameObjects(dt);

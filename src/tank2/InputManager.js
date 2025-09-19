@@ -15,18 +15,6 @@ export default class InputManager {
         if (!this._onKeyDown) {
             this._onKeyDown = (e) => {
                 this.keys[e.code] = true;
-                switch (e.code) {
-                    case 'Space':
-                        e.preventDefault();
-                        this.shoot();
-                        break;
-                    case 'KeyP':
-                        e.preventDefault();
-                        if (this.logic && typeof this.logic.togglePause === 'function') {
-                            this.logic.togglePause();
-                        }
-                        break;
-                }
             };
         }
         if (!this._onKeyUp) {
@@ -43,7 +31,18 @@ export default class InputManager {
         this.logic = logic;
     }
 
-    updatePlayerInput() {
+    update(dt) {
+        this.updateMove(dt);
+        this.updateShoot(dt);
+    }
+
+    updateShoot(dt) {
+        const player = this.tankApp.player;
+        if (!player) return;
+        player.setShooting(this.keys['Space']);
+    }
+
+    updateMove() {
         const player = this.tankApp.player;
         if (!player) return;
         
@@ -64,19 +63,6 @@ export default class InputManager {
             player.setMoving(true);
         } else {
             player.setMoving(false);
-        }
-    }
-
-    shoot() {
-        const player = this.tankApp.player;
-        if (!player) return;
-        
-        const now = Date.now() / 1000;
-        if (now - this.lastShootTime < this.shootCooldown) return;
-        
-        this.lastShootTime = now;
-        if (this.logic && typeof this.logic.createPlayerBullet === 'function') {
-            this.logic.createPlayerBullet(player.direction);
         }
     }
 

@@ -16,12 +16,17 @@ export default class TankBase extends PIXI.Container {
         this.health = 1;
         
         this.isMoving = false;
+        this.isShooting = false;
+        this.shootOnce = false;
 
         this.invincibleTime = 0;
         
         this.animationTimer = 0;
         this.currentFrame = 0;
-        this.animationSpeed = 0.15; // 动画切换速度
+        this.animationSpeed = 0.15;
+        
+        this.shootTimer = 0;
+        this.shootCooldown = 0.3;
         
         this.initSprites();
     }
@@ -77,24 +82,23 @@ export default class TankBase extends PIXI.Container {
         this.isMoving = moving;
     }
 
-    move(direction) {
-        this.setDirection(direction);
-        this.setMoving(true);
+    setShooting(shooting) {
+        this.isShooting = shooting;
+    }
+
+    setShootOnce() {
+        this.shootOnce = true;
+    }
+
+    createBullet(){
         
-        const radians = (direction * 90) * Math.PI / 180;
-        const dx = Math.sin(radians) * this.speed;
-        const dy = -Math.cos(radians) * this.speed;
-        
-        this.x += dx;
-        this.y += dy;
     }
     
     takeDamage(damage = 1) {
         
     }
-    
-    update(deltaTime) {
-        // 自动移动逻辑
+
+    checkMoving(deltaTime){
         if (this.isMoving) {
             const size = 64;
             const allowed = this.tankApp.levelData.getMovableDistance(this.x, this.y, size, size, this.direction);
@@ -111,8 +115,7 @@ export default class TankBase extends PIXI.Container {
                 this.setMoving(false);
             }
         }
-        
-        // 更新动画
+
         if (this.isMoving) {
             this.animationTimer += deltaTime;
             if (this.animationTimer >= this.animationSpeed) {
@@ -120,15 +123,35 @@ export default class TankBase extends PIXI.Container {
                 this.enterNextFrame();
             }
         }
+    }
+
+    checkShooting(deltaTime){
+        if (this.shootTimer > 0) {
+            this.shootTimer -= deltaTime;
+        }
+
+        if (this.shootTimer > 0) return;
         
-        // 更新无敌时间
+        if (this.isShooting || this.shootOnce) {
+            this.shootOnce = false;
+            this.shootTimer = this.shootCooldown;
+            this.createBullet();
+        }
+    }
+
+    checkInvincible(deltaTime){
         if (this.invincibleTime > 0) {
             this.invincibleTime -= deltaTime;
             this.alpha = Math.sin(Date.now() * 0.01) > 0 ? 1 : 0.5;
         } else {
             this.alpha = 1;
         }
-        
+    }
+    
+    update(deltaTime) {
+        this.checkMoving(deltaTime);
+        this.checkShooting(deltaTime);
+        this.checkInvincible(deltaTime);
     }
     
     setCurrentFrame(frame){
@@ -138,6 +161,6 @@ export default class TankBase extends PIXI.Container {
         this.currentFrame = frame;
     }
     enterNextFrame(){
-        this.setCurrentFrame((this.currentFrame + 1) % 2);
+        this.setCurrentFrame((this.currentFrame + 1) % this.tankSprites.length);
     }
 }

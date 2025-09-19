@@ -8,7 +8,7 @@ import Enemy from './Enemy.js';
 import Bullet from './Bullet.js';
 import { TileType } from './TileType.js';
 import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
-import Player from './Player.js';
+import TankBase from './TankBase.js';
 import Ticker from './Ticker.js';
 
 export class TankLogic {
@@ -36,7 +36,6 @@ export class TankLogic {
         this.tankApp.pixi = createPixi(domElement);
         this.tankApp.gameContainer = new PIXI.Container();
         this.tankApp.pixi.stage.addChild(this.tankApp.gameContainer);
-        // this.tankApp.gameContainer.alpha = 0.05;
 
         // 创建渲染层
         this.createRenderLayers();
@@ -45,27 +44,17 @@ export class TankLogic {
         this.inputManager = new InputManager();
         // 让输入管理器持有逻辑引用，便于触发发射子弹/暂停/重开
         this.inputManager.bindLogic(this);
+        this.inputManager.setupInput();
+
         this.enemySpawner = new EnemySpawner();
+
         this.tankApp.levelData = new TankLevelData();
         
-        // 设置统一的全局时钟（基于 PIXI.Ticker.shared）
         this.tankApp.ticker = new Ticker();
         this._gameTickId = this.tankApp.ticker.tick((dt) => this.update(dt), 0);
         
-        // 设置输入监听
-        this.inputManager.setupInput();
-        
         // 开始游戏
         this.tankApp.levelData.loadLevel(0);
-
-        // {
-        //     const player = new Player();
-        //     player.x = 0;
-        //     player.y = 0;
-        //     player.spawn();
-        //     player.tankSprite.visible = true;
-        //     this.tankApp.renderLayers.effect.addChild(player);
-        // }
     }
 
     spawnEnemy() {
@@ -303,12 +292,12 @@ export class TankLogic {
 
     destroy() {
         if (this.tankApp.ticker) {
-            // 停止并清空所有调度
-            this.tankApp.ticker.clear();
+            this.tankApp.ticker.stop();
             this.tankApp.ticker = null;
         }
         if (this.tankApp.pixi) {
             this.tankApp.pixi.destroy(true);
+            this.tankApp.pixi = null;
         }
         this.inputManager.destroy();
     }
@@ -324,13 +313,9 @@ export class TankLogic {
         
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.background);
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.tiles);
-        this.tankApp.renderLayers.tank.zIndex = 3;
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.tank);
-        this.tankApp.renderLayers.bullets.zIndex = 4;
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.bullets);
-        this.tankApp.renderLayers.grass.zIndex = 5;
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.grass);
-        this.tankApp.renderLayers.effect.zIndex = 6;
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.effect);
 
         {

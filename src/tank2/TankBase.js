@@ -3,46 +3,62 @@ import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
 import { TankApp } from './TankApp.js';
 import { Dir } from './TileType.js';
 
-export default class Player extends PIXI.Container {
+export default class TankBase extends PIXI.Container {
     constructor() {
         super();
         
         this.tankApp = TankApp.instance;
         this.textures = this.tankApp.textures;
+
         this.speed = 2;
-        this.direction = 0; // 0: 上, 1: 右, 2: 下, 3: 左
-        this.isMoving = false;
+        this.direction = Dir.UP;
+
         this.health = 1;
-        this.isInvincible = false;
+        
+        this.isMoving = false;
+
         this.invincibleTime = 0;
+        
         this.animationTimer = 0;
         this.currentFrame = 0;
-        
-        this.createSprites();
-        this.setupAnimations();
-    }
-    
-    createSprites() {
-        // 创建玩家坦克精灵
-        this.tankSprite = new PIXI.Sprite(this.textures['tank2/player1_run_1.png']);
-        this.tankSprite.anchor.set(0.5);
-        this.tankSprite.visible = false;
-        this.addChild(this.tankSprite);
-    }
-    
-    setupAnimations() {
         this.animationSpeed = 0.15; // 动画切换速度
+        
+        this.initSprites();
     }
     
-    spawn() {
-        // 无敌时间仍由 Player 控制，出现动画逻辑已移至 TankLevelData
-        this.isInvincible = true;
-        this.invincibleTime = 3; // 3秒无敌时间
+    initSprites() {
+        this.tankSprites = [];
+        for (let i = 1; i <= 2; i++) {
+            const sprite = PIXI.Sprite.from(this.textures[`tank2/player1_run_${i}.png`]);
+            sprite.anchor.set(0.5);
+            sprite.visible = false;
+            this.tankSprites.push(sprite);
+            this.addChild(sprite);
+        }
+    }
+
+    appear(){
+        this.setInvincible();
+        const appearAnim = createSpriteSeqAnim('tankAppear', () => {
+            this.onAppearFinish();
+        });
+        this.addChild(appearAnim);
+    }
+
+    onAppearFinish(){
+        this.setInvincible(false);
+        this.enterNextFrame();
+    }
+    
+    isInvincible() {
+        return this.invincibleTime > 0;
+    }
+    setInvincible(invincibleTime = 3) {
+        this.invincibleTime = invincibleTime;
     }
     
     explode() {
-        this.tankSprite.visible = false;
-        // 使用临时变量创建并播放爆炸动画，播放完成后触发销毁事件并移除自身
+        this.tankSprites.forEach(sprite => sprite.visible = false);
         const explodeAnim = createSpriteSeqAnim('tankExplode', () => {
             this.emit('destroyed');
             if (explodeAnim.parent) {
@@ -54,23 +70,13 @@ export default class Player extends PIXI.Container {
     
     setDirection(direction) {
         this.direction = direction;
-        this.tankSprite.rotation = direction * (Math.PI / 2);
-        this.updateSprite();
+        this.tankSprites.forEach(sprite => sprite.rotation = direction * (Math.PI / 2));
     }
     
     setMoving(moving) {
         this.isMoving = moving;
-        this.updateSprite();
     }
-    
-    updateSprite() {
-        const frame = this.isMoving ? this.currentFrame : 0;
-        const textureName = `tank2/player1_run_${frame + 1}.png`;
-        if (this.textures[textureName]) {
-            this.tankSprite.texture = this.textures[textureName];
-        }
-    }
-    
+
     move(direction) {
         this.setDirection(direction);
         this.setMoving(true);
@@ -83,25 +89,8 @@ export default class Player extends PIXI.Container {
         this.y += dy;
     }
     
-    stop() {
-        this.setMoving(false);
-    }
-    
     takeDamage(damage = 1) {
-        if (this.isInvincible) return false;
         
-        this.health -= damage;
-        
-        if (this.health <= 0) {
-            this.explode();
-            return true;
-        }
-        
-        // 受伤闪烁效果
-        this.isInvincible = true;
-        this.invincibleTime = 1;
-        
-        return false;
     }
     
     update(deltaTime) {
@@ -110,8 +99,6 @@ export default class Player extends PIXI.Container {
             const size = 64;
             const allowed = this.tankApp.levelData.getMovableDistance(this.x, this.y, size, size, this.direction);
             const movable = Math.min(allowed, this.speed);
-
-            console.log(`allowed=${allowed}, movable=${movable}`);
             
             if (movable > 0) {
                 const radians = (this.direction * 90) * Math.PI / 180;
@@ -130,22 +117,13 @@ export default class Player extends PIXI.Container {
             this.animationTimer += deltaTime;
             if (this.animationTimer >= this.animationSpeed) {
                 this.animationTimer = 0;
-                this.currentFrame = (this.currentFrame + 1) % 2;
-                this.updateSprite();
+                this.enterNextFrame();
             }
-        } else {
-            this.currentFrame = 0;
-            this.updateSprite();
         }
         
         // 更新无敌时间
-        if (this.isInvincible) {
+        if (this.invincibleTime > 0) {
             this.invincibleTime -= deltaTime;
-            if (this.invincibleTime <= 0) {
-                this.isInvincible = false;
-            }
-            
-            // 闪烁效果
             this.alpha = Math.sin(Date.now() * 0.01) > 0 ? 1 : 0.5;
         } else {
             this.alpha = 1;
@@ -153,12 +131,13 @@ export default class Player extends PIXI.Container {
         
     }
     
-    getBounds() {
-        return {
-            x: this.x - 16,
-            y: this.y - 16,
-            width: 32,
-            height: 32
-        };
+    setCurrentFrame(frame){
+        this.tankSprites.forEach((sprite, index) => {
+            sprite.visible = index === frame;
+        });
+        this.currentFrame = frame;
+    }
+    enterNextFrame(){
+        this.setCurrentFrame((this.currentFrame + 1) % 2);
     }
 }

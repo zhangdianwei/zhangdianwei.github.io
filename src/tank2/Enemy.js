@@ -24,7 +24,7 @@ export default class Enemy extends PIXI.Container {
     
     createSprites() {
         // 创建敌人坦克精灵
-        this.tankSprite = new PIXI.Sprite(this.textures[`tank2/enermys/enermy_${this.type}_run_1.png`]);
+        this.tankSprite = PIXI.Sprite.from(`tank2/enermys/enermy_${this.type}_run_1.png`);
         this.tankSprite.anchor.set(0.5);
         this.tankSprite.visible = false;
         this.addChild(this.tankSprite);

@@ -56,7 +56,7 @@ export class SpriteSeqAnim extends PIXI.Container {
     createSprites() {
         for (let i = 1; i <= this.frameCount; i++) {
             const texture = PIXI.Texture.from(`${this.basePath}/${this.imgNamePattern}${i}.png`);
-            const sprite = new PIXI.Sprite(texture);
+            const sprite = PIXI.Sprite.from(texture);
             sprite.anchor.set(0.5);
             sprite.visible = false;
             this.sprites.push(sprite);
@@ -86,6 +86,7 @@ export class SpriteSeqAnim extends PIXI.Container {
             this.tankApp.ticker.removeTick(this._tickId);
             this._tickId = null;
         }
+        this.removeFromParent();
     }
     
     update(deltaTime) {

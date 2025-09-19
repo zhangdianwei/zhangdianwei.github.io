@@ -12,7 +12,6 @@ import { TankApp } from './TankApp.js';
 import { TankLogic } from './TankLogic.js';
 
 const gameContainer = ref(null);
-const texturesLoaded = ref(false);
 const textureUrls = ref([
     'tank2/bigtile_1_tile_1.png',
     'tank2/bigtile_2_tile_1.png',
@@ -44,7 +43,6 @@ const tankApp = TankApp.instance;
 tankApp.gameLogic = new TankLogic();
 
 const onTexturesLoaded = (textures) => {
-    texturesLoaded.value = true;
     tankApp.textures = textures;
     tankApp.gameLogic.init(gameContainer.value);
 };

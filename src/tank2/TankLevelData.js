@@ -1,10 +1,10 @@
 import TankTile from './TankTile.js';
-import Player from './Player.js';
+import TankBase from './TankBase.js';
 import { TankApp } from './TankApp.js';
 import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
 import allLevels from './level/levels.json' with { type: 'json' };
 import * as PIXI from 'pixi.js';
-import { TileType, Dir } from './TileType.js';
+import { TileType, Dir, TileSize } from './TileType.js';
 
 export default class TankLevelData {
     constructor() {
@@ -16,10 +16,9 @@ export default class TankLevelData {
         this.score = 0;
         
         // === 地图配置 ===
-        this.config = null;
+        this.config = null; //当前使用的关卡配置
         this.mapCols = 26;
         this.mapRows = 26;
-        this.tileSize = 32;
         
         // === 瓦片管理 ===
         this.tiles = [];
@@ -55,9 +54,8 @@ export default class TankLevelData {
     
     // 加载关卡配置
     loadLevel(levelId) {
-        const levelConfig = allLevels[levelId];
-        this.config = levelConfig;
-        this.createTilesFromMap(levelConfig.map);
+        this.config = allLevels[levelId];
+        this.initTilesFromMap(this.config.map);
         this.createHome();
         this.createPlayer();
         return true;
@@ -84,7 +82,7 @@ export default class TankLevelData {
             }
         }
         
-        this.player = new Player();
+        this.player = new TankBase();
         this.tankApp.player = this.player;
         this.tankApp.renderLayers.tank.addChild(this.player);
         
@@ -93,27 +91,10 @@ export default class TankLevelData {
         const baseCol = this.mapCols / 2 - 1;  // 基地的左上角列位置
         let playerRow = baseRow;              // 与基地同一行
         let playerCol = baseCol - 2;          // 基地左边3个格子
-        this.player.x = playerCol * this.tileSize;
-        this.player.y = playerRow * this.tileSize;
-        
-        // 触发玩家进入无敌与出现动画
-        this.player.spawn();
-        this.player.setDirection(Dir.UP);
-        const appearAnim = createSpriteSeqAnim('tankAppear', () => {
-            // 动画结束：隐藏动画、显示玩家精灵、结束无敌、并移除动画
-            appearAnim.visible = false;
-            if (this.player && this.player.tankSprite) {
-                this.player.tankSprite.visible = true;
-            }
-            if (this.player) {
-                this.player.isInvincible = false;
-            }
-            if (appearAnim.parent) {
-                appearAnim.parent.removeChild(appearAnim);
-            }
-        });
-        // 把出现动画挂到玩家容器上，这样位置和层级随玩家
-        this.player.addChild(appearAnim);
+        this.player.x = playerCol * TileSize;
+        this.player.y = playerRow * TileSize;
+
+        this.player.appear();
     }
     
     // 创建基地（老窝）
@@ -130,21 +111,21 @@ export default class TankLevelData {
         const homeCol = this.mapCols / 2 - 1;
         
         // 创建基地（使用一张2x2的大图）
-        this.home = new PIXI.Sprite(this.tankApp.textures['tank2/bigtile_6.png']);
-        this.home.width = this.tileSize * 2;  // 宽度为2个tile
-        this.home.height = this.tileSize * 2; // 高度为2个tile
+        this.home = PIXI.Sprite.from('tank2/bigtile_6.png');
+        this.home.width = TileSize * 2;  // 宽度为2个tile
+        this.home.height = TileSize * 2; // 高度为2个tile
         this.home.anchor.set(0, 0);
         
         // 设置位置（左上角对齐到第一个tile位置）
-        this.home.x = homeCol * this.tileSize;
-        this.home.y = (homeRow - 1) * this.tileSize; // 从上一行开始，因为要占2行
+        this.home.x = homeCol * TileSize;
+        this.home.y = (homeRow - 1) * TileSize; // 从上一行开始，因为要占2行
         
         // 添加到tank渲染层（而不是tiles层）
         this.tankApp.renderLayers.tank.addChild(this.home);
     }
 
     // 根据地图数据创建瓦片对象
-    createTilesFromMap(mapData) {
+    initTilesFromMap(mapData) {
         this.clearAll();
         
         for (let r = 0; r < this.mapRows; r++) {
@@ -156,8 +137,6 @@ export default class TankLevelData {
                 if (tileType > TileType.EMPTY) {
                     const tile = new TankTile(r, c, tileType);
                     this.tiles[r][c] = tile;
-                    
-                    // 添加到对应的渲染层
                     this.addTileToRenderLayer(tile, tileType);
                 } else {
                     this.tiles[r][c] = null;
@@ -174,13 +153,12 @@ export default class TankLevelData {
             case TileType.BRICK: // 砖块
             case TileType.IRON: // 铁块
             case TileType.WATER: // 水面
-            case TileType.BASE: // 基地
                 renderLayers.tiles.addChild(tile);
                 break;
             case TileType.GRASS: // 草地
                 renderLayers.grass.addChild(tile);
                 break;
-            case TileType.NEST: // 老窝
+            case TileType.BASE: // 老窝
                 renderLayers.tiles.addChild(tile);
                 break;
         }
@@ -275,8 +253,8 @@ export default class TankLevelData {
 
     // 检查位置是否可通行
     isWalkable(worldX, worldY) {
-        const col = Math.floor(worldX / this.tileSize);
-        const row = Math.floor(worldY / this.tileSize);
+        const col = Math.floor(worldX / TileSize);
+        const row = Math.floor(worldY / TileSize);
         const tileType = this.getTileType(row, col);
         return tileType === TileType.EMPTY || tileType === TileType.GRASS; // 空地或草地可通行
     }
@@ -286,10 +264,10 @@ export default class TankLevelData {
         const right = cx + halfSize - 1;
         const top = cy - halfSize;
         const bottom = cy + halfSize - 1;
-        const colStart = Math.floor(left / this.tileSize);
-        const colEnd = Math.floor(right / this.tileSize);
-        const rowStart = Math.floor(top / this.tileSize);
-        const rowEnd = Math.floor(bottom / this.tileSize);
+        const colStart = Math.floor(left / TileSize);
+        const colEnd = Math.floor(right / TileSize);
+        const rowStart = Math.floor(top / TileSize);
+        const rowEnd = Math.floor(bottom / TileSize);
         for (let r = rowStart; r <= rowEnd; r++) {
             for (let c = colStart; c <= colEnd; c++) {
                 const t = this.getTileType(r, c);
@@ -320,10 +298,10 @@ export default class TankLevelData {
         const nextPoses = nextRCs.map(rc => this.gridToWorld(rc.row, rc.col));
         const diffs = [];
         for (let i = 0; i < srcPoses.length; i++) {
-            if (direction === 0) diffs.push(srcPoses[i].y - (nextPoses[i].y + this.tileSize));
+            if (direction === 0) diffs.push(srcPoses[i].y - (nextPoses[i].y + TileSize));
             else if (direction === 1) diffs.push(nextPoses[i].x - srcPoses[i].x);
             else if (direction === 2) diffs.push(nextPoses[i].y - srcPoses[i].y);
-            else diffs.push(srcPoses[i].x - (nextPoses[i].x + this.tileSize));
+            else diffs.push(srcPoses[i].x - (nextPoses[i].x + TileSize));
         }
         return Math.min(...diffs);
     }
@@ -430,13 +408,13 @@ export default class TankLevelData {
     
     // 世界坐标转换为网格坐标
     worldToGrid(worldX, worldY) {
-        const col = Math.floor(worldX / this.tileSize);
-        const row = Math.floor(worldY / this.tileSize);
+        const col = Math.floor(worldX / TileSize);
+        const row = Math.floor(worldY / TileSize);
         return { row, col };
     }
 
     gridToWorld(row, col) {
-        return { x: col * this.tileSize, y: row * this.tileSize };
+        return { x: col * TileSize, y: row * TileSize };
     }
 
     // === 敌人管理方法 ===
@@ -533,7 +511,7 @@ export default class TankLevelData {
     // 重置关卡数据（用于重新开始）
     reset() {
         if (this.config) {
-            this.createTilesFromMap(this.config.map);
+            this.initTilesFromMap(this.config.map);
             this.createHome();
             this.createPlayer();
         }

@@ -27,8 +27,6 @@ export class TankApp {
             grass: null,
             effect: null
         };
-        
-
     }
 
     static get instance() {
@@ -38,5 +36,7 @@ export class TankApp {
         return TankApp._instance;
     }
 
-
+    clear(){
+        this.ticker.stop();
+    }
 } 

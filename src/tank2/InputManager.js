@@ -63,7 +63,7 @@ export default class InputManager {
             player.setDirection(direction);
             player.setMoving(true);
         } else {
-            player.stop();
+            player.setMoving(false);
         }
     }
 

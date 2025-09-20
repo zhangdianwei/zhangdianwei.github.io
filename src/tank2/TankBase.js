@@ -112,9 +112,6 @@ export default class TankBase extends PIXI.Container {
                 const dy = -Math.cos(radians) * movable;
                 this.x += dx;
                 this.y += dy;
-            } else {
-                // 如果无法移动，停止移动状态
-                this.setMoving(false);
             }
         }
 

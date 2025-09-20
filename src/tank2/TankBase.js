@@ -27,6 +27,9 @@ export default class TankBase extends PIXI.Container {
         
         this.shootTimer = 0;
         this.shootCooldown = 0.15;
+        
+        this.maxBullets = 1; // 最大子弹数量
+        this.currentBullets = 0; // 当前子弹数量
 
         this.initByTankType(tankType);
     }
@@ -102,6 +105,18 @@ export default class TankBase extends PIXI.Container {
         const bullet = new Bullet(this);
         return bullet;
     }
+
+    onBulletAdded(bullet) {
+        // 子弹被添加时调用，增加子弹计数
+        this.currentBullets++;
+    }
+
+    onBulletDestroyed() {
+        // 子弹被销毁时调用，减少子弹计数
+        if (this.currentBullets > 0) {
+            this.currentBullets--;
+        }
+    }
     
     checkCorrectPath(){
         const size = TileSize/2;
@@ -141,6 +156,10 @@ export default class TankBase extends PIXI.Container {
         }
 
         if (this.shootTimer > 0) return;
+
+        if (this.currentBullets >= this.maxBullets) {
+            return;
+        }
         
         if (this.isShooting || this.shootOnce) {
             this.shootOnce = false;
@@ -164,8 +183,6 @@ export default class TankBase extends PIXI.Container {
         this.health -= damage;
         if (this.health <= 0) {
             this.destroy();
-        } else {
-            this.setInvincible(1); // 受伤后1秒无敌
         }
     }
 

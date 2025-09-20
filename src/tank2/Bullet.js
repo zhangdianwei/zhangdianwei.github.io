@@ -18,7 +18,13 @@ export default class Bullet extends PIXI.Container {
         this.y = this.owner.y;
         
         this.createSprite();
-        this.addToGame();
+
+        this.tankApp.logic.addBullet(this);
+        
+        // 通知坦克子弹被添加
+        if (this.owner && this.owner.onBulletAdded) {
+            this.owner.onBulletAdded(this);
+        }
     }
     
     getPower() {
@@ -53,10 +59,6 @@ export default class Bullet extends PIXI.Container {
         this.sprite.rotation = rotation;
     }
     
-    addToGame() {
-        this.tankApp.logic.addBullet(this);
-    }
-    
     update(deltaTime) {
         moveByDir(this, this.direction, this.speed * deltaTime);
         
@@ -67,6 +69,11 @@ export default class Bullet extends PIXI.Container {
     }
     
     destroy() {
+        // 通知坦克子弹被销毁
+        if (this.owner && this.owner.onBulletDestroyed) {
+            this.owner.onBulletDestroyed();
+        }
+        
         this.tankApp.logic.removeBullet(this);
     }
     

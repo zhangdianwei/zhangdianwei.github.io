@@ -1,23 +1,20 @@
 import * as PIXI from 'pixi.js';
 import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
 import { TankApp } from './TankApp.js';
-import { Dir, moveByDir, TileSize } from './TileType.js';
+import { Dir, moveByDir, TileSize, TankType, TankConfig } from './TileType.js';
 import Bullet from './Bullet.js';
 
 export default class TankBase extends PIXI.Container {
-    constructor() {
+    constructor(tankType) {
         super();
         
         this.tankApp = TankApp.instance;
         this.textures = this.tankApp.textures;
 
-        this.speed = 100;
+        this.tankType = tankType;
         this.direction = Dir.UP;
-
-        this.health = 1;
-
         this.size = 64;
-        
+
         this.isMoving = false;
         this.isShooting = false;
         this.shootOnce = false;
@@ -30,14 +27,33 @@ export default class TankBase extends PIXI.Container {
         
         this.shootTimer = 0;
         this.shootCooldown = 0.5;
+
+        this.initByTankType(tankType);
+    }
+
+    initByTankType(tankType){
+        this.tankType = tankType;
         
+        const config = TankConfig[tankType] || TankConfig[TankType.PLAYER];
+        this.speed = config.speed;
+        this.health = config.health;
+        this.power = config.power;
+
         this.initSprites();
     }
-    
+
     initSprites() {
         this.tankSprites = [];
+        
+        let texturePrefix;
+        if (this.tankType === TankType.PLAYER) {
+            texturePrefix = 'tank2/player1_run_';
+        } else {
+            texturePrefix = `tank2/enermys/enermy_${this.tankType}_run_`;
+        }
+        
         for (let i = 1; i <= 2; i++) {
-            const sprite = PIXI.Sprite.from(this.textures[`tank2/player1_run_${i}.png`]);
+            const sprite = PIXI.Sprite.from(this.textures[`${texturePrefix}${i}.png`]);
             sprite.anchor.set(0.5);
             sprite.visible = false;
             this.tankSprites.push(sprite);

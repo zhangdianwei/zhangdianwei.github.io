@@ -4,7 +4,7 @@ import { TankApp } from './TankApp.js';
 import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
 import allLevels from './level/levels.json' with { type: 'json' };
 import * as PIXI from 'pixi.js';
-import { TileType, Dir, TileSize } from './TileType.js';
+import { TileType, Dir, TileSize, TankType } from './TileType.js';
 
 export default class TankLevelData {
     constructor() {
@@ -82,7 +82,7 @@ export default class TankLevelData {
             }
         }
         
-        this.player = new TankBase();
+        this.player = new TankBase(TankType.PLAYER);
         this.tankApp.player = this.player;
         this.tankApp.renderLayers.tank.addChild(this.player);
         
@@ -427,7 +427,7 @@ export default class TankLevelData {
         }
         return false;
     }
-
+    
     // 敌人被摧毁
     enemyDestroyed() {
         this.enemiesDestroyed++;

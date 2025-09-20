@@ -105,11 +105,24 @@ export class TankLogic {
         this.tankApp.bullets.push(bullet);
         this.tankApp.renderLayers.bullets.addChild(bullet);
     }
+    
     removeBullet(bullet) {
         this.tankApp.renderLayers.bullets.removeChild(bullet);
         let index = this.tankApp.bullets.indexOf(bullet);
         if (index === -1) return;
         this.tankApp.bullets.splice(index, 1);
+    }
+
+    addEnemy(enemy) {
+        this.tankApp.enemies.push(enemy);
+        this.tankApp.renderLayers.tank.addChild(enemy);
+    }
+
+    removeEnemy(enemy) {
+        this.tankApp.renderLayers.tank.removeChild(enemy);
+        let index = this.tankApp.enemies.indexOf(enemy);
+        if (index === -1) return;
+        this.tankApp.enemies.splice(index, 1);
     }
 
     createEnemyBullet(enemy, direction) {
@@ -136,7 +149,6 @@ export class TankLogic {
         // 更新敌人
         this.tankApp.enemies.forEach(enemy => {
             enemy.update(deltaTime);
-            enemy.updateAI(deltaTime, this.tankApp.levelData);
         });
         
         // 更新子弹
@@ -168,7 +180,7 @@ export class TankLogic {
         this.updateGameObjects(dt);
         
         // 更新敌人生成
-        // this.enemySpawner.update(dt);
+        this.enemySpawner.update(dt);
         
         // 更新关卡数据
         // this.tankApp.levelData.updateEffects(dt);

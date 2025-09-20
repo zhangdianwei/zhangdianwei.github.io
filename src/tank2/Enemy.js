@@ -4,5 +4,10 @@ import { TankApp } from './TankApp.js';
 import TankBase from './TankBase.js';
 
 export default class Enemy extends TankBase {
-    
+
+
+    update(deltaTime) {
+        this.checkAI(deltaTime);
+        super.update(deltaTime);
+    }
 } 

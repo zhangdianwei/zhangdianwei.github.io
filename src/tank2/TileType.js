@@ -19,6 +19,42 @@ export const MapCols = 26;
 export const MapWidth = MapCols * TileSize;
 export const MapHeight = MapRows * TileSize;
 
+export const TankType = {
+    PLAYER: 0,
+    ENEMY_1: 1,
+    ENEMY_2: 2,
+    ENEMY_3: 3,
+    ENEMY_4: 4
+};
+
+export const TankConfig = {
+    [TankType.PLAYER]: {
+        speed: 100,
+        health: 1,
+        power: 1
+    },
+    [TankType.ENEMY_1]: {
+        speed: 80,
+        health: 1,
+        power: 1
+    },
+    [TankType.ENEMY_2]: {
+        speed: 100,
+        health: 1,
+        power: 1
+    },
+    [TankType.ENEMY_3]: {
+        speed: 120,
+        health: 1,
+        power: 1
+    },
+    [TankType.ENEMY_4]: {
+        speed: 100,
+        health: 2,
+        power: 2
+    }
+};
+
 export function moveByDir(obj, dir, distance) {
     switch (dir) {
         case Dir.UP:
@@ -35,3 +71,4 @@ export function moveByDir(obj, dir, distance) {
             break;
     }
 }
+

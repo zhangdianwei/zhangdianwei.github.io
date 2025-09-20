@@ -1,20 +1,57 @@
 import { TankApp } from './TankApp.js';
+import TankBase from './TankBase.js';
+import { TileSize, TankType } from './TileType.js';
 
 export default class EnemySpawner {
     constructor() {
         this.tankApp = TankApp.instance;
-        this.spawnTimer = 0;
-        this.spawnInterval = 3;
+        this.spawnIndex = 0; // 0=左, 1=中, 2=右
     }
 
     update(deltaTime) {
-        this.spawnTimer += deltaTime;
-        if (this.spawnTimer >= this.spawnInterval) {
-            this.spawnTimer = 0;
+        this.checkCreateEnemy();
+    }
+
+    checkCreateEnemy() {
+        const levelData = this.tankApp.levelData;
+        if (!levelData || !levelData.config) return;
+
+        // const maxEnemiesOnScreen = levelData.config.maxEnemiesOnScreen || 3;
+        const maxEnemiesOnScreen = 1;
+        const currentEnemies = this.tankApp.enemies.length;
+
+        if (currentEnemies < maxEnemiesOnScreen && levelData.spawnEnemy()) {
+            this.createEnemy();
+        }
+    }
+
+    createEnemy() {
+        const enemyType = TankType.ENEMY_1 + (this.spawnIndex % 4); // 循环使用1-4种敌人类型
+        const enemy = new TankBase(enemyType);
+        
+        const {r, c} = this.getStartRC();
+        enemy.x = c * TileSize;
+        enemy.y = r * TileSize;
+        enemy.setDirection(2);
+        enemy.appear();
+
+        this.spawnIndex = (this.spawnIndex + 1) % 3;
+        
+        this.tankApp.logic.addEnemy(enemy);
+    }
+
+    getStartRC(){
+        switch (this.spawnIndex) {
+            case 0: // 左
+                return {r: 1, c: 1};
+            case 1: // 中
+                return {r: 1, c: Math.floor(this.tankApp.levelData.mapCols / 2)};
+            case 2: // 右
+                return {r: 1, c: this.tankApp.levelData.mapCols - 1};
         }
     }
 
     reset() {
-        this.spawnTimer = 0;
+        this.spawnIndex = 0;
     }
 } 

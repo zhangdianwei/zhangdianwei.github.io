@@ -91,7 +91,7 @@ export default class TankBase extends PIXI.Container {
         this.shootOnce = true;
     }
 
-    createBullet(){
+    shoot(){
         const bullet = new Bullet(this);
         return bullet;
     }
@@ -137,7 +137,7 @@ export default class TankBase extends PIXI.Container {
         if (this.isShooting || this.shootOnce) {
             this.shootOnce = false;
             this.shootTimer = this.shootCooldown;
-            this.createBullet();
+            this.shoot();
         }
     }
 

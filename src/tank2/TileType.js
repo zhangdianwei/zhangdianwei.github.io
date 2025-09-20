@@ -40,3 +40,7 @@ export function isBaseTileType(type) {
 }
 
 export const TileSize = 32; //每个小格子大小
+export const MapRows = 26;
+export const MapCols = 26;
+export const MapWidth = MapCols * TileSize;
+export const MapHeight = MapRows * TileSize;

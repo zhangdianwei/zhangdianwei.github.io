@@ -11,7 +11,9 @@ export default class Bullet extends PIXI.Container {
         this.direction = owner.direction; // 0: 上, 1: 右, 2: 下, 3: 左
         this.power = 1; // 子弹威力
         this.speed = 4;
-        this.isDestroyed = false;
+
+        this.x = this.owner.x;
+        this.y = this.owner.y;
         
         this.createSprite();
         this.addToGame();
@@ -21,11 +23,10 @@ export default class Bullet extends PIXI.Container {
         // 创建子弹精灵
         const graphics = new PIXI.Graphics();
         graphics.beginFill(0xFFFF00); // 黄色子弹
-        graphics.drawRect(-2, -2, 4, 4);
+        graphics.drawRect(-10, -10, 20, 20);
         graphics.endFill();
         
         this.sprite = graphics;
-        this.sprite.anchor.set(0.5);
         this.addChild(this.sprite);
         
         // 根据方向旋转子弹
@@ -38,25 +39,32 @@ export default class Bullet extends PIXI.Container {
     }
     
     update(deltaTime) {
-        if (this.isDestroyed) return;
+        console.log(this.direction);
         
         // 移动子弹
-        const radians = (this.direction * 90) * Math.PI / 180;
-        const dx = Math.sin(radians) * this.speed;
-        const dy = -Math.cos(radians) * this.speed;
-        
-        this.x += dx;
-        this.y += dy;
+        switch (this.direction) {
+            case 0: // 上
+                this.y -= this.speed;
+                break;
+            case 1: // 右
+                this.x += this.speed;
+                break;
+            case 2: // 下
+                this.y += this.speed;
+                break;
+            case 3: // 左
+                this.x -= this.speed;
+                break;
+        }
         
         // 检查边界
-        if (this.x < 0 || this.x > 832 || this.y < 0 || this.y > 768) {
+        if (!this.tankApp.logic.isInBounds(this.x, this.y)) {
             this.destroy();
         }
     }
     
     destroy() {
-        this.isDestroyed = true;
-        this.emit('destroyed');
+        this.tankApp.logic.removeBullet(this);
     }
     
     getBounds() {
@@ -70,7 +78,6 @@ export default class Bullet extends PIXI.Container {
     
     // 检查与其他对象的碰撞
     checkCollision(object) {
-        if (this.isDestroyed) return false;
         
         const bulletBounds = this.getBounds();
         const objectBounds = object.getBounds ? object.getBounds() : object;

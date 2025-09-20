@@ -6,7 +6,7 @@ import InputManager from './InputManager.js';
 import EnemySpawner from './EnemySpawner.js';
 import Enemy from './Enemy.js';
 import Bullet from './Bullet.js';
-import { TileType } from './TileType.js';
+import { TileType, MapWidth, MapHeight } from './TileType.js';
 import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
 import TankBase from './TankBase.js';
 import Ticker from './Ticker.js';
@@ -168,19 +168,19 @@ export class TankLogic {
         this.updateGameObjects(dt);
         
         // 更新敌人生成
-        this.enemySpawner.update(dt);
+        // this.enemySpawner.update(dt);
         
         // 更新关卡数据
-        this.tankApp.levelData.updateEffects(dt);
+        // this.tankApp.levelData.updateEffects(dt);
         
         // 碰撞检测
-        this.checkCollisions();
+        // this.checkCollisions();
         
         // 清理销毁的对象
-        this.cleanup();
+        // this.cleanup();
         
         // 检查游戏状态
-        this.checkGameState();
+        // this.checkGameState();
     }
 
 
@@ -306,13 +306,16 @@ export class TankLogic {
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.grass);
         this.tankApp.gameContainer.addChild(this.tankApp.renderLayers.effect);
 
-        {
-            this.tankApp.renderLayers.background.alpha = 0.1;
-            this.tankApp.renderLayers.tiles.alpha = 0.1;
-            this.tankApp.renderLayers.tank.alpha = 0.1;
-            this.tankApp.renderLayers.bullets.alpha = 0.1;
-            this.tankApp.renderLayers.grass.alpha = 0.1;
-        }
+        // {
+        //     this.tankApp.renderLayers.background.alpha = 0.1;
+        //     this.tankApp.renderLayers.tiles.alpha = 0.1;
+        //     this.tankApp.renderLayers.tank.alpha = 0.1;
+        //     this.tankApp.renderLayers.bullets.alpha = 0.1;
+        //     this.tankApp.renderLayers.grass.alpha = 0.1;
+        // }
     }
 
+    isInBounds(x, y) {
+        return x >= 0 && x < MapWidth && y >= 0 && y < MapHeight;
+    }
 } 

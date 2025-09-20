@@ -1,6 +1,11 @@
 import * as PIXI from 'pixi.js';
 import { TankApp } from './TankApp.js';
-import { moveByDir } from './TileType.js';
+import { moveByDir, TankType } from './TileType.js';
+
+export const BulletType = {
+    PLAYER: 'player',
+    ENEMY: 'enemy'
+};
 
 export default class Bullet extends PIXI.Container {
     constructor(owner) {
@@ -9,6 +14,7 @@ export default class Bullet extends PIXI.Container {
         this.tankApp = TankApp.instance;
 
         this.owner = owner; // 发射者（玩家或敌人）
+        this.bulletType = owner.tankType === TankType.PLAYER ? BulletType.PLAYER : BulletType.ENEMY;
         this.direction = owner.direction; // 0: 上, 1: 右, 2: 下, 3: 左
         this.power = 1; // 子弹威力
         this.speed = 400;
@@ -47,7 +53,14 @@ export default class Bullet extends PIXI.Container {
     createSprite() {
         // 创建子弹精灵
         const graphics = new PIXI.Graphics();
-        graphics.beginFill(0xFFFF00); // 黄色子弹
+        
+        // 根据子弹类型选择颜色
+        if (this.bulletType === BulletType.PLAYER) {
+            graphics.beginFill(0x00FF00); // 绿色子弹（玩家）
+        } else {
+            graphics.beginFill(0xFF0000); // 红色子弹（敌人）
+        }
+        
         graphics.drawRect(-this.size/2, -this.size/2, this.size, this.size);
         graphics.endFill();
         

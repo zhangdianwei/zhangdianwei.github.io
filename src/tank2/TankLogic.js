@@ -67,8 +67,13 @@ export class TankLogic {
             enemy.update(deltaTime);
         });
         
-        // 更新子弹
-        this.tankApp.bullets.forEach(bullet => {
+        // 更新玩家子弹
+        this.tankApp.playerBullets.forEach(bullet => {
+            bullet.update(deltaTime);
+        });
+        
+        // 更新敌人子弹
+        this.tankApp.enemyBullets.forEach(bullet => {
             bullet.update(deltaTime);
         });
     }
@@ -76,7 +81,8 @@ export class TankLogic {
     resetGameObjects() {
         this.tankApp.player = null;
         this.tankApp.enemies = [];
-        this.tankApp.bullets = [];
+        this.tankApp.playerBullets = [];
+        this.tankApp.enemyBullets = [];
     }
 
     update(dt) {
@@ -103,29 +109,42 @@ export class TankLogic {
     }
 
     checkCollisions() {
-        const bullets = this.tankApp.bullets.concat();
+        const playerBullets = this.tankApp.playerBullets.concat();
+        const enemyBullets = this.tankApp.enemyBullets.concat();
+        const allBullets = [...playerBullets, ...enemyBullets];
         const player = this.tankApp.player;
         const enemies = this.tankApp.enemies;
         
         // 子弹与地图碰撞
-        for (let i = 0; i < bullets.length; i++) {
-            const bullet = bullets[i];
+        for (let i = 0; i < allBullets.length; i++) {
+            const bullet = allBullets[i];
             this.tankApp.levelData.checkCollisionBullet(bullet);
         }
         
-        // 子弹与坦克碰撞
-        bullets.forEach(bullet => {
-            // 检查子弹与玩家碰撞
-            if (player && bullet.owner !== player && this.checkBulletTankCollision(bullet, player)) {
+        // 玩家子弹与敌人碰撞
+        playerBullets.forEach(bullet => {
+            enemies.forEach(enemy => {
+                if (this.checkBulletTankCollision(bullet, enemy)) {
+                    enemy.takeDamage(bullet.power);
+                    bullet.destroy();
+                }
+            });
+        });
+        
+        // 敌人子弹与玩家碰撞
+        enemyBullets.forEach(bullet => {
+            if (player && this.checkBulletTankCollision(bullet, player)) {
                 player.takeDamage(bullet.power);
                 bullet.destroy();
             }
-
-            // 检查子弹与敌人碰撞
-            enemies.forEach(enemy => {
-                if (bullet.owner !== enemy && this.checkBulletTankCollision(bullet, enemy)) {
-                    enemy.takeDamage(bullet.power);
-                    bullet.destroy();
+        });
+        
+        // 玩家子弹与敌人子弹碰撞
+        playerBullets.forEach(playerBullet => {
+            enemyBullets.forEach(enemyBullet => {
+                if (this.checkBulletBulletCollision(playerBullet, enemyBullet)) {
+                    playerBullet.destroy();
+                    enemyBullet.destroy();
                 }
             });
         });
@@ -147,6 +166,19 @@ export class TankLogic {
                bulletBounds.x + bulletBounds.width > tankBounds.x &&
                bulletBounds.y < tankBounds.y + tankBounds.height &&
                bulletBounds.y + bulletBounds.height > tankBounds.y;
+    }
+
+    checkBulletBulletCollision(bullet1, bullet2) {
+        if (!bullet1 || !bullet2) return false;
+        
+        const bullet1Bounds = bullet1.getBounds();
+        const bullet2Bounds = bullet2.getBounds();
+        
+        // AABB碰撞检测
+        return bullet1Bounds.x < bullet2Bounds.x + bullet2Bounds.width &&
+               bullet1Bounds.x + bullet1Bounds.width > bullet2Bounds.x &&
+               bullet1Bounds.y < bullet2Bounds.y + bullet2Bounds.height &&
+               bullet1Bounds.y + bullet1Bounds.height > bullet2Bounds.y;
     }
 
     checkGameState() {

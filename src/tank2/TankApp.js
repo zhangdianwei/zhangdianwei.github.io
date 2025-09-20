@@ -14,7 +14,8 @@ export class TankApp {
         // 关卡游戏对象
         this.player = null;
         this.enemies = [];
-        this.bullets = [];
+        this.playerBullets = [];
+        this.enemyBullets = [];
         
         // 关卡数据
         this.levelData = null;
@@ -42,15 +43,28 @@ export class TankApp {
     }
 
     addBullet(bullet) {
-        this.bullets.push(bullet);
+        if (bullet.bulletType === 'player') {
+            this.playerBullets.push(bullet);
+        } else {
+            this.enemyBullets.push(bullet);
+        }
         this.renderLayers.bullets.addChild(bullet);
     }
     
     removeBullet(bullet) {
         this.renderLayers.bullets.removeChild(bullet);
-        let index = this.bullets.indexOf(bullet);
-        if (index === -1) return;
-        this.bullets.splice(index, 1);
+        
+        if (bullet.bulletType === 'player') {
+            let index = this.playerBullets.indexOf(bullet);
+            if (index !== -1) {
+                this.playerBullets.splice(index, 1);
+            }
+        } else {
+            let index = this.enemyBullets.indexOf(bullet);
+            if (index !== -1) {
+                this.enemyBullets.splice(index, 1);
+            }
+        }
     }
 
     addEnemy(enemy) {

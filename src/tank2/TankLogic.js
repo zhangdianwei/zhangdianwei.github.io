@@ -4,7 +4,7 @@ import { TankApp } from './TankApp.js';
 import TankLevelData from './TankLevelData.js';
 import InputManager from './InputManager.js';
 import EnemySpawner from './EnemySpawner.js';
-import Enemy from './Enemy.js';
+import TankEnemy from './TankEnemy.js';
 import Bullet from './Bullet.js';
 import { TileType, MapWidth, MapHeight } from './TileType.js';
 import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
@@ -55,52 +55,6 @@ export class TankLogic {
         this.tankApp.levelData.loadLevel(0);
     }
 
-    spawnEnemy() {
-        const levelData = this.tankApp.levelData;
-        if (this.tankApp.enemies.length >= levelData.config.maxEnemiesOnScreen || 
-            !levelData.spawnEnemy()) {
-            return;
-        }
-        
-        const spawnPoints = [
-            { x: 32, y: 32 },
-            { x: 416, y: 32 },
-            { x: 800, y: 32 }
-        ];
-        
-        const spawnPoint = spawnPoints[Math.floor(Math.random() * spawnPoints.length)];
-        
-        // 根据配置的概率选择敌人类型
-        const random = Math.random();
-        let enemyType = 1;
-        const rates = levelData.config.enemySpawnRates;
-        
-        if (random < rates.type1) enemyType = 1;
-        else if (random < rates.type1 + rates.type2) enemyType = 2;
-        else if (random < rates.type1 + rates.type2 + rates.type3) enemyType = 3;
-        else enemyType = 4;
-        
-        const enemy = new Enemy(enemyType);
-        enemy.x = spawnPoint.x;
-        enemy.y = spawnPoint.y;
-        
-        // 监听敌人事件
-        enemy.on('destroyed', () => {
-            levelData.enemyDestroyed();
-            levelData.addScore(100);
-            this.tankApp.enemies = this.tankApp.enemies.filter(e => e !== enemy);
-            this.tankApp.renderLayers.tank.removeChild(enemy);
-        });
-        
-        enemy.on('shoot', (direction) => {
-            this.createEnemyBullet(enemy, direction);
-        });
-        
-        enemy.spawn();
-        this.tankApp.enemies.push(enemy);
-        this.tankApp.renderLayers.tank.addChild(enemy);
-    }
-
     addBullet(bullet) {
         this.tankApp.bullets.push(bullet);
         this.tankApp.renderLayers.bullets.addChild(bullet);
@@ -125,19 +79,11 @@ export class TankLogic {
         this.tankApp.enemies.splice(index, 1);
     }
 
-    createEnemyBullet(enemy, direction) {
-        const bullet = new Bullet(enemy, direction);
-        bullet.x = enemy.x;
-        bullet.y = enemy.y;
-        
-        // 监听子弹事件
-        bullet.on('destroyed', () => {
-            this.tankApp.bullets = this.tankApp.bullets.filter(b => b !== bullet);
-            this.tankApp.renderLayers.bullets.removeChild(bullet);
-        });
-        
-        this.tankApp.bullets.push(bullet);
-        this.tankApp.renderLayers.bullets.addChild(bullet);
+    addEffect(effectName, x, y, callback) {
+        const effect = createSpriteSeqAnim(effectName, callback);
+        effect.x = x;
+        effect.y = y;
+        this.tankApp.renderLayers.effect.addChild(effect);
     }
 
     updateGameObjects(deltaTime) {
@@ -155,12 +101,6 @@ export class TankLogic {
         this.tankApp.bullets.forEach(bullet => {
             bullet.update(deltaTime);
         });
-    }
-
-    cleanup() {
-        // 清理已销毁的对象
-        this.tankApp.bullets = this.tankApp.bullets.filter(bullet => !bullet.isDestroyed);
-        this.tankApp.enemies = this.tankApp.enemies.filter(enemy => enemy.parent);
     }
 
     resetGameObjects() {
@@ -188,22 +128,8 @@ export class TankLogic {
         // 碰撞检测
         this.checkCollisions();
         
-        // 清理销毁的对象
-        // this.cleanup();
-        
         // 检查游戏状态
         // this.checkGameState();
-    }
-
-
-
-    isWalkable(worldX, worldY) {
-        const { row, col } = this.tankApp.levelData.worldToGrid(worldX, worldY);
-        
-        if (row < 0 || row >= 24 || col < 0 || col >= 26) {
-            return false;
-        }
-        return this.tankApp.levelData.isWalkable(row, col);
     }
 
     checkCollisions() {
@@ -219,23 +145,39 @@ export class TankLogic {
         
         // 子弹与坦克碰撞
         bullets.forEach(bullet => {
-            // 检查与玩家碰撞
-            if (player && bullet.owner !== player && bullet.checkCollision(player)) {
-                player.takeDamage();
+            // 检查子弹与玩家碰撞
+            if (player && bullet.owner !== player && this.checkBulletTankCollision(bullet, player)) {
+                player.takeDamage(bullet.power);
                 bullet.destroy();
             }
-            
-            // 检查与敌人碰撞
+
+            // 检查子弹与敌人碰撞
             enemies.forEach(enemy => {
-                if (bullet.owner !== enemy && bullet.checkCollision(enemy)) {
-                    enemy.takeDamage();
+                if (bullet.owner !== enemy && this.checkBulletTankCollision(bullet, enemy)) {
+                    enemy.takeDamage(bullet.power);
                     bullet.destroy();
                 }
             });
         });
     }
 
-
+    checkBulletTankCollision(bullet, tank) {
+        if (!bullet || !tank) return false;
+        
+        const bulletBounds = bullet.getBounds();
+        const tankBounds = {
+            x: tank.x - tank.size / 2,
+            y: tank.y - tank.size / 2,
+            width: tank.size,
+            height: tank.size
+        };
+        
+        // AABB碰撞检测
+        return bulletBounds.x < tankBounds.x + tankBounds.width &&
+               bulletBounds.x + bulletBounds.width > tankBounds.x &&
+               bulletBounds.y < tankBounds.y + tankBounds.height &&
+               bulletBounds.y + bulletBounds.height > tankBounds.y;
+    }
 
     checkGameState() {
         // 检查关卡是否完成

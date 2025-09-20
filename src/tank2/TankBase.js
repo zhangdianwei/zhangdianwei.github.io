@@ -26,7 +26,7 @@ export default class TankBase extends PIXI.Container {
         this.animationSpeed = 0.15;
         
         this.shootTimer = 0;
-        this.shootCooldown = 0.5;
+        this.shootCooldown = 0.15;
 
         this.initByTankType(tankType);
     }
@@ -81,17 +81,6 @@ export default class TankBase extends PIXI.Container {
         this.invincibleTime = invincibleTime;
     }
     
-    explode() {
-        this.tankSprites.forEach(sprite => sprite.visible = false);
-        const explodeAnim = createSpriteSeqAnim('tankExplode', () => {
-            this.emit('destroyed');
-            if (explodeAnim.parent) {
-                explodeAnim.parent.removeChild(explodeAnim);
-            }
-        });
-        this.addChild(explodeAnim);
-    }
-    
     setDirection(direction) {
         this.direction = direction;
         this.tankSprites.forEach(sprite => sprite.rotation = direction * (Math.PI / 2));
@@ -114,10 +103,6 @@ export default class TankBase extends PIXI.Container {
         return bullet;
     }
     
-    takeDamage(damage = 1) {
-        
-    }
-
     checkCorrectPath(){
         const size = TileSize/2;
         const centerX = Math.round(this.x / size) * size;
@@ -171,6 +156,21 @@ export default class TankBase extends PIXI.Container {
         } else {
             this.alpha = 1;
         }
+    }
+
+    takeDamage(damage) {
+        if (this.invincibleTime > 0) return; // 无敌状态下不受伤害
+        
+        this.health -= damage;
+        if (this.health <= 0) {
+            this.destroy();
+        } else {
+            this.setInvincible(1); // 受伤后1秒无敌
+        }
+    }
+
+    destroy() {
+        this.tankApp.logic.addEffect('tankExplode', this.x, this.y);
     }
     
     update(deltaTime) {

@@ -1,5 +1,6 @@
 import { TankApp } from './TankApp.js';
 import TankBase from './TankBase.js';
+import TankEnemy from './TankEnemy.js';
 import { TileSize, TankType } from './TileType.js';
 
 export default class EnemySpawner {
@@ -27,7 +28,7 @@ export default class EnemySpawner {
 
     createEnemy() {
         const enemyType = TankType.ENEMY_1 + (this.spawnIndex % 4); // 循环使用1-4种敌人类型
-        const enemy = new TankBase(enemyType);
+        const enemy = new TankEnemy(enemyType);
         
         const {r, c} = this.getStartRC();
         enemy.x = c * TileSize;

@@ -2,12 +2,12 @@ import * as PIXI from 'pixi.js';
 import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
 import { TankApp } from './TankApp.js';
 import TankBase from './TankBase.js';
+import { Dir, TileSize } from './TileType.js';
 
-export default class Enemy extends TankBase {
+export default class TankPlayer extends TankBase {
 
-
-    update(deltaTime) {
-        this.checkAI(deltaTime);
-        super.update(deltaTime);
+    destroy() {
+        super.destroy();
     }
+    
 } 

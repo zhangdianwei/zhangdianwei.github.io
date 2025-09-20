@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
 import { TankApp } from './TankApp.js';
-import { Dir } from './TileType.js';
+import { Dir, moveByDir, TileSize } from './TileType.js';
 import Bullet from './Bullet.js';
 
 export default class TankBase extends PIXI.Container {
@@ -11,10 +11,12 @@ export default class TankBase extends PIXI.Container {
         this.tankApp = TankApp.instance;
         this.textures = this.tankApp.textures;
 
-        this.speed = 2;
+        this.speed = 100;
         this.direction = Dir.UP;
 
         this.health = 1;
+
+        this.size = 64;
         
         this.isMoving = false;
         this.isShooting = false;
@@ -27,7 +29,7 @@ export default class TankBase extends PIXI.Container {
         this.animationSpeed = 0.15;
         
         this.shootTimer = 0;
-        this.shootCooldown = 0.3;
+        this.shootCooldown = 0.5;
         
         this.initSprites();
     }
@@ -100,18 +102,26 @@ export default class TankBase extends PIXI.Container {
         
     }
 
+    checkCorrectPath(){
+        const size = TileSize/2;
+        const centerX = Math.round(this.x / size) * size;
+        const centerY = Math.round(this.y / size) * size;
+        this.x = centerX;
+        this.y = centerY;
+    }
+
     checkMoving(deltaTime){
         if (this.isMoving) {
-            const size = 64;
-            const allowed = this.tankApp.levelData.getMovableDistance(this.x, this.y, size, size, this.direction);
-            const movable = Math.min(allowed, this.speed);
+            let allowed = this.tankApp.levelData.getMovableDistance(this.x, this.y, this.size, this.size, this.direction);
+            if (allowed <= 0) {
+                this.checkCorrectPath();
+                allowed = this.tankApp.levelData.getMovableDistance(this.x, this.y, this.size, this.size, this.direction);
+            }            
+            let frameSpeed = this.speed * deltaTime;
+            let movable = Math.min(allowed, frameSpeed);
             
             if (movable > 0) {
-                const radians = (this.direction * 90) * Math.PI / 180;
-                const dx = Math.sin(radians) * movable;
-                const dy = -Math.cos(radians) * movable;
-                this.x += dx;
-                this.y += dy;
+                moveByDir(this, this.direction, movable);
             }
         }
 

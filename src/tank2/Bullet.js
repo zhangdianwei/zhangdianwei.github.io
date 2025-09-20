@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { TankApp } from './TankApp.js';
+import { moveByDir } from './TileType.js';
 
 export default class Bullet extends PIXI.Container {
     constructor(owner) {
@@ -10,7 +11,7 @@ export default class Bullet extends PIXI.Container {
         this.owner = owner; // 发射者（玩家或敌人）
         this.direction = owner.direction; // 0: 上, 1: 右, 2: 下, 3: 左
         this.power = 1; // 子弹威力
-        this.speed = 4;
+        this.speed = 400;
         this.size = 20;
 
         this.x = this.owner.x;
@@ -57,23 +58,7 @@ export default class Bullet extends PIXI.Container {
     }
     
     update(deltaTime) {
-        console.log(this.direction);
-        
-        // 移动子弹
-        switch (this.direction) {
-            case 0: // 上
-                this.y -= this.speed;
-                break;
-            case 1: // 右
-                this.x += this.speed;
-                break;
-            case 2: // 下
-                this.y += this.speed;
-                break;
-            case 3: // 左
-                this.x -= this.speed;
-                break;
-        }
+        moveByDir(this, this.direction, this.speed * deltaTime);
         
         // 检查边界
         if (!this.tankApp.logic.isInBounds(this.x, this.y)) {
@@ -95,17 +80,4 @@ export default class Bullet extends PIXI.Container {
         };
     }
     
-    // 检查与其他对象的碰撞
-    checkCollision(object) {
-        
-        const bulletBounds = this.getBounds();
-        const objectBounds = object.getBounds ? object.getBounds() : object;
-        
-        return (
-            bulletBounds.x < objectBounds.x + objectBounds.width &&
-            bulletBounds.x + bulletBounds.width > objectBounds.x &&
-            bulletBounds.y < objectBounds.y + objectBounds.height &&
-            bulletBounds.y + bulletBounds.height > objectBounds.y
-        );
-    }
 } 

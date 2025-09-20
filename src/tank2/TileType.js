@@ -4,7 +4,6 @@ export const TileType = {
     IRON: 2,
     GRASS: 3,
     WATER: 4,
-    BASE: 6
 };
 
 export const Dir = {
@@ -14,33 +13,25 @@ export const Dir = {
     LEFT: 3
 };
 
-export function getTileTypeName(type) {
-    const typeNames = {
-        [TileType.EMPTY]: '空地',
-        [TileType.BRICK]: '砖块', 
-        [TileType.IRON]: '铁块',
-        [TileType.GRASS]: '草地',
-        [TileType.WATER]: '水面',
-        [TileType.BASE]: '老窝',
-        [TileType.BASE]: '基地'
-    };
-    return typeNames[type] || '未知';
-}
-
-export function isWalkableTileType(type) {
-    return type === TileType.EMPTY || type === TileType.GRASS;
-}
-
-export function isDestructibleTileType(type) {
-    return type === TileType.BRICK;
-}
-
-export function isBaseTileType(type) {
-    return type === TileType.BASE;
-}
-
 export const TileSize = 32; //每个小格子大小
 export const MapRows = 26;
 export const MapCols = 26;
 export const MapWidth = MapCols * TileSize;
 export const MapHeight = MapRows * TileSize;
+
+export function moveByDir(obj, dir, distance) {
+    switch (dir) {
+        case Dir.UP:
+            obj.y -= distance;
+            break;
+        case Dir.DOWN:
+            obj.y += distance;
+            break;
+        case Dir.LEFT:
+            obj.x -= distance;
+            break;
+        case Dir.RIGHT:
+            obj.x += distance;
+            break;
+    }
+}

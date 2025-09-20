@@ -11,9 +11,21 @@ export default class TankTile extends PIXI.Container {
         this.type = type;
         this.tankApp = TankApp.instance;
         this.tileSize = 32;
+        this.blood = 2;
         
         this.createSprite();
         this.setPosition();
+    }
+
+    getBlood() {
+        return this.blood;
+    }
+
+    setBlood(blood) {
+        this.blood = blood;
+        if (this.blood == 1) {
+            this.sprite.alpha = 0.5;
+        }
     }
     
     createSprite() {
@@ -67,22 +79,7 @@ export default class TankTile extends PIXI.Container {
     getType() {
         return this.type;
     }
-    
-    // 检查是否可通行
-    isWalkable() {
-        return this.type === TileType.EMPTY || this.type === TileType.GRASS; // 空地或草地可通行
-    }
-    
-    // 检查是否可破坏
-    isDestructible() {
-        return this.type === TileType.BRICK; // 只有砖块可破坏
-    }
-    
-    // 检查是否是基地
-    isBase() {
-        return this.type === TileType.BASE;
-    }
-    
+
     // 销毁瓦片
     destroy() {
         if (this.parent) {

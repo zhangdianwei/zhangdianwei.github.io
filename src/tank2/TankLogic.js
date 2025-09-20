@@ -174,7 +174,7 @@ export class TankLogic {
         // this.tankApp.levelData.updateEffects(dt);
         
         // 碰撞检测
-        // this.checkCollisions();
+        this.checkCollisions();
         
         // 清理销毁的对象
         // this.cleanup();
@@ -195,29 +195,15 @@ export class TankLogic {
     }
 
     checkCollisions() {
-        const bullets = this.tankApp.bullets;
+        const bullets = this.tankApp.bullets.concat();
         const player = this.tankApp.player;
         const enemies = this.tankApp.enemies;
         
         // 子弹与地图碰撞
-        bullets.forEach(bullet => {
-            // 检查与基地碰撞
-            if (this.tankApp.levelData.checkBaseCollision(bullet.x, bullet.y)) {
-                this.tankApp.levelData.destroyBase();
-                bullet.destroy();
-                return;
-            }
-            
-            // 检查与瓦片碰撞
-            const { row, col } = this.tankApp.levelData.worldToGrid(bullet.x, bullet.y);
-            
-            if (row >= 0 && row < 24 && col >= 0 && col < 26) {
-                if (this.tankApp.levelData.isDestructible(row, col)) {
-                    this.tankApp.levelData.setTileType(row, col, TileType.EMPTY);
-                    bullet.destroy();
-                }
-            }
-        });
+        for (let i = 0; i < bullets.length; i++) {
+            const bullet = bullets[i];
+            this.tankApp.levelData.checkCollisionBullet(bullet);
+        }
         
         // 子弹与坦克碰撞
         bullets.forEach(bullet => {

@@ -11,6 +11,7 @@ export default class Bullet extends PIXI.Container {
         this.direction = owner.direction; // 0: 上, 1: 右, 2: 下, 3: 左
         this.power = 1; // 子弹威力
         this.speed = 4;
+        this.size = 20;
 
         this.x = this.owner.x;
         this.y = this.owner.y;
@@ -19,11 +20,28 @@ export default class Bullet extends PIXI.Container {
         this.addToGame();
     }
     
+    getPower() {
+        return this.power;
+    }
+    setPower(power) {
+        this.power = power;
+    }
+
+    getBlood() {
+        return this.blood;
+    }
+    setBlood(blood) {
+        this.blood = blood;
+        if (this.blood <= 0) {
+            this.destroy();
+        }
+    }
+
     createSprite() {
         // 创建子弹精灵
         const graphics = new PIXI.Graphics();
         graphics.beginFill(0xFFFF00); // 黄色子弹
-        graphics.drawRect(-10, -10, 20, 20);
+        graphics.drawRect(-this.size/2, -this.size/2, this.size, this.size);
         graphics.endFill();
         
         this.sprite = graphics;
@@ -68,11 +86,12 @@ export default class Bullet extends PIXI.Container {
     }
     
     getBounds() {
+        const size = this.size * 1;
         return {
-            x: this.x - 4,
-            y: this.y - 4,
-            width: 8,
-            height: 8
+            x: this.x,
+            y: this.y,
+            width: size,
+            height: size
         };
     }
     

@@ -525,4 +525,52 @@ export default class TankLevelData {
         this.bonusesCollected = [];
         this.tilesDestroyed = 0;
     }
+
+    findRCsInBounds(bounds) {
+        const rcs = [];
+        const left = bounds.x - bounds.width / 2;
+        const top = bounds.y - bounds.height / 2;
+        const right = bounds.x + bounds.width / 2;
+        const bottom = bounds.y + bounds.height / 2;
+        
+        const startRow = Math.floor(top / TileSize);
+        const endRow = Math.floor(bottom / TileSize);
+        const startCol = Math.floor(left / TileSize);
+        const endCol = Math.floor(right / TileSize);
+        
+        for (let row = startRow; row <= endRow; row++) {
+            for (let col = startCol; col <= endCol; col++) {
+                if (row >= 0 && row < this.mapRows && col >= 0 && col < this.mapCols) {
+                    rcs.push({ row, col });
+                }
+            }
+        }
+
+        return rcs;
+    }
+
+    checkCollisionBullet(bullet) {
+        let bounds = bullet.getBounds();
+        let rcs = this.findRCsInBounds(bounds);
+        for (let i = 0; i < rcs.length; i++) {
+            let rc = rcs[i];
+            let tile = this.tiles[rc.row][rc.col];
+            if (!tile) continue;
+
+            if (tile.type === TileType.BRICK) {
+                tile.setBlood(tile.getBlood() - bullet.getPower());
+                if (tile.getBlood() <= 0) {
+                    this.setTileType(rc.row, rc.col, TileType.EMPTY);
+                }
+                bullet.destroy();
+            }
+            else if (tile.type === TileType.IRON) {
+                if (bullet.getPower() >= 2) {
+                    this.setTileType(rc.row, rc.col, TileType.EMPTY);
+                }
+                bullet.destroy();
+            }
+            
+        }
+    }
 } 

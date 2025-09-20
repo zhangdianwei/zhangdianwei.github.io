@@ -40,4 +40,37 @@ export class TankApp {
     clear(){
         this.ticker.stop();
     }
+
+    addBullet(bullet) {
+        this.bullets.push(bullet);
+        this.renderLayers.bullets.addChild(bullet);
+    }
+    
+    removeBullet(bullet) {
+        this.renderLayers.bullets.removeChild(bullet);
+        let index = this.bullets.indexOf(bullet);
+        if (index === -1) return;
+        this.bullets.splice(index, 1);
+    }
+
+    addEnemy(enemy) {
+        this.enemies.push(enemy);
+        this.renderLayers.tank.addChild(enemy);
+    }
+
+    removeEnemy(enemy) {
+        this.renderLayers.tank.removeChild(enemy);
+        let index = this.enemies.indexOf(enemy);
+        if (index === -1) return;
+        this.enemies.splice(index, 1);
+    }
+
+    addEffect(effectName, x, y, callback) {
+        import('./SpriteSeqAnim.js').then(({ createSpriteSeqAnim }) => {
+            const effect = createSpriteSeqAnim(effectName, callback);
+            effect.x = x;
+            effect.y = y;
+            this.renderLayers.effect.addChild(effect);
+        });
+    }
 } 

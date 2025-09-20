@@ -19,7 +19,7 @@ export default class Bullet extends PIXI.Container {
         
         this.createSprite();
 
-        this.tankApp.logic.addBullet(this);
+        this.tankApp.addBullet(this);
         
         // 通知坦克子弹被添加
         if (this.owner && this.owner.onBulletAdded) {
@@ -74,7 +74,7 @@ export default class Bullet extends PIXI.Container {
             this.owner.onBulletDestroyed();
         }
         
-        this.tankApp.logic.removeBullet(this);
+        this.tankApp.removeBullet(this);
     }
     
     getBounds() {

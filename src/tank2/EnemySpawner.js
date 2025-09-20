@@ -38,7 +38,7 @@ export default class EnemySpawner {
 
         this.spawnIndex = (this.spawnIndex + 1) % 3;
         
-        this.tankApp.logic.addEnemy(enemy);
+        this.tankApp.addEnemy(enemy);
     }
 
     getStartRC(){

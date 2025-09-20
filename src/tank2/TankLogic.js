@@ -55,36 +55,6 @@ export class TankLogic {
         this.tankApp.levelData.loadLevel(0);
     }
 
-    addBullet(bullet) {
-        this.tankApp.bullets.push(bullet);
-        this.tankApp.renderLayers.bullets.addChild(bullet);
-    }
-    
-    removeBullet(bullet) {
-        this.tankApp.renderLayers.bullets.removeChild(bullet);
-        let index = this.tankApp.bullets.indexOf(bullet);
-        if (index === -1) return;
-        this.tankApp.bullets.splice(index, 1);
-    }
-
-    addEnemy(enemy) {
-        this.tankApp.enemies.push(enemy);
-        this.tankApp.renderLayers.tank.addChild(enemy);
-    }
-
-    removeEnemy(enemy) {
-        this.tankApp.renderLayers.tank.removeChild(enemy);
-        let index = this.tankApp.enemies.indexOf(enemy);
-        if (index === -1) return;
-        this.tankApp.enemies.splice(index, 1);
-    }
-
-    addEffect(effectName, x, y, callback) {
-        const effect = createSpriteSeqAnim(effectName, callback);
-        effect.x = x;
-        effect.y = y;
-        this.tankApp.renderLayers.effect.addChild(effect);
-    }
 
     updateGameObjects(deltaTime) {
         // 更新玩家

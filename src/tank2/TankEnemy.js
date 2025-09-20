@@ -8,82 +8,121 @@ export default class TankEnemy extends TankBase {
     constructor(tankType) {
         super(tankType);
         
-        this.aiTimer = 0;
-        this.aiInterval = 2; // AI决策间隔（秒）
-        this.moveTimer = 0;
-        this.moveInterval = 1; // 移动间隔（秒）
-        this.shootTimer = 0;
-        this.shootInterval = 1.5; // 射击间隔（秒）
+        this.aiTimer = 0; // AI决策间隔（秒）
+        this.moveTimer = 0; // 移动间隔（秒）
+        this.resetShootTimer();
         
-        this.currentTargetDirection = Dir.DOWN;
-        this.lastDecisionTime = 0;
+        // AI状态
+        this.aiState = ''; // 'random', 'huntHome'
+    }
+
+    random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    onAppearFinish(){
+        super.onAppearFinish();
+        this.checkAI(0);
+        this.setMoving(true);
+    }
+
+    resetShootTimer(mode = 'normal') {
+        if (mode === 'fast') {
+            this.shootTimer = this.random(0.1, 0.3); // 快速射击模式
+        } else {
+            this.shootTimer = this.random(1, 3); // 正常射击模式
+        }
     }
 
     update(deltaTime) {
-        // this.checkAI(deltaTime);
+        this.checkAI(deltaTime);
         super.update(deltaTime);
     }
 
     checkAI(deltaTime) {
-        this.aiTimer += deltaTime;
-        this.moveTimer += deltaTime;
-        this.shootTimer += deltaTime;
+        this.aiTimer -= deltaTime;
+        this.moveTimer -= deltaTime;
+        this.shootTimer -= deltaTime;
 
         // AI决策
-        if (this.aiTimer >= this.aiInterval) {
-            this.aiTimer = 0;
+        if (this.aiTimer <= 0) {
+            this.aiTimer = 2;
             this.makeDecision();
         }
 
         // 移动逻辑
-        if (this.moveTimer >= this.moveInterval) {
-            this.moveTimer = 0;
+        if (this.moveTimer <= 0) {
+            this.moveTimer = 1;
             this.executeMovement();
         }
 
         // 射击逻辑
-        if (this.shootTimer >= this.shootInterval) {
-            this.shootTimer = 0;
-            this.tryShoot();
+        if (this.shootTimer <= 0) {
+            this.resetShootTimer();
+            this.setShootOnce(true); // 直接射击
         }
     }
 
     makeDecision() {
-        const player = this.tankApp.player;
-        if (!player) return;
-
-        // 计算到玩家的距离
-        const dx = player.x - this.x;
-        const dy = player.y - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        // 如果距离很近，优先攻击
-        if (distance < TileSize * 3) {
-            this.currentTargetDirection = this.getDirectionToPlayer();
-            this.setShooting(true);
-            return;
-        }
-
-        // 随机决策：移动、停止、改变方向
         const decision = Math.random();
+        const oldState = this.aiState;
         
-        if (decision < 0.3) {
-            // 30% 概率停止移动
-            this.setMoving(false);
-        } else if (decision < 0.7) {
-            // 40% 概率改变方向
+        // 50% 概率进入随机游动状态
+        if (decision < 1) {
+            this.aiState = 'random';
+            this.randomWander(oldState !== 'random');
+            // 退出huntHome状态时重置射击间隔
+            if (oldState === 'huntHome') {
+                this.resetShootTimer('normal');
+            }
+        }
+        // 50% 概率进入猎杀基地状态
+        else {
+            this.aiState = 'huntHome';
+            this.huntHome(oldState !== 'huntHome');
+        }
+    }
+
+    randomWander(isFirstEnter) {
+        console.log('randomWander', isFirstEnter);
+        if (isFirstEnter) {
+            // 首次进入随机游动状态：立即改变方向
             this.changeDirection();
         } else {
-            // 30% 概率继续移动
-            this.setMoving(true);
+            // 刷新状态：随机改变方向
+            if (Math.random() < 0.3) { // 30% 概率改变方向
+                this.changeDirection();
+            }
+        }
+    }
+
+    huntHome(isFirstEnter) {
+        if (isFirstEnter) {
+            // 首次进入猎杀基地状态：设置快速射击
+            this.resetShootTimer('fast');
+        }
+        
+        const targetRow = 25;
+        const currentRow = Math.round(this.y / TileSize);
+        
+        if (currentRow < targetRow) {
+            // 还没到第25行，向下移动
+            this.setDirection(Dir.DOWN);
+        } else if (currentRow > targetRow) {
+            // 超过第25行，向上移动
+            this.setDirection(Dir.UP);
+        } else {
+            // 已经在第25行，左右移动
+            if (Math.random() < 0.3) { // 30%概率改变方向
+                const horizontalDirs = [Dir.LEFT, Dir.RIGHT];
+                const randomDir = horizontalDirs[Math.floor(Math.random() * horizontalDirs.length)];
+                this.setDirection(randomDir);
+            }
         }
     }
 
     executeMovement() {
-        console.log('executeMovement');
-        if (!this.isMoving) return;
-
-        // 检查前方是否有障碍
+        // 坦克永远移动，检查前方是否有障碍
         const allowed = this.tankApp.levelData.getMovableDistance(
             this.x, this.y, this.size, this.size, this.direction
         );
@@ -95,10 +134,11 @@ export default class TankEnemy extends TankBase {
     }
 
     changeDirection() {
+        const oldDirection = this.direction;
         const directions = [Dir.UP, Dir.RIGHT, Dir.DOWN, Dir.LEFT];
         const availableDirections = [];
 
-        // 检查每个方向是否可通行
+        // 先找出所有可移动方向
         for (const dir of directions) {
             const allowed = this.tankApp.levelData.getMovableDistance(
                 this.x, this.y, this.size, this.size, dir
@@ -108,23 +148,51 @@ export default class TankEnemy extends TankBase {
             }
         }
 
-        // 如果有可通行的方向，随机选择一个
-        if (availableDirections.length > 0) {
+        if (availableDirections.length === 0) return; // 没有可移动方向
+
+        const strategy = Math.random();
+        let targetDirection;
+
+        // 10% 概率向下
+        if (strategy < 0.1) {
+            targetDirection = Dir.DOWN;
+            console.log('向下');
+        }
+        // 40% 概率维持方向
+        else if (strategy < 0.5) {
+            targetDirection = oldDirection;
+            console.log('维持');
+        }
+        // 40% 概率侧面转向
+        else if (strategy < 0.9) {
+            // 随机选择左右两个侧面方向
+            const sideDirections = [(oldDirection + 1) % 4, (oldDirection + 3) % 4];
+            targetDirection = sideDirections[Math.floor(Math.random() * sideDirections.length)];
+            console.log('侧面走', targetDirection);
+        }
+        // 10% 概率反向走
+        else {
+            targetDirection = (oldDirection + 2) % 4; // 相反方向
+            console.log('反向走', targetDirection);
+        }
+
+        // 检查目标方向是否在可移动方向中
+        if (availableDirections.includes(targetDirection)) {
+            // 目标方向可通行，直接使用
+            this.setDirection(targetDirection);
+        } else {
+            // 目标方向不可通行，从可移动方向中随机选择一个
             const randomDir = availableDirections[Math.floor(Math.random() * availableDirections.length)];
             this.setDirection(randomDir);
-            this.setMoving(true);
-        } else {
-            // 没有可通行的方向，停止移动
-            this.setMoving(false);
         }
     }
 
-    getDirectionToPlayer() {
-        const player = this.tankApp.player;
-        if (!player) return Dir.DOWN;
+    getDirectionToHome() {
+        const home = this.tankApp.levelData.home;
+        if (!home) return Dir.DOWN;
 
-        const dx = player.x - this.x;
-        const dy = player.y - this.y;
+        const dx = home.x - this.x;
+        const dy = home.y - this.y;
 
         // 优先选择距离更近的轴
         if (Math.abs(dx) > Math.abs(dy)) {
@@ -134,19 +202,8 @@ export default class TankEnemy extends TankBase {
         }
     }
 
-    tryShoot() {
-        const player = this.tankApp.player;
-        if (!player) return;
-
-        // 检查是否朝向玩家
-        const directionToPlayer = this.getDirectionToPlayer();
-        if (this.direction === directionToPlayer) {
-            this.setShooting(true);
-        }
-    }
-
     destroy() {
         super.destroy();
-        this.tankApp.logic.removeEnemy(this);
+        this.tankApp.removeEnemy(this);
     }
 } 

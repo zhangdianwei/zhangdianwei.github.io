@@ -6,7 +6,7 @@ import { TileSize, TankType } from './TileType.js';
 export default class EnemySpawner {
     constructor() {
         this.tankApp = TankApp.instance;
-        this.spawnIndex = 0; // 0=左, 1=中, 2=右
+        this.spawnIndex = 1; // 0=左, 1=中, 2=右
     }
 
     update(deltaTime) {
@@ -18,7 +18,7 @@ export default class EnemySpawner {
         if (!levelData || !levelData.config) return;
 
         // const maxEnemiesOnScreen = levelData.config.maxEnemiesOnScreen || 3;
-        const maxEnemiesOnScreen = 1;
+        const maxEnemiesOnScreen = 3;
         const currentEnemies = this.tankApp.enemies.length;
 
         if (currentEnemies < maxEnemiesOnScreen && levelData.spawnEnemy()) {

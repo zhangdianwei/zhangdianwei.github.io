@@ -28,7 +28,7 @@ export default class TankEnemy extends TankBase {
 
     resetShootTimer(mode = 'normal') {
         if (mode === 'fast') {
-            this.shootTimer = this.random(0.1, 0.3); // 快速射击模式
+            this.shootTimer = this.random(1, 3); // 快速射击模式
         } else {
             this.shootTimer = this.random(1, 3); // 正常射击模式
         }
@@ -124,7 +124,7 @@ export default class TankEnemy extends TankBase {
     executeMovement() {
         // 坦克永远移动，检查前方是否有障碍
         const allowed = this.tankApp.levelData.getMovableDistance(
-            this.x, this.y, this.size, this.size, this.direction
+            this.getBounds(), this.direction
         );
 
         if (allowed <= 0) {
@@ -141,9 +141,13 @@ export default class TankEnemy extends TankBase {
         // 先找出所有可移动方向
         for (const dir of directions) {
             const allowed = this.tankApp.levelData.getMovableDistance(
-                this.x, this.y, this.size, this.size, dir
+                this.getBounds(), dir
             );
-            if (allowed > TileSize / 2) {
+            const allowed2 = this.tankApp.logic.getMovableDistance(
+                this.getBounds(), dir, this
+            );
+            const minAllowed = Math.min(allowed, allowed2);
+            if (minAllowed > TileSize / 2) {
                 availableDirections.push(dir);
             }
         }

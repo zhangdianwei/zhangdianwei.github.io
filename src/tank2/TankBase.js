@@ -128,11 +128,16 @@ export default class TankBase extends PIXI.Container {
 
     checkMoving(deltaTime){
         if (this.isMoving) {
-            let allowed = this.tankApp.levelData.getMovableDistance(this.x, this.y, this.size, this.size, this.direction);
+            let allowed = this.tankApp.levelData.getMovableDistance(this.getBounds(), this.direction);
             if (allowed <= 0) {
                 this.checkCorrectPath();
-                allowed = this.tankApp.levelData.getMovableDistance(this.x, this.y, this.size, this.size, this.direction);
-            }            
+                allowed = this.tankApp.levelData.getMovableDistance(this.getBounds(), this.direction);
+            }
+            let allowed2 = this.tankApp.logic.getMovableDistance(this.getBounds(), this.direction, this);
+            if (this == this.tankApp.player) {
+                console.log('allowed', allowed, 'allowed2', allowed2);
+            }
+            allowed = Math.min(allowed, allowed2);
             let frameSpeed = this.speed * deltaTime;
             let movable = Math.min(allowed, frameSpeed);
             
@@ -204,5 +209,14 @@ export default class TankBase extends PIXI.Container {
     }
     enterNextFrame(){
         this.setCurrentFrame((this.currentFrame + 1) % this.tankSprites.length);
+    }
+
+    getBounds() {
+        return {
+            x: this.x,
+            y: this.y,
+            width: this.size,
+            height: this.size
+        };
     }
 }

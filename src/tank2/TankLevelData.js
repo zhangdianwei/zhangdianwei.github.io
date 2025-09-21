@@ -279,7 +279,12 @@ export default class TankLevelData {
         return true;
     }
 
-    getMovableDistance(centerX, centerY, width, height, direction) {
+    getMovableDistance(bounds, direction) {
+        const centerX = bounds.x;
+        const centerY = bounds.y;
+        const width = bounds.width;
+        const height = bounds.height;
+        
         let t = 4;
         const srcPoses = [
             { x: centerX - width/2, y: centerY - height/2 },

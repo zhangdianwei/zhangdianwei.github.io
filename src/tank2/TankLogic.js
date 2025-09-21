@@ -154,12 +154,7 @@ export class TankLogic {
         if (!bullet || !tank) return false;
         
         const bulletBounds = bullet.getBounds();
-        const tankBounds = {
-            x: tank.x - tank.size / 2,
-            y: tank.y - tank.size / 2,
-            width: tank.size,
-            height: tank.size
-        };
+        const tankBounds = tank.getBounds();
         
         // AABB碰撞检测
         return bulletBounds.x < tankBounds.x + tankBounds.width &&
@@ -179,6 +174,92 @@ export class TankLogic {
                bullet1Bounds.x + bullet1Bounds.width > bullet2Bounds.x &&
                bullet1Bounds.y < bullet2Bounds.y + bullet2Bounds.height &&
                bullet1Bounds.y + bullet1Bounds.height > bullet2Bounds.y;
+    }
+
+    // 检查坦克与坦克的碰撞
+    checkTankTankCollision(tank1, tank2) {
+        if (!tank1 || !tank2 || tank1 === tank2) return false;
+        
+        const tank1Bounds = tank1.getBounds();
+        const tank2Bounds = tank2.getBounds();
+        
+        // AABB碰撞检测
+        return tank1Bounds.x < tank2Bounds.x + tank2Bounds.width &&
+               tank1Bounds.x + tank1Bounds.width > tank2Bounds.x &&
+               tank1Bounds.y < tank2Bounds.y + tank2Bounds.height &&
+               tank1Bounds.y + tank1Bounds.height > tank2Bounds.y;
+    }
+
+    // 获取坦克的可移动距离，只考虑坦克碰撞
+    getMovableDistance(bounds, direction, excludeTank = null) {
+        const centerX = bounds.x;
+        const centerY = bounds.y;
+        const width = bounds.width;
+        const height = bounds.height;
+        
+        // 获取所有坦克（排除指定的坦克）
+        const allTanks = [this.tankApp.player, ...this.tankApp.enemies].filter(t => t && t !== excludeTank);
+        
+        let minDistance = Infinity;
+        
+        // 遍历所有坦克，找到在指定方向上最近的碰撞距离
+        for (const tank of allTanks) {
+            const tankBounds = tank.getBounds();
+            const tankCenterX = tankBounds.x;
+            const tankCenterY = tankBounds.y;
+            const tankWidth = tankBounds.width;
+            const tankHeight = tankBounds.height;
+            
+            let distance = Infinity;
+            
+            // 根据方向计算距离
+            if (direction === 0) { // UP
+                // 检查上方是否有坦克
+                if (centerX - width/2 < tankCenterX + tankWidth/2 && 
+                    centerX + width/2 > tankCenterX - tankWidth/2) {
+                    // X轴有重叠，计算Y轴距离
+                    distance = centerY - height/2 - (tankCenterY + tankHeight/2);
+                }
+            } else if (direction === 1) { // RIGHT
+                // 检查右方是否有坦克
+                if (centerY - height/2 < tankCenterY + tankHeight/2 && 
+                    centerY + height/2 > tankCenterY - tankHeight/2) {
+                    // Y轴有重叠，计算X轴距离
+                    distance = tankCenterX - tankWidth/2 - (centerX + width/2);
+                }
+            } else if (direction === 2) { // DOWN
+                // 检查下方是否有坦克
+                if (centerX - width/2 < tankCenterX + tankWidth/2 && 
+                    centerX + width/2 > tankCenterX - tankWidth/2) {
+                    // X轴有重叠，计算Y轴距离
+                    distance = tankCenterY - tankHeight/2 - (centerY + height/2);
+                }
+            } else if (direction === 3) { // LEFT
+                // 检查左方是否有坦克
+                if (centerY - height/2 < tankCenterY + tankHeight/2 && 
+                    centerY + height/2 > tankCenterY - tankHeight/2) {
+                    // Y轴有重叠，计算X轴距离
+                    distance = centerX - width/2 - (tankCenterX + tankWidth/2);
+                }
+            }
+            
+            // 更新最小距离
+            if (distance < minDistance) {
+                minDistance = distance;
+            }
+        }
+        
+        // 如果没有找到碰撞，返回一个很大的值
+        if (minDistance === Infinity) {
+            return 1000;
+        }
+        
+        // 如果距离是负数（坦克在后面），但超过一个坦克的距离，则允许移动
+        if (minDistance < 0 && Math.abs(minDistance) > Math.max(width, height)) {
+            return 1000; // 返回一个很大的值，允许移动
+        }
+        
+        return minDistance;
     }
 
     checkGameState() {

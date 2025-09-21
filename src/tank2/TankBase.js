@@ -134,9 +134,6 @@ export default class TankBase extends PIXI.Container {
                 allowed = this.tankApp.levelData.getMovableDistance(this.getBounds(), this.direction);
             }
             let allowed2 = this.tankApp.logic.getMovableDistance(this.getBounds(), this.direction, this);
-            if (this == this.tankApp.player) {
-                console.log('allowed', allowed, 'allowed2', allowed2);
-            }
             allowed = Math.min(allowed, allowed2);
             let frameSpeed = this.speed * deltaTime;
             let movable = Math.min(allowed, frameSpeed);

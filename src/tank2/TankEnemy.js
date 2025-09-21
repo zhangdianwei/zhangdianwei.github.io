@@ -84,7 +84,6 @@ export default class TankEnemy extends TankBase {
     }
 
     randomWander(isFirstEnter) {
-        console.log('randomWander', isFirstEnter);
         if (isFirstEnter) {
             // 首次进入随机游动状态：立即改变方向
             this.changeDirection();
@@ -160,24 +159,20 @@ export default class TankEnemy extends TankBase {
         // 10% 概率向下
         if (strategy < 0.1) {
             targetDirection = Dir.DOWN;
-            console.log('向下');
         }
         // 40% 概率维持方向
         else if (strategy < 0.5) {
             targetDirection = oldDirection;
-            console.log('维持');
         }
         // 40% 概率侧面转向
         else if (strategy < 0.9) {
             // 随机选择左右两个侧面方向
             const sideDirections = [(oldDirection + 1) % 4, (oldDirection + 3) % 4];
             targetDirection = sideDirections[Math.floor(Math.random() * sideDirections.length)];
-            console.log('侧面走', targetDirection);
         }
         // 10% 概率反向走
         else {
             targetDirection = (oldDirection + 2) % 4; // 相反方向
-            console.log('反向走', targetDirection);
         }
 
         // 检查目标方向是否在可移动方向中

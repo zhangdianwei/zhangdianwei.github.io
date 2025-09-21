@@ -11,24 +11,8 @@ export class TankApp {
         
         this.logic = null;
         
-        // 关卡游戏对象
-        this.player = null;
-        this.enemies = [];
-        this.playerBullets = [];
-        this.enemyBullets = [];
-        
-        // 关卡数据
-        this.levelData = null;
-        
-        // 渲染层
-        this.renderLayers = {
-            background: null,
-            tiles: null,
-            tank: null,
-            bullets: null,
-            grass: null,
-            effect: null
-        };
+        this.ui = null;
+        this.uiContainer = null; //屏幕中心
     }
 
     static get instance() {
@@ -42,49 +26,44 @@ export class TankApp {
         this.ticker.stop();
     }
 
-    addBullet(bullet) {
-        if (bullet.bulletType === 'player') {
-            this.playerBullets.push(bullet);
-        } else {
-            this.enemyBullets.push(bullet);
+    setUI(ui) {
+        if (this.ui) {
+            this.ui.removeFromParent();
         }
-        this.renderLayers.bullets.addChild(bullet);
+        this.ui = ui;
+        this.uiContainer.addChild(this.ui);
+    }
+
+    get winW(){
+        return this.pixi.screen.width;
+    }
+
+    get winH(){
+        return this.pixi.screen.height;
     }
     
-    removeBullet(bullet) {
-        this.renderLayers.bullets.removeChild(bullet);
-        
-        if (bullet.bulletType === 'player') {
-            let index = this.playerBullets.indexOf(bullet);
-            if (index !== -1) {
-                this.playerBullets.splice(index, 1);
-            }
-        } else {
-            let index = this.enemyBullets.indexOf(bullet);
-            if (index !== -1) {
-                this.enemyBullets.splice(index, 1);
-            }
-        }
+    // 向后兼容的getter方法，通过ui访问游戏数据
+    get player() {
+        return this.ui ? this.ui.player : null;
     }
-
-    addEnemy(enemy) {
-        this.enemies.push(enemy);
-        this.renderLayers.tank.addChild(enemy);
+    
+    get enemies() {
+        return this.ui ? this.ui.enemies : [];
     }
-
-    removeEnemy(enemy) {
-        this.renderLayers.tank.removeChild(enemy);
-        let index = this.enemies.indexOf(enemy);
-        if (index === -1) return;
-        this.enemies.splice(index, 1);
+    
+    get playerBullets() {
+        return this.ui ? this.ui.playerBullets : [];
     }
-
-    addEffect(effectName, x, y, callback) {
-        import('./SpriteSeqAnim.js').then(({ createSpriteSeqAnim }) => {
-            const effect = createSpriteSeqAnim(effectName, callback);
-            effect.x = x;
-            effect.y = y;
-            this.renderLayers.effect.addChild(effect);
-        });
+    
+    get enemyBullets() {
+        return this.ui ? this.ui.enemyBullets : [];
+    }
+    
+    get levelData() {
+        return this.ui;
+    }
+    
+    get renderLayers() {
+        return this.ui ? this.ui.renderLayers : null;
     }
 } 

@@ -1,6 +1,6 @@
 import { TankApp } from './TankApp.js';
 
-export default class InputManager {
+export default class TankCompInput {
     constructor() {
         this.tankApp = TankApp.instance;
         this.keys = {};
@@ -29,7 +29,7 @@ export default class InputManager {
     }
 
     keyDown(keyCode) {
-        const player = this.tankApp.player;
+        const player = this.tankApp.ui.player;
         if (!player) return;
         
         switch (keyCode) {
@@ -50,7 +50,7 @@ export default class InputManager {
     }
 
     keyUp(keyCode) {
-        const player = this.tankApp.player;
+        const player = this.tankApp.ui.player;
         if (!player) return;
         
         switch (keyCode) {
@@ -83,7 +83,7 @@ export default class InputManager {
     }
 
     checkMovePlayer() {
-        const player = this.tankApp.player;
+        const player = this.tankApp.ui.player;
 
         const last = this.moveKeys[this.moveKeys.length - 1];
         if (!last){
@@ -105,6 +105,11 @@ export default class InputManager {
             player.setDirection(3);
             player.setMoving(true);
         }
+    }
+
+    update(deltaTime) {
+        // 输入管理器更新逻辑（如果需要的话）
+        // 目前主要是事件驱动的，不需要每帧更新
     }
 
     destroy() {

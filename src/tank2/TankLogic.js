@@ -2,7 +2,7 @@ import * as PIXI from 'pixi.js';
 import { createPixi, initDom } from '../pixi/PixiHelper.js';
 import { TankApp } from './TankApp.js';
 import TankLevelData from './TankLevelData.js';
-import InputManager from './InputManager.js';
+import TankCompInput from './TankCompInput.js';
 import EnemySpawner from './EnemySpawner.js';
 import TankEnemy from './TankEnemy.js';
 import Bullet from './Bullet.js';
@@ -10,6 +10,8 @@ import { TileType, MapWidth, MapHeight } from './TileType.js';
 import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
 import TankBase from './TankBase.js';
 import Ticker from './Ticker.js';
+import TankStartUI from './TankStartUI.js';
+import TankGameUI from './TankGameUI.js';
 
 export class TankLogic {
     constructor() {
@@ -37,22 +39,29 @@ export class TankLogic {
         this.tankApp.gameContainer = new PIXI.Container();
         this.tankApp.pixi.stage.addChild(this.tankApp.gameContainer);
 
-        // 创建渲染层
-        this.createRenderLayers();
+        this.tankApp.uiContainer = new PIXI.Container();
+        this.tankApp.gameContainer.addChild(this.tankApp.uiContainer);
+        this.tankApp.uiContainer.position.set(this.tankApp.pixi.screen.width / 2, this.tankApp.pixi.screen.height / 2);
 
-        // 创建管理器
-        this.inputManager = new InputManager();
-        this.inputManager.setupInput();
-
-        this.enemySpawner = new EnemySpawner();
-
-        this.tankApp.levelData = new TankLevelData();
-        
         this.tankApp.ticker = new Ticker();
         this._gameTickId = this.tankApp.ticker.tick((dt) => this.update(dt), 0);
+
+        // this.tankApp.setUI(new TankStartUI());
+        this.tankApp.setUI(new TankGameUI());
+
+        // this.createRenderLayers();
+
+        // this.inputManager = new InputManager();
+        // this.inputManager.setupInput();
+
+        // this.enemySpawner = new EnemySpawner();
+
+        // this.tankApp.levelData = new TankLevelData();
         
-        // 开始游戏
-        this.tankApp.levelData.loadLevel(0);
+        // 启动游戏循环
+        
+        
+        // this.tankApp.levelData.loadLevel(0);
     }
 
 
@@ -87,22 +96,28 @@ export class TankLogic {
 
     update(dt) {
 
-        if (this.isPaused || this.isGameOver) return;
+        if(this.tankApp.ui && this.tankApp.ui.update){
+            this.tankApp.ui.update(dt);
+        }
+
+        // if (this.isPaused || this.isGameOver) return;
         
         // 更新玩家输入
         // this.inputManager.update(dt);
         
         // 更新游戏对象
-        this.updateGameObjects(dt);
+        // this.updateGameObjects(dt);
         
         // 更新敌人生成
-        this.enemySpawner.update(dt);
+        // if (this.enemySpawner) {
+        //     this.enemySpawner.update(dt);
+        // }
         
         // 更新关卡数据
         // this.tankApp.levelData.updateEffects(dt);
         
         // 碰撞检测
-        this.checkCollisions();
+        // this.checkCollisions();
         
         // 检查游戏状态
         // this.checkGameState();

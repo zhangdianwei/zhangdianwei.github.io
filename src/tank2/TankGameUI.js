@@ -40,6 +40,7 @@ export default class TankGameUI extends PIXI.Container {
         this.initComps();
         this.on('removed', this.makeDead, this);
         this.startLevel();
+        this.side.updateView();
     }
 
     onAppearFinish(){
@@ -86,7 +87,7 @@ export default class TankGameUI extends PIXI.Container {
         this.enemySpawner = new TankCompEnemySpawner(this);
         this.updater.push(this.enemySpawner);
 
-        this.side = new TankGameSide();
+        this.side = new TankGameSide(this);
         this.addChild(this.side);
         this.side.position.set(MapWidth/2+50, 0);
     }
@@ -427,7 +428,9 @@ export default class TankGameUI extends PIXI.Container {
         }
         else {
             this.removeEnemy(tank);
+            this.tankApp.playerData.addEnemyDestroyed(tank.tankType, 1);
         }
+        this.side.updateView();
         this.checkGameState();
     }
 

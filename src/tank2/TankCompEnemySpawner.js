@@ -24,6 +24,10 @@ export default class TankCompEnemySpawner {
         return this.spawnCount >= this.gameUI.map.config.totalEnemies && this.gameUI.enemies.length === 0;
     }
 
+    getRemainingEnemies(){
+        return this.gameUI.map.config.totalEnemies - this.spawnCount;
+    }
+
     createEnemy() {
         const enemyType = TankType.ENEMY_1 + (this.spawnIndex % 4); // 循环使用1-4种敌人类型
         const enemy = new TankEnemy(enemyType);

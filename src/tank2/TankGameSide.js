@@ -2,11 +2,12 @@ import * as PIXI from 'pixi.js';
 import { TankApp } from './TankApp.js';
 
 export default class TankGameSide extends PIXI.Container {
-    constructor() {
+    constructor(gameUI) {
         super();
         
         this.tankApp = TankApp.instance;
-        
+        this.gameUI = gameUI;
+
         // 面板尺寸
         this.panelWidth = 300;
         this.panelHeight = 600;
@@ -71,11 +72,11 @@ export default class TankGameSide extends PIXI.Container {
         this.livesText.y = -this.panelHeight/2 + 120;
         this.addChild(this.livesText);
         
-        // 敌人摧毁数量
-        this.enemyDestroyedText = new PIXI.Text('击毁敌人: 0', textStyle);
-        this.enemyDestroyedText.x = 30;
-        this.enemyDestroyedText.y = -this.panelHeight/2 + 160;
-        this.addChild(this.enemyDestroyedText);
+        // 敌人信息
+        this.enemyText = new PIXI.Text('剩余敌人: 0/0', textStyle);
+        this.enemyText.x = 30;
+        this.enemyText.y = -this.panelHeight/2 + 160;
+        this.addChild(this.enemyText);
         
         // 分隔线
         const line = new PIXI.Graphics();
@@ -85,18 +86,23 @@ export default class TankGameSide extends PIXI.Container {
         this.addChild(line);
     }
     
-    update() {
-        if (!this.tankApp.playerData) return;
-        
+    updateView() {
         // 更新关卡信息
         this.levelText.text = `关卡: ${this.tankApp.playerData.levelId + 1}`;
         
         // 更新生命值信息
         this.livesText.text = `生命: ${this.tankApp.playerData.playerLives}`;
         
-        // 更新敌人摧毁数量
-        const destroyedCount = this.tankApp.playerData.enermyDestroyed ? this.tankApp.playerData.enermyDestroyed.length : 0;
-        this.enemyDestroyedText.text = `击毁敌人: ${destroyedCount}`;
+        // 更新剩余敌人信息
+        this.updateEnemyInfo();
+    }
+    
+    updateEnemyInfo() {
+        // 获取总敌人数量和剩余数量
+        const totalEnemies = this.gameUI.map.config.totalEnemies;
+        const remainingEnemies = this.gameUI.enemySpawner.getRemainingEnemies();
+        
+        this.enemyText.text = `剩余敌人: ${remainingEnemies}/${totalEnemies}`;
     }
     
 }

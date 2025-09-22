@@ -5,6 +5,7 @@ import TankPlayerData from './TankPlayerData.js';
 import Ticker from './Ticker.js';
 import TankGameUI from './TankGameUI.js';
 import TankStartUI from './TankStartUI.js';
+import TankEndUI from './TankEndUI.js';
 
 export class TankLogic {
     constructor() {
@@ -29,14 +30,18 @@ export class TankLogic {
 
         this.tankApp.playerData = new TankPlayerData();
 
-        this.setUI("TankGameUI");
+        this.setUI("TankStartUI");
     }
 
     setUI(name) {
         if(name === 'TankGameUI') {
             this.tankApp.setUI(new TankGameUI());
-        }else if(name === 'TankStartUI') {
+        }
+        else if(name === 'TankStartUI') {
             this.tankApp.setUI(new TankStartUI());
+        }
+        else if(name === 'TankEndUI') {
+            this.tankApp.setUI(new TankEndUI());
         }
     }
 

@@ -183,9 +183,7 @@ export default class TankStartUI extends PIXI.Container {
     
     // 事件回调函数
     onSinglePlayer() {
-        console.log('开始单人游戏');
-        // 这里可以触发单人游戏逻辑
-        // 例如：this.tankApp.logic.startSinglePlayer();
+        this.tankApp.logic.setUI('TankGameUI');
     }
     
     onMultiPlayer() {

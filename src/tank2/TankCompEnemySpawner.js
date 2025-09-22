@@ -3,8 +3,9 @@ import TankBase from './TankBase.js';
 import TankEnemy from './TankEnemy.js';
 import { TileSize, TankType } from './TileType.js';
 
-export default class EnemySpawner {
-    constructor() {
+export default class TankCompEnemySpawner {
+    constructor(gameUI) {
+        this.gameUI = gameUI;
         this.tankApp = TankApp.instance;
         this.spawnIndex = 1; // 0=左, 1=中, 2=右
     }
@@ -14,12 +15,12 @@ export default class EnemySpawner {
     }
 
     checkCreateEnemy() {
-        const levelData = this.tankApp.ui.map;
+        const levelData = this.gameUI.map;
         if (!levelData || !levelData.config) return;
 
         // const maxEnemiesOnScreen = levelData.config.maxEnemiesOnScreen || 3;
         const maxEnemiesOnScreen = 3;
-        const currentEnemies = this.tankApp.ui.enemies.length;
+        const currentEnemies = this.gameUI.enemies.length;
 
         if (currentEnemies < maxEnemiesOnScreen && levelData.spawnEnemy()) {
             this.createEnemy();
@@ -38,7 +39,7 @@ export default class EnemySpawner {
 
         this.spawnIndex = (this.spawnIndex + 1) % 3;
         
-        this.tankApp.addEnemy(enemy);
+        this.gameUI.addEnemy(enemy);
     }
 
     getStartRC(){
@@ -46,9 +47,9 @@ export default class EnemySpawner {
             case 0: // 左
                 return {r: 1, c: 1};
             case 1: // 中
-                return {r: 1, c: Math.floor(this.tankApp.ui.map.mapCols / 2)};
+                return {r: 1, c: Math.floor(this.gameUI.map.mapCols / 2)};
             case 2: // 右
-                return {r: 1, c: this.tankApp.ui.map.mapCols - 1};
+                return {r: 1, c: this.gameUI.map.mapCols - 1};
         }
     }
 

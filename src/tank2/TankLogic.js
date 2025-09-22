@@ -4,6 +4,7 @@ import { TankApp } from './TankApp.js';
 import { TileType, MapWidth, MapHeight } from './TileType.js';
 import Ticker from './Ticker.js';
 import TankGameUI from './TankGameUI.js';
+import TankStartUI from './TankStartUI.js';
 
 export class TankLogic {
     constructor() {
@@ -26,7 +27,15 @@ export class TankLogic {
         this.tankApp.ticker = new Ticker();
         this._gameTickId = this.tankApp.ticker.tick((dt) => this.update(dt), 0);
 
-        this.tankApp.setUI(new TankGameUI());
+        this.setUI("TankGameUI");
+    }
+
+    setUI(name) {
+        if(name === 'TankGameUI') {
+            this.tankApp.setUI(new TankGameUI());
+        }else if(name === 'TankStartUI') {
+            this.tankApp.setUI(new TankStartUI());
+        }
     }
 
     update(dt) {

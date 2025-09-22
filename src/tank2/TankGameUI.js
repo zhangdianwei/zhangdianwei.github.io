@@ -5,6 +5,7 @@ import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
 import { TileType, Dir, TileSize, TankType, MapWidth, MapHeight } from './TileType.js';
 import TankCompInput from './TankCompInput.js';
 import TankCompMap from './TankCompMap.js';
+import TankCompEnemySpawner from './TankCompEnemySpawner.js';
 
 export default class TankGameUI extends PIXI.Container {
     constructor() {
@@ -28,6 +29,7 @@ export default class TankGameUI extends PIXI.Container {
         // === 组件管理 ===
         this.input = null;
         this.map = null;
+        this.enemySpawner = null;
         
         // === 根容器 ===
         this.root = new PIXI.Container();
@@ -76,6 +78,9 @@ export default class TankGameUI extends PIXI.Container {
         this.map = new TankCompMap(this);
         this.map.setRenderLayers(this.renderLayers);
         this.comps.push(this.map);
+        
+        this.enemySpawner = new TankCompEnemySpawner(this);
+        this.comps.push(this.enemySpawner);
     }
     
     update(deltaTime) {
@@ -103,6 +108,9 @@ export default class TankGameUI extends PIXI.Container {
         this.enemyBullets.forEach(bullet => {
             bullet.update(deltaTime);
         });
+        
+        // 检查碰撞
+        this.checkCollisions();
     }
     
     // === 从TankApp整合的游戏对象管理方法 ===

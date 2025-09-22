@@ -165,6 +165,7 @@ export default class TankStartUI extends PIXI.Container {
     
     // 事件回调函数
     onSinglePlayer() {
+        this.tankApp.playerData.levelId = 0;
         this.tankApp.logic.setUI('TankGameUI');
     }
     

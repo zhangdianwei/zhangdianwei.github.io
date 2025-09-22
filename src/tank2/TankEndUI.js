@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { TankApp } from './TankApp.js';
+import allLevels from './level/levels.json' with { type: 'json' };
 
 export default class TankEndUI extends PIXI.Container {
     constructor() {
@@ -16,6 +17,7 @@ export default class TankEndUI extends PIXI.Container {
         this.createStats();
         this.createButtons();
         this.updateTitleAndButton();
+        this.updateStats();
     }
     
     createPanel() {
@@ -194,8 +196,14 @@ export default class TankEndUI extends PIXI.Container {
         if (!this.tankApp.playerData) return;
         
         if (this.tankApp.playerData.levelEndType === 1) {
-            // 胜利 - 下一关
-            this.onNextLevel();
+            // 胜利
+            if (this.isLastLevel()) {
+                // 最后一关胜利 - 返回菜单
+                this.onBackToStart();
+            } else {
+                // 普通胜利 - 下一关
+                this.onNextLevel();
+            }
         } else {
             // 失败 - 重新开始
             this.onRestart();
@@ -233,11 +241,8 @@ export default class TankEndUI extends PIXI.Container {
     updateStats() {
         if (!this.tankApp.playerData) return;
         
-        // 从playerData获取关卡用时（假设有levelTime属性）
-        const levelTime = this.tankApp.playerData.levelTime || 0;
-        const minutes = Math.floor(levelTime / 60);
-        const seconds = Math.floor(levelTime % 60);
-        this.timeText.text = `关卡用时: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        // 使用playerData的格式化时间方法
+        this.timeText.text = `关卡用时: ${this.tankApp.playerData.getFormattedLevelTime()}`;
         
         // 从playerData获取各种坦克摧毁数量
         const enemyDestroyed = this.tankApp.playerData.enermyDestroyed || [];
@@ -269,6 +274,14 @@ export default class TankEndUI extends PIXI.Container {
         this.titleText.text = title;
     }
     
+    isLastLevel() {
+        if (!this.tankApp.playerData) return false;
+        
+        // 从levels.json获取关卡总数
+        const totalLevels = allLevels.length;
+        return this.tankApp.playerData.levelId-1 >= totalLevels;
+    }
+    
     updateTitleAndButton() {
         if (!this.tankApp.playerData) return;
         
@@ -287,7 +300,13 @@ export default class TankEndUI extends PIXI.Container {
         const buttonText = this.actionBtn.children[1]; // 获取按钮文字
         if (this.tankApp.playerData.levelEndType === 1) {
             // 胜利
-            buttonText.text = '下一关';
+            if (this.isLastLevel()) {
+                // 最后一关胜利
+                buttonText.text = '返回菜单';
+            } else {
+                // 普通胜利
+                buttonText.text = '下一关';
+            }
         } else {
             // 失败
             buttonText.text = '重新开始';

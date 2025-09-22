@@ -15,14 +15,14 @@ export default class TankCompEnemySpawner {
     }
 
     checkCreateEnemy() {
-        const levelData = this.gameUI.map;
-        if (!levelData || !levelData.config) return;
+        const map = this.gameUI.map;
+        if (!map || !map.config) return;
 
-        // const maxEnemiesOnScreen = levelData.config.maxEnemiesOnScreen || 3;
+        // const maxEnemiesOnScreen = map.config.maxEnemiesOnScreen || 3;
         const maxEnemiesOnScreen = 3;
         const currentEnemies = this.gameUI.enemies.length;
 
-        if (currentEnemies < maxEnemiesOnScreen && levelData.spawnEnemy()) {
+        if (currentEnemies < maxEnemiesOnScreen && map.spawnEnemy()) {
             this.createEnemy();
         }
     }

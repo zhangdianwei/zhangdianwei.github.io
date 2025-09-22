@@ -4,9 +4,8 @@ import TankBase from './TankBase.js';
 import allLevels from './level/levels.json' with { type: 'json' };
 import { TileType, Dir, TileSize, TankType, MapWidth, MapHeight } from './TileType.js';
 
-export default class TankCompMap extends PIXI.Container {
+export default class TankCompMap {
     constructor(gameUI) {
-        super();
         
         this.gameUI = gameUI;
         this.tankApp = gameUI.tankApp;
@@ -30,17 +29,6 @@ export default class TankCompMap extends PIXI.Container {
     
     setRenderLayers(renderLayers) {
         this.renderLayers = renderLayers;
-    }
-    
-    update(deltaTime) {
-        // 地图组件更新逻辑（如果需要的话）
-        // 目前主要是静态的，不需要每帧更新
-    }
-    
-    // === 关卡管理方法 ===
-    
-    startLevel() {
-        this.loadLevel(this.gameUI.levelId);
     }
     
     loadLevel(levelId) {

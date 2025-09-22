@@ -6,6 +6,7 @@ import { TileType, Dir, TileSize, TankType, MapWidth, MapHeight } from './TileTy
 import TankCompInput from './TankCompInput.js';
 import TankCompMap from './TankCompMap.js';
 import TankCompEnemySpawner from './TankCompEnemySpawner.js';
+import TankGameSide from './TankGameSide.js';
 
 export default class TankGameUI extends PIXI.Container {
     constructor() {
@@ -13,11 +14,6 @@ export default class TankGameUI extends PIXI.Container {
         
         this.tankApp = TankApp.instance;
         this.textures = this.tankApp.textures;
-        
-        // === 从TankLevelData整合的关卡数据 ===
-        this.levelId = 0;
-        this.lives = 3;
-        this.score = 0;
         
         // === 游戏对象 ===
         this.home = null;
@@ -32,9 +28,12 @@ export default class TankGameUI extends PIXI.Container {
         this.enemySpawner = null;
         
         // === 根容器 ===
-        this.root = new PIXI.Container();
-        this.addChild(this.root);
-        this.root.position.set(-MapWidth/2, -MapHeight/2);
+        this.tileRoot = new PIXI.Container();
+        this.addChild(this.tileRoot);
+        this.tileRoot.position.set(-MapWidth/2, -MapHeight/2);
+        
+        // === 地图边框 ===
+        this.createMapBorder();
         
         // === 渲染层管理 ===
         this.renderLayers = {
@@ -45,11 +44,22 @@ export default class TankGameUI extends PIXI.Container {
             grass: null,
             effect: null
         };
-        
         this.createRenderLayers();
         this.initComps();
 
         this.startLevel();
+    }
+    
+    createMapBorder() {
+        // 创建地图边框
+        const border = new PIXI.Graphics();
+        
+        // 绘制圆角矩形边框
+        border.lineStyle(3, 0xFFFFFF, 0.5); // 白色边框，3像素宽
+        border.drawRoundedRect(-MapWidth/2, -MapHeight/2, MapWidth, MapHeight, 8);
+        
+        // 添加到tileRoot的父容器（与tileRoot同级）
+        this.addChild(border);
     }
     
     createRenderLayers() {
@@ -61,33 +71,33 @@ export default class TankGameUI extends PIXI.Container {
         this.renderLayers.grass = new PIXI.Container();      // RenderLayer5: 草地（装饰层）
         this.renderLayers.effect = new PIXI.Container();     // RenderLayer6: 效果层
         
-        this.root.addChild(this.renderLayers.background);
-        this.root.addChild(this.renderLayers.tiles);
-        this.root.addChild(this.renderLayers.tank);
-        this.root.addChild(this.renderLayers.bullets);
-        this.root.addChild(this.renderLayers.grass);
-        this.root.addChild(this.renderLayers.effect);
+        this.tileRoot.addChild(this.renderLayers.background);
+        this.tileRoot.addChild(this.renderLayers.tiles);
+        this.tileRoot.addChild(this.renderLayers.tank);
+        this.tileRoot.addChild(this.renderLayers.bullets);
+        this.tileRoot.addChild(this.renderLayers.grass);
+        this.tileRoot.addChild(this.renderLayers.effect);
     }
     
     initComps() {
-        this.comps = [];
+        this.updater = [];
 
-        this.input = new TankCompInput();
-        this.comps.push(this.input);
+        this.input = new TankCompInput(this);
         
         this.map = new TankCompMap(this);
         this.map.setRenderLayers(this.renderLayers);
-        this.comps.push(this.map);
         
         this.enemySpawner = new TankCompEnemySpawner(this);
-        this.comps.push(this.enemySpawner);
+        this.updater.push(this.enemySpawner);
+
+        this.side = new TankGameSide();
+        this.addChild(this.side);
+        this.side.position.set(MapWidth/2+50, 0);
     }
     
     update(deltaTime) {
-        this.comps.forEach(comp => {
-            if (comp) {
-                comp.update(deltaTime);
-            }
+        this.updater.forEach(updater => {
+            updater.update(deltaTime);
         });
         
         if (this.player) {
@@ -112,8 +122,6 @@ export default class TankGameUI extends PIXI.Container {
         // 检查碰撞
         this.checkCollisions();
     }
-    
-    // === 从TankApp整合的游戏对象管理方法 ===
     
     addBullet(bullet) {
         if (bullet.bulletType === 'player') {
@@ -159,24 +167,9 @@ export default class TankGameUI extends PIXI.Container {
         this.renderLayers.effect.addChild(effect);
     }
     
-    // === 地图组件代理方法 ===
-    
     startLevel() {
         if (this.map) {
-            this.map.startLevel();
-        }
-    }
-    
-    loadLevel(levelId) {
-        if (this.map) {
-            return this.map.loadLevel(levelId);
-        }
-        return false;
-    }
-    
-    setLevel(levelId) {
-        if (this.map) {
-            this.map.setLevel(levelId);
+            this.map.loadLevel(this.tankApp.playerData.levelId);
         }
     }
     
@@ -233,22 +226,6 @@ export default class TankGameUI extends PIXI.Container {
         // 添加到tank渲染层
         this.renderLayers.tank.addChild(this.home);
     }
-    
-    clearAll() {
-        if (this.map) {
-            this.map.clearAll();
-        }
-    }
-    
-    reset() {
-        if (this.map) {
-            this.map.reset();
-        }
-    }
-    
-    // === 坦克碰撞检测方法 ===
-    
-    // === 碰撞检测方法 ===
     
     // 检查所有碰撞
     checkCollisions() {
@@ -412,9 +389,4 @@ export default class TankGameUI extends PIXI.Container {
         return x >= 0 && x < MapWidth && y >= 0 && y < MapHeight;
     }
     
-    destroy() {
-        this.clearAll();
-        this.removeChildren();
-        super.destroy();
-    }
 }

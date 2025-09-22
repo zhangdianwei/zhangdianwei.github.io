@@ -12,6 +12,8 @@ export class TankApp {
         
         this.ui = null;
         this.uiContainer = null; //屏幕中心
+
+        this.playerData = null;
     }
 
     static get instance() {

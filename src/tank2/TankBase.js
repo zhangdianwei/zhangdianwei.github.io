@@ -191,7 +191,7 @@ export default class TankBase extends PIXI.Container {
     }
 
     destroy() {
-        this.tankApp.addEffect('tankExplode', this.x, this.y);
+        this.tankApp.ui.addEffect('tankExplode', this.x, this.y);
     }
     
     update(deltaTime) {

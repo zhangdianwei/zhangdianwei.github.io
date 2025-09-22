@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { createPixi, initDom } from '../pixi/PixiHelper.js';
 import { TankApp } from './TankApp.js';
-import { TileType, MapWidth, MapHeight } from './TileType.js';
+import TankPlayerData from './TankPlayerData.js';
 import Ticker from './Ticker.js';
 import TankGameUI from './TankGameUI.js';
 import TankStartUI from './TankStartUI.js';
@@ -26,6 +26,8 @@ export class TankLogic {
 
         this.tankApp.ticker = new Ticker();
         this._gameTickId = this.tankApp.ticker.tick((dt) => this.update(dt), 0);
+
+        this.tankApp.playerData = new TankPlayerData();
 
         this.setUI("TankGameUI");
     }
@@ -53,6 +55,5 @@ export class TankLogic {
             this.tankApp.pixi.destroy(true);
             this.tankApp.pixi = null;
         }
-        this.inputManager.destroy();
     }
 } 

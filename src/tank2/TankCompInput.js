@@ -9,6 +9,7 @@ export default class TankCompInput {
         this.shootCooldown = 0.3;
         this._onKeyDown = null;
         this._onKeyUp = null;
+        this.setupInput();
     }
 
     setupInput() {

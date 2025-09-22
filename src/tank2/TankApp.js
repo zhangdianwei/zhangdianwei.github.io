@@ -3,7 +3,6 @@ export class TankApp {
 
     constructor() {
         this.pixi = null;
-        this.gameContainer = null;
         this.textures = {};
 
         // 全局时钟（在 TankLogic 中初始化）
@@ -32,6 +31,7 @@ export class TankApp {
         }
         this.ui = ui;
         this.uiContainer.addChild(this.ui);
+        this.ui.alpha = 0.05;
     }
 
     get winW(){
@@ -40,30 +40,5 @@ export class TankApp {
 
     get winH(){
         return this.pixi.screen.height;
-    }
-    
-    // 向后兼容的getter方法，通过ui访问游戏数据
-    get player() {
-        return this.ui ? this.ui.player : null;
-    }
-    
-    get enemies() {
-        return this.ui ? this.ui.enemies : [];
-    }
-    
-    get playerBullets() {
-        return this.ui ? this.ui.playerBullets : [];
-    }
-    
-    get enemyBullets() {
-        return this.ui ? this.ui.enemyBullets : [];
-    }
-    
-    get levelData() {
-        return this.ui;
-    }
-    
-    get renderLayers() {
-        return this.ui ? this.ui.renderLayers : null;
     }
 } 

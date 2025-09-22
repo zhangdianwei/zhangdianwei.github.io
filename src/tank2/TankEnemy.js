@@ -122,7 +122,7 @@ export default class TankEnemy extends TankBase {
 
     executeMovement() {
         // 坦克永远移动，检查前方是否有障碍
-        const allowed = this.tankApp.levelData.getMovableDistance(
+        const allowed = this.tankApp.ui.map.getMovableDistance(
             this.getBounds(), this.direction
         );
 
@@ -139,10 +139,10 @@ export default class TankEnemy extends TankBase {
 
         // 先找出所有可移动方向
         for (const dir of directions) {
-            const allowed = this.tankApp.levelData.getMovableDistance(
+            const allowed = this.tankApp.ui.map.getMovableDistance(
                 this.getBounds(), dir
             );
-            const allowed2 = this.tankApp.logic.getMovableDistance(
+            const allowed2 = this.tankApp.ui.getMovableDistance(
                 this.getBounds(), dir, this
             );
             const minAllowed = Math.min(allowed, allowed2);
@@ -187,7 +187,7 @@ export default class TankEnemy extends TankBase {
     }
 
     getDirectionToHome() {
-        const home = this.tankApp.levelData.home;
+        const home = this.tankApp.ui.home;
         if (!home) return Dir.DOWN;
 
         const dx = home.x - this.x;

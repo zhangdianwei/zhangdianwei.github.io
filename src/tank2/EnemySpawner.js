@@ -14,12 +14,12 @@ export default class EnemySpawner {
     }
 
     checkCreateEnemy() {
-        const levelData = this.tankApp.levelData;
+        const levelData = this.tankApp.ui.map;
         if (!levelData || !levelData.config) return;
 
         // const maxEnemiesOnScreen = levelData.config.maxEnemiesOnScreen || 3;
         const maxEnemiesOnScreen = 3;
-        const currentEnemies = this.tankApp.enemies.length;
+        const currentEnemies = this.tankApp.ui.enemies.length;
 
         if (currentEnemies < maxEnemiesOnScreen && levelData.spawnEnemy()) {
             this.createEnemy();
@@ -46,9 +46,9 @@ export default class EnemySpawner {
             case 0: // 左
                 return {r: 1, c: 1};
             case 1: // 中
-                return {r: 1, c: Math.floor(this.tankApp.levelData.mapCols / 2)};
+                return {r: 1, c: Math.floor(this.tankApp.ui.map.mapCols / 2)};
             case 2: // 右
-                return {r: 1, c: this.tankApp.levelData.mapCols - 1};
+                return {r: 1, c: this.tankApp.ui.map.mapCols - 1};
         }
     }
 

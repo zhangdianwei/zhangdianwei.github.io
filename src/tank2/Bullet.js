@@ -76,7 +76,7 @@ export default class Bullet extends PIXI.Container {
         moveByDir(this, this.direction, this.speed * deltaTime);
         
         // 检查边界
-        if (!this.tankApp.logic.isInBounds(this.x, this.y)) {
+        if (!this.tankApp.ui.isInBounds(this.x, this.y)) {
             this.destroy();
         }
     }

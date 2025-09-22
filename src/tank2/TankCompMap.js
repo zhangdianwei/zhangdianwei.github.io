@@ -16,14 +16,8 @@ export default class TankCompMap {
         this.mapCols = 26;
         this.mapRows = 26;
         
-        // === 瓦片管理 ===
         this.tiles = [];
-        
-        // === 敌人状态 ===
-        this.enemiesSpawned = 0;
-        this.enemiesDestroyed = 0;
-        
-        // === 渲染层引用 ===
+
         this.renderLayers = null;
     }
     
@@ -323,35 +317,6 @@ export default class TankCompMap {
 
     gridToWorld(row, col) {
         return { x: col * TileSize, y: row * TileSize };
-    }
-
-    // === 敌人管理方法 ===
-    
-    // 生成敌人
-    spawnEnemy() {
-        if (this.enemiesSpawned < this.config.totalEnemies) {
-            this.enemiesSpawned++;
-            return true;
-        }
-        return false;
-    }
-    
-    // 敌人被摧毁
-    enemyDestroyed() {
-        this.enemiesDestroyed++;
-    }
-
-    // 获取剩余敌人数量
-    getRemainingEnemies() {
-        return this.config.totalEnemies - this.enemiesDestroyed;
-    }
-
-    // 检查关卡是否完成
-    isLevelComplete() {
-        if(!this.config){
-            return false;
-        }
-        return this.enemiesSpawned >= this.config.totalEnemies && this.getRemainingEnemies() === 0;
     }
 
     findRCsInBounds(bounds) {

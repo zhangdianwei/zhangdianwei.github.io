@@ -6,7 +6,6 @@ import { TileSize, TankType } from './TileType.js';
 export default class TankCompEnemySpawner {
     constructor(gameUI) {
         this.gameUI = gameUI;
-        this.tankApp = TankApp.instance;
         this.spawnIndex = 1; // 0=左, 1=中, 2=右
     }
 
@@ -16,13 +15,9 @@ export default class TankCompEnemySpawner {
 
     checkCreateEnemy() {
         const map = this.gameUI.map;
-        if (!map || !map.config) return;
+        const condition1 = this.gameUI.enemies.length < map.config.maxEnemiesOnScreen;
 
-        // const maxEnemiesOnScreen = map.config.maxEnemiesOnScreen || 3;
-        const maxEnemiesOnScreen = 3;
-        const currentEnemies = this.gameUI.enemies.length;
-
-        if (currentEnemies < maxEnemiesOnScreen && map.spawnEnemy()) {
+        if (condition1) {
             this.createEnemy();
         }
     }
@@ -53,7 +48,4 @@ export default class TankCompEnemySpawner {
         }
     }
 
-    reset() {
-        this.spawnIndex = 0;
-    }
 } 

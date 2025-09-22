@@ -78,7 +78,7 @@
             0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0
         ],
         "totalEnemies": 25,
-        "maxEnemiesOnScreen": 5,
+        "maxEnemiesOnScreen": 4,
         "enemySpawnRates": {
             "type1": 0.35,
             "type2": 0.35,
@@ -126,7 +126,7 @@
             3, 3, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0
         ],
         "totalEnemies": 30,
-        "maxEnemiesOnScreen": 6,
+        "maxEnemiesOnScreen": 4,
         "enemySpawnRates": {
             "type1": 0.3,
             "type2": 0.35,
@@ -147,7 +147,7 @@
         "name": "第四关",
         "map": [],
         "totalEnemies": 35,
-        "maxEnemiesOnScreen": 7,
+        "maxEnemiesOnScreen": 4,
         "enemySpawnRates": {
             "type1": 0.25,
             "type2": 0.35,
@@ -168,7 +168,7 @@
         "name": "第五关",
         "map": [],
         "totalEnemies": 40,
-        "maxEnemiesOnScreen": 8,
+        "maxEnemiesOnScreen": 4,
         "enemySpawnRates": {
             "type1": 0.2,
             "type2": 0.35,

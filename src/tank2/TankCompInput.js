@@ -3,11 +3,8 @@ import { TankApp } from './TankApp.js';
 export default class TankCompInput {
     constructor(gameUI) {
         this.gameUI = gameUI;
-        this.tankApp = TankApp.instance;
         this.keys = {};
         this.moveKeys = [];
-        this.lastShootTime = 0;
-        this.shootCooldown = 0.3;
         this._onKeyDown = null;
         this._onKeyUp = null;
         this.setupInput();
@@ -28,6 +25,7 @@ export default class TankCompInput {
         }
         window.addEventListener('keydown', this._onKeyDown);
         window.addEventListener('keyup', this._onKeyUp);
+        console.log('TankCompInput.setupInput');
     }
 
     keyDown(keyCode) {
@@ -118,5 +116,6 @@ export default class TankCompInput {
             window.removeEventListener('keyup', this._onKeyUp);
             this._onKeyUp = null;
         }
+        console.log('TankCompInput.makeDead');
     }
 }

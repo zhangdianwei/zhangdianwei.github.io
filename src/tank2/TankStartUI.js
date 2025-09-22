@@ -12,8 +12,6 @@ export default class TankStartUI extends PIXI.Container {
         // UI元素
         this.titleText = null;
         this.singlePlayerButton = null;
-        this.multiPlayerButton = null;
-        this.onlineButton = null;
         
         this.createUI();
     }
@@ -73,35 +71,19 @@ export default class TankStartUI extends PIXI.Container {
     
     createButtons() {
         // 基于屏幕尺寸计算按钮大小和间距
-        const buttonWidth = this.tankApp.winW * 0.25;
-        const buttonHeight = this.tankApp.winH * 0.08;
+        const buttonWidth = this.tankApp.winW * 0.2;
+        const buttonHeight = this.tankApp.winH * 0.06;
         const buttonSpacing = this.tankApp.winH * 0.08;
-        const buttonY = this.tankApp.winH * 0.05;
+        const buttonY = this.tankApp.winH * 0.1;
         const buttonFontSize = Math.min(buttonWidth, buttonHeight) * 0.3;
         
-        // 单人游戏按钮
-        this.singlePlayerButton = this.createButton('单人游戏', 0x228B22, () => {
+        // 开始游戏按钮
+        this.singlePlayerButton = this.createButton('开始游戏', 0x228B22, () => {
             this.onSinglePlayer();
         }, buttonWidth, buttonHeight, buttonFontSize);
         this.singlePlayerButton.x = 0;
         this.singlePlayerButton.y = buttonY;
         this.addChild(this.singlePlayerButton);
-        
-        // 双人游戏按钮
-        this.multiPlayerButton = this.createButton('双人游戏', 0x4169E1, () => {
-            this.onMultiPlayer();
-        }, buttonWidth, buttonHeight, buttonFontSize);
-        this.multiPlayerButton.x = 0;
-        this.multiPlayerButton.y = buttonY + buttonSpacing;
-        this.addChild(this.multiPlayerButton);
-        
-        // 联网游戏按钮
-        this.onlineButton = this.createButton('联网游戏', 0xFF6347, () => {
-            this.onOnlineGame();
-        }, buttonWidth, buttonHeight, buttonFontSize);
-        this.onlineButton.x = 0;
-        this.onlineButton.y = buttonY + buttonSpacing * 2;
-        this.addChild(this.onlineButton);
     }
     
     createButton(text, color, onClick, width, height, fontSize) {
@@ -184,18 +166,6 @@ export default class TankStartUI extends PIXI.Container {
     // 事件回调函数
     onSinglePlayer() {
         this.tankApp.logic.setUI('TankGameUI');
-    }
-    
-    onMultiPlayer() {
-        console.log('开始双人游戏');
-        // 这里可以触发双人游戏逻辑
-        // 例如：this.tankApp.logic.startMultiPlayer();
-    }
-    
-    onOnlineGame() {
-        console.log('开始联网游戏');
-        // 这里可以触发联网游戏逻辑
-        // 例如：this.tankApp.logic.startOnlineGame();
     }
     
 }

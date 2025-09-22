@@ -30,7 +30,7 @@ export class TankLogic {
 
         this.tankApp.playerData = new TankPlayerData();
 
-        this.setUI("TankGameUI");
+        this.setUI("TankStartUI");
     }
 
     setUI(name) {

@@ -11,7 +11,7 @@ export default class TankPlayerData {
 
     resetOneLevelData(){
         this.enermyDestroyed = []; // 敌人被摧毁的数量
-        this.levelEnded = false; // 关卡是否结束
+        this.levelEndType = 0; // 1=胜利 2=失败
     }
 
     addEnemyDestroyed(enermyType, count){
@@ -21,7 +21,4 @@ export default class TankPlayerData {
         this.enermyDestroyed[enermyType] += count;
     }
 
-    setLevelEnded(ended){
-        this.levelEnded = ended;
-    }
 }

@@ -37,8 +37,12 @@ export default class TankGameUI extends PIXI.Container {
         };
         this.createRenderLayers();
         this.initComps();
-
+        this.on('removed', this.makeDead, this);
         this.startLevel();
+    }
+
+    onAppearFinish(){
+        this.createPlayer();
     }
     
     createMapBorder() {
@@ -73,10 +77,10 @@ export default class TankGameUI extends PIXI.Container {
     initComps() {
         this.updater = [];
 
-        this.input = new TankCompInput(this);
-        
         this.map = new TankCompMap(this);
         this.map.setRenderLayers(this.renderLayers);
+        
+        this.input = new TankCompInput(this);
         
         this.enemySpawner = new TankCompEnemySpawner(this);
         this.updater.push(this.enemySpawner);
@@ -172,7 +176,6 @@ export default class TankGameUI extends PIXI.Container {
         this.clearLevel();
         this.map.loadLevel(this.tankApp.playerData.levelId);
         this.createHome();
-        this.createPlayer();
     }
     
     nextLevel() {
@@ -422,8 +425,16 @@ export default class TankGameUI extends PIXI.Container {
                 this.createPlayer();
             }
             else {
-                this.tankApp.playerData.setLevelEnded(true);
+                this.tankApp.playerData.levelEndType = 2;
             }
         }
+    }
+
+    checkEnermyDestroyed() {
+        
+    }
+
+    makeDead(){
+        this.input.makeDead();
     }
 }

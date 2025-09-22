@@ -1,8 +1,6 @@
-import * as PIXI from 'pixi.js';
 import TankTile from './TankTile.js';
-import TankBase from './TankBase.js';
 import allLevels from './level/levels.json' with { type: 'json' };
-import { TileType, Dir, TileSize, TankType, MapWidth, MapHeight } from './TileType.js';
+import { TileType, TileSize } from './TileType.js';
 
 export default class TankCompMap {
     constructor(gameUI) {
@@ -32,8 +30,6 @@ export default class TankCompMap {
     }
     
     initTilesFromMap(mapData) {
-        this.clearAll();
-        
         for (let r = 0; r < this.mapRows; r++) {
             this.tiles[r] = [];
             for (let c = 0; c < this.mapCols; c++) {
@@ -63,9 +59,6 @@ export default class TankCompMap {
             case TileType.GRASS:
                 renderLayers.grass.addChild(tile);
                 break;
-            case TileType.BASE:
-                renderLayers.tiles.addChild(tile);
-                break;
         }
     }
     
@@ -81,28 +74,6 @@ export default class TankCompMap {
         });
         this.tiles = [];
     }
-    
-    clearAll() {
-        // 清除瓦片
-        this.clearTiles();
-        
-        // 清除玩家和基地（通过TankGameUI）
-        if (this.gameUI.player) {
-            if (this.gameUI.player.parent) {
-                this.gameUI.player.parent.removeChild(this.gameUI.player);
-            }
-            this.gameUI.player = null;
-        }
-        
-        if (this.gameUI.home) {
-            if (this.gameUI.home.parent) {
-                this.gameUI.home.parent.removeChild(this.gameUI.home);
-            }
-            this.gameUI.home = null;
-        }
-    }
-    
-    // === 地图查询方法 ===
     
     // 获取指定位置的瓦片类型
     getTileType(row, col) {
@@ -270,43 +241,6 @@ export default class TankCompMap {
         while (this.passable(r, c)) c--;
         return { row: r, col: c };
     }
-
-    // 检查位置是否可被摧毁
-    isDestructible(row, col) {
-        const tileType = this.getTileType(row, col);
-        return tileType === TileType.BRICK; // 砖块可被摧毁
-    }
-
-    // 检查基地是否被摧毁
-    isBaseDestroyed() {
-        // 直接检查home对象是否还存在于渲染层中
-        if (this.gameUI.home && this.gameUI.home.parent) {
-            return false;
-        }
-        return true;
-    }
-    
-    // 摧毁基地（被子弹击中时调用）
-    destroyBase() {
-        if (this.gameUI.home && this.gameUI.home.parent) {
-            this.gameUI.home.parent.removeChild(this.gameUI.home);
-        }
-    }
-    
-    // 检查基地碰撞（子弹与基地的碰撞检测）
-    checkBaseCollision(x, y) {
-        if (!this.gameUI.home || !this.gameUI.home.parent) {
-            return false;
-        }
-        
-        // 检查点是否在基地范围内
-        const homeLeft = this.gameUI.home.x;
-        const homeRight = this.gameUI.home.x + this.gameUI.home.width;
-        const homeTop = this.gameUI.home.y;
-        const homeBottom = this.gameUI.home.y + this.gameUI.home.height;
-        
-        return x >= homeLeft && x <= homeRight && y >= homeTop && y <= homeBottom;
-    }
     
     // 世界坐标转换为网格坐标
     worldToGrid(worldX, worldY) {
@@ -343,6 +277,8 @@ export default class TankCompMap {
     }
 
     checkCollisionBullet(bullet) {
+        if (bullet.isDead) return;
+
         let bounds = bullet.getBounds();
         let rcs = this.findRCsInBounds(bounds);
         for (let i = 0; i < rcs.length; i++) {

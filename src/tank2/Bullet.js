@@ -82,11 +82,14 @@ export default class Bullet extends PIXI.Container {
     }
     
     makeDead() {
+        this.isDead = true;
+        this.visible = false;
+
         if (this.owner && this.owner.onBulletDestroyed) {
             this.owner.onBulletDestroyed();
         }
         
-        this.tankApp.ui.removeBullet(this);
+        this.tankApp.ui.onBulletDeadFinish(this);
     }
     
     getBounds() {

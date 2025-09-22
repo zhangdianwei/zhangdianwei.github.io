@@ -15,6 +15,7 @@ export default class TankEndUI extends PIXI.Container {
         this.createTitle();
         this.createStats();
         this.createButtons();
+        this.updateTitleAndButton();
     }
     
     createPanel() {
@@ -117,25 +118,9 @@ export default class TankEndUI extends PIXI.Container {
     }
     
     createButtons() {
-        const buttonStyle = new PIXI.TextStyle({
-            fontFamily: 'Arial',
-            fontSize: 20,
-            fill: 0xFFFFFF,
-            align: 'center',
-            fontWeight: 'bold'
-        });
-        
-        // 回到开始界面按钮
-        this.backToStartBtn = this.createButton('回到开始界面', -200, 150);
-        this.addChild(this.backToStartBtn);
-        
-        // 重新开始按钮
-        this.restartBtn = this.createButton('重新开始', 0, 150);
-        this.addChild(this.restartBtn);
-        
-        // 下一关按钮
-        this.nextLevelBtn = this.createButton('下一关', 200, 150);
-        this.addChild(this.nextLevelBtn);
+        // 创建单个按钮
+        this.actionBtn = this.createButton('下一关', 0, 150);
+        this.addChild(this.actionBtn);
         
         // 设置按钮点击事件
         this.setupButtonEvents();
@@ -198,23 +183,25 @@ export default class TankEndUI extends PIXI.Container {
     }
     
     setupButtonEvents() {
-        // 回到开始界面按钮
-        this.backToStartBtn.on('pointerdown', () => {
-            this.onBackToStart();
-        });
-        
-        // 重新开始按钮
-        this.restartBtn.on('pointerdown', () => {
-            this.onRestart();
-        });
-        
-        // 下一关按钮
-        this.nextLevelBtn.on('pointerdown', () => {
-            this.onNextLevel();
+        // 单个按钮点击事件
+        this.actionBtn.on('pointerdown', () => {
+            this.onActionButtonClick();
         });
     }
     
     // 按钮回调函数
+    onActionButtonClick() {
+        if (!this.tankApp.playerData) return;
+        
+        if (this.tankApp.playerData.levelEndType === 1) {
+            // 胜利 - 下一关
+            this.onNextLevel();
+        } else {
+            // 失败 - 重新开始
+            this.onRestart();
+        }
+    }
+    
     onBackToStart() {
         console.log('回到开始界面');
         // 切换到开始界面
@@ -280,6 +267,31 @@ export default class TankEndUI extends PIXI.Container {
     
     setTitle(title) {
         this.titleText.text = title;
+    }
+    
+    updateTitleAndButton() {
+        if (!this.tankApp.playerData) return;
+        
+        // 更新标题
+        if (this.tankApp.playerData.levelEndType === 1) {
+            // 胜利
+            this.titleText.text = '关卡胜利';
+            this.titleText.style.fill = 0x00FF00; // 绿色
+        } else {
+            // 失败
+            this.titleText.text = '关卡失败';
+            this.titleText.style.fill = 0xFF0000; // 红色
+        }
+        
+        // 更新按钮文本
+        const buttonText = this.actionBtn.children[1]; // 获取按钮文字
+        if (this.tankApp.playerData.levelEndType === 1) {
+            // 胜利
+            buttonText.text = '下一关';
+        } else {
+            // 失败
+            buttonText.text = '重新开始';
+        }
     }
     
     show() {

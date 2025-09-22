@@ -7,19 +7,21 @@ export default class TankCompEnemySpawner {
     constructor(gameUI) {
         this.gameUI = gameUI;
         this.spawnIndex = 1; // 0=左, 1=中, 2=右
+        this.spawnCount = 0;
     }
 
     update(deltaTime) {
-        this.checkCreateEnemy();
-    }
-
-    checkCreateEnemy() {
         const map = this.gameUI.map;
         const condition1 = this.gameUI.enemies.length < map.config.maxEnemiesOnScreen;
+        const condition2 = this.spawnCount < map.config.totalEnemies;
 
-        if (condition1) {
+        if (condition1 && condition2) {
             this.createEnemy();
         }
+    }
+
+    isFinished() {
+        return this.spawnCount >= this.gameUI.map.config.totalEnemies && this.gameUI.enemies.length === 0;
     }
 
     createEnemy() {
@@ -35,6 +37,8 @@ export default class TankCompEnemySpawner {
         this.spawnIndex = (this.spawnIndex + 1) % 3;
         
         this.gameUI.addEnemy(enemy);
+
+        this.spawnCount++;
     }
 
     getStartRC(){

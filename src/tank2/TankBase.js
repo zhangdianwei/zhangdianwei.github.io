@@ -191,10 +191,18 @@ export default class TankBase extends PIXI.Container {
     }
 
     makeDead() {
-        this.tankApp.ui.onTankDead(this);
+        this.isDead = true;
+        this.visible = false;
+        this.tankApp.ui.addEffect('tankExplode', this.x, this.y, this.onDeadFinish.bind(this));
     }
+
+    onDeadFinish() {
+        this.tankApp.ui.onTankDeadFinish(this);
+    }
+
     
     update(deltaTime) {
+        if (this.isDead) return;
         this.checkMoving(deltaTime);
         this.checkShooting(deltaTime);
         this.checkInvincible(deltaTime);

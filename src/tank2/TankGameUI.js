@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { TankApp } from './TankApp.js';
 import TankBase from './TankBase.js';
+import TankHome from './TankHome.js';
 import { createSpriteSeqAnim } from './SpriteSeqAnim.js';
 import { TileType, Dir, TileSize, TankType, MapWidth, MapHeight } from './TileType.js';
 import TankCompInput from './TankCompInput.js';
@@ -91,6 +92,9 @@ export default class TankGameUI extends PIXI.Container {
     }
     
     update(deltaTime) {
+        if (this.tankApp.playerData.levelEndType != 0)
+            return;
+
         this.updater.forEach(updater => {
             updater.update(deltaTime);
         });
@@ -231,15 +235,12 @@ export default class TankGameUI extends PIXI.Container {
         const homeRow = this.map.mapRows - 1;
         const homeCol = this.map.mapCols / 2 - 1;
         
-        // 创建基地（使用一张2x2的大图）
-        this.home = PIXI.Sprite.from('tank2/bigtile_6.png');
-        this.home.width = TileSize * 2;
-        this.home.height = TileSize * 2;
-        this.home.anchor.set(0, 0);
+        // 创建基地
+        this.home = new TankHome();
         
-        // 设置位置（左上角对齐到第一个tile位置）
-        this.home.x = homeCol * TileSize;
-        this.home.y = (homeRow - 1) * TileSize;
+        // 设置位置（中心对齐）
+        this.home.x = homeCol * TileSize + TileSize;
+        this.home.y = (homeRow - 1) * TileSize + TileSize;
         
         // 添加到tank渲染层
         this.renderLayers.tank.addChild(this.home);
@@ -258,6 +259,18 @@ export default class TankGameUI extends PIXI.Container {
             const bullet = allBullets[i];
             this.map.checkCollisionBullet(bullet);
         }
+        
+        // 子弹与基地碰撞
+        if (this.home && !this.home.isDead) {
+            for (let i = 0; i < allBullets.length; i++) {
+                const bullet = allBullets[i];
+                if (this.home.checkCollision(bullet.x, bullet.y)) {
+                    this.home.takeDamage(bullet.power);
+                    bullet.makeDead();
+                }
+            }
+        }
+        
         
         // 玩家子弹与敌人碰撞
         playerBullets.forEach(bullet => {
@@ -290,7 +303,7 @@ export default class TankGameUI extends PIXI.Container {
     
     // 检查子弹与坦克的碰撞
     checkBulletTankCollision(bullet, tank) {
-        if (!bullet || !tank) return false;
+        if (!bullet || !tank || bullet.isDead || tank.isDead) return false;
         
         const bulletBounds = bullet.getBounds();
         const tankBounds = tank.getBounds();
@@ -304,7 +317,7 @@ export default class TankGameUI extends PIXI.Container {
     
     // 检查子弹与子弹的碰撞
     checkBulletBulletCollision(bullet1, bullet2) {
-        if (!bullet1 || !bullet2) return false;
+        if (!bullet1 || !bullet2 || bullet1.isDead || bullet2.isDead) return false;
         
         const bullet1Bounds = bullet1.getBounds();
         const bullet2Bounds = bullet2.getBounds();
@@ -407,9 +420,7 @@ export default class TankGameUI extends PIXI.Container {
         return x >= 0 && x < MapWidth && y >= 0 && y < MapHeight;
     }
     
-    onTankDead(tank) {
-        this.addEffect('tankExplode', tank.x, tank.y);
-
+    onTankDeadFinish(tank) {
         if(tank === this.player) {
             this.removePlayer(tank);
             this.checkCreatePlayer();
@@ -417,21 +428,51 @@ export default class TankGameUI extends PIXI.Container {
         else {
             this.removeEnemy(tank);
         }
+        this.checkGameState();
+    }
+
+    onHomeDeadFinish(home) {
+        this.home = null;
+        this.checkGameState();
+    }
+
+    onBulletDeadFinish(bullet) {
+        this.removeBullet(bullet);
     }
 
     checkCreatePlayer() {
-        if (!this.player) {
-            if(this.tankApp.playerData.playerLives > 0) {
-                this.createPlayer();
-            }
-            else {
-                this.tankApp.playerData.levelEndType = 2;
-            }
+        if(this.tankApp.playerData.playerLives > 0) {
+            this.tankApp.playerData.playerLives--;
+            this.createPlayer();
         }
     }
 
-    checkEnermyDestroyed() {
-        
+    checkGameState(){
+        if (this.tankApp.playerData.levelEndType != 0) return;
+
+        do{
+            if (this.enemySpawner.isFinished()) {
+                this.tankApp.playerData.levelEndType = 1; // 胜利
+                break;
+            }
+    
+            if (!this.home) {
+                this.tankApp.playerData.levelEndType = 2; // 失败
+                break;
+            }
+    
+            if (!this.player && this.tankApp.playerData.playerLives == 0) {
+                this.tankApp.playerData.levelEndType = 2; // 失败
+                break;
+            }
+        }
+        while(0);
+
+        if (this.tankApp.playerData.levelEndType){
+            this.tankApp.ticker.tickOnce(()=>{
+                this.tankApp.logic.setUI('TankEndUI');
+            }, 2);
+        }
     }
 
     makeDead(){

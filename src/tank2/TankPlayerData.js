@@ -11,5 +11,17 @@ export default class TankPlayerData {
 
     resetOneLevelData(){
         this.enermyDestroyed = []; // 敌人被摧毁的数量
+        this.levelEnded = false; // 关卡是否结束
+    }
+
+    addEnemyDestroyed(enermyType, count){
+        if(!this.enermyDestroyed[enermyType]) {
+            this.enermyDestroyed[enermyType] = 0;
+        }
+        this.enermyDestroyed[enermyType] += count;
+    }
+
+    setLevelEnded(ended){
+        this.levelEnded = ended;
     }
 }

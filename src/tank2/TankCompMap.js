@@ -34,20 +34,8 @@ export default class TankCompMap {
     loadLevel(levelId) {
         this.config = allLevels[levelId];
         this.initTilesFromMap(this.config.map);
-        this.gameUI.createHome();
-        this.gameUI.createPlayer();
         return true;
     }
-    
-    setLevel(levelId) {
-        this.gameUI.levelId = levelId;
-    }
-    
-    nextLevel() {
-        this.gameUI.levelId++;
-    }
-    
-    // === 游戏对象创建方法 ===
     
     initTilesFromMap(mapData) {
         this.clearAll();
@@ -402,26 +390,14 @@ export default class TankCompMap {
                 if (tile.getBlood() <= 0) {
                     this.setTileType(rc.row, rc.col, TileType.EMPTY);
                 }
-                bullet.destroy();
+                bullet.makeDead();
             }
             else if (tile.type === TileType.IRON) {
                 if (bullet.getPower() >= 2) {
                     this.setTileType(rc.row, rc.col, TileType.EMPTY);
                 }
-                bullet.destroy();
+                bullet.makeDead();
             }
         }
-    }
-
-    // === 重置方法 ===
-    
-    reset() {
-        this.clearAll();
-    }
-    
-    destroy() {
-        this.clearAll();
-        this.removeChildren();
-        super.destroy();
     }
 }

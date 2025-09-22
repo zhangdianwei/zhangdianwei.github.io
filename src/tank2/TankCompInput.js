@@ -109,7 +109,7 @@ export default class TankCompInput {
         }
     }
 
-    destroy() {
+    makeDead() {
         if (this._onKeyDown) {
             window.removeEventListener('keydown', this._onKeyDown);
             this._onKeyDown = null;

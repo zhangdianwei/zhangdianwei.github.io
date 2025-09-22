@@ -81,7 +81,7 @@ export default class TankTile extends PIXI.Container {
     }
 
     // 销毁瓦片
-    destroy() {
+    makeDead() {
         if (this.parent) {
             this.parent.removeChild(this);
         }

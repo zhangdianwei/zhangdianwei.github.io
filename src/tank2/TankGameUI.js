@@ -15,25 +15,16 @@ export default class TankGameUI extends PIXI.Container {
         this.tankApp = TankApp.instance;
         this.textures = this.tankApp.textures;
         
-        // === 游戏对象 ===
-        this.home = null;
-        this.player = null;
-        this.enemies = [];
-        this.playerBullets = [];
-        this.enemyBullets = [];
-        
-        // === 组件管理 ===
-        this.input = null;
-        this.map = null;
-        this.enemySpawner = null;
-        
         // === 根容器 ===
         this.tileRoot = new PIXI.Container();
         this.addChild(this.tileRoot);
         this.tileRoot.position.set(-MapWidth/2, -MapHeight/2);
-        
-        // === 地图边框 ===
         this.createMapBorder();
+
+        // === 组件管理 ===
+        this.input = null;
+        this.map = null;
+        this.enemySpawner = null;
         
         // === 渲染层管理 ===
         this.renderLayers = {
@@ -159,7 +150,17 @@ export default class TankGameUI extends PIXI.Container {
         if (index === -1) return;
         this.enemies.splice(index, 1);
     }
-    
+
+    addPlayer(player) {
+        this.player = player;
+        this.renderLayers.tank.addChild(player);
+    }
+
+    removePlayer(player) {
+        this.renderLayers.tank.removeChild(player);
+        this.player = null;
+    }
+
     addEffect(effectName, x, y, callback) {
         const effect = createSpriteSeqAnim(effectName, callback);
         effect.x = x;
@@ -168,14 +169,28 @@ export default class TankGameUI extends PIXI.Container {
     }
     
     startLevel() {
-        if (this.map) {
-            this.map.loadLevel(this.tankApp.playerData.levelId);
-        }
+        this.clearLevel();
+        this.map.loadLevel(this.tankApp.playerData.levelId);
+        this.createHome();
+        this.createPlayer();
     }
     
     nextLevel() {
-        if (this.map) {
-            this.map.nextLevel();
+        this.tankApp.playerData.levelId++;
+        this.startLevel();
+    }
+
+    clearLevel() {
+        this.home = null;
+        this.player = null;
+        this.enemies = [];
+        this.playerBullets = [];
+        this.enemyBullets = [];
+
+        for(let name in this.renderLayers){
+            if(this.renderLayers[name]){
+                this.renderLayers[name].removeChildren();
+            }
         }
     }
     
@@ -246,7 +261,7 @@ export default class TankGameUI extends PIXI.Container {
             enemies.forEach(enemy => {
                 if (this.checkBulletTankCollision(bullet, enemy)) {
                     enemy.takeDamage(bullet.power);
-                    bullet.destroy();
+                    bullet.makeDead();
                 }
             });
         });
@@ -255,7 +270,7 @@ export default class TankGameUI extends PIXI.Container {
         enemyBullets.forEach(bullet => {
             if (player && this.checkBulletTankCollision(bullet, player)) {
                 player.takeDamage(bullet.power);
-                bullet.destroy();
+                bullet.makeDead();
             }
         });
         
@@ -263,8 +278,8 @@ export default class TankGameUI extends PIXI.Container {
         playerBullets.forEach(playerBullet => {
             enemyBullets.forEach(enemyBullet => {
                 if (this.checkBulletBulletCollision(playerBullet, enemyBullet)) {
-                    playerBullet.destroy();
-                    enemyBullet.destroy();
+                    playerBullet.makeDead();
+                    enemyBullet.makeDead();
                 }
             });
         });
@@ -389,4 +404,26 @@ export default class TankGameUI extends PIXI.Container {
         return x >= 0 && x < MapWidth && y >= 0 && y < MapHeight;
     }
     
+    onTankDead(tank) {
+        this.addEffect('tankExplode', tank.x, tank.y);
+
+        if(tank === this.player) {
+            this.removePlayer(tank);
+            this.checkCreatePlayer();
+        }
+        else {
+            this.removeEnemy(tank);
+        }
+    }
+
+    checkCreatePlayer() {
+        if (!this.player) {
+            if(this.tankApp.playerData.playerLives > 0) {
+                this.createPlayer();
+            }
+            else {
+                this.tankApp.playerData.setLevelEnded(true);
+            }
+        }
+    }
 }

@@ -30,15 +30,15 @@ export class TankLogic {
 
         this.tankApp.playerData = new TankPlayerData();
 
-        this.setUI("TankStartUI");
+        this.setUI("TankGameUI");
     }
 
     setUI(name) {
-        if(name === 'TankGameUI') {
-            this.tankApp.setUI(new TankGameUI());
-        }
-        else if(name === 'TankStartUI') {
+        if(name === 'TankStartUI') {
             this.tankApp.setUI(new TankStartUI());
+        }
+        else if(name === 'TankGameUI') {
+            this.tankApp.setUI(new TankGameUI());
         }
         else if(name === 'TankEndUI') {
             this.tankApp.setUI(new TankEndUI());
@@ -51,7 +51,7 @@ export class TankLogic {
         }
     }
 
-    destroy() {
+    makeDead() {
         if (this.tankApp.ticker) {
             this.tankApp.ticker.stop();
             this.tankApp.ticker = null;

@@ -186,12 +186,12 @@ export default class TankBase extends PIXI.Container {
         
         this.health -= damage;
         if (this.health <= 0) {
-            this.destroy();
+            this.makeDead();
         }
     }
 
-    destroy() {
-        this.tankApp.ui.addEffect('tankExplode', this.x, this.y);
+    makeDead() {
+        this.tankApp.ui.onTankDead(this);
     }
     
     update(deltaTime) {

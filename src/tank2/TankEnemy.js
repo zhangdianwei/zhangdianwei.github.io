@@ -22,8 +22,9 @@ export default class TankEnemy extends TankBase {
 
     onAppearFinish(){
         super.onAppearFinish();
-        this.checkAI(0);
-        this.setMoving(true);
+        // this.checkAI(0);
+        // this.setMoving(true);
+        this.setShooting(true);
     }
 
     resetShootTimer(mode = 'normal') {
@@ -35,7 +36,7 @@ export default class TankEnemy extends TankBase {
     }
 
     update(deltaTime) {
-        this.checkAI(deltaTime);
+        // this.checkAI(deltaTime);
         super.update(deltaTime);
     }
 
@@ -199,10 +200,5 @@ export default class TankEnemy extends TankBase {
         } else {
             return dy > 0 ? Dir.DOWN : Dir.UP;
         }
-    }
-
-    destroy() {
-        super.destroy();
-        this.tankApp.removeEnemy(this);
     }
 } 

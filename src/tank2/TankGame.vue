@@ -48,6 +48,6 @@ const onTexturesLoaded = (textures) => {
 };
 
 onUnmounted(() => {
-    tankApp.logic.destroy();
+    tankApp.logic.makeDead();
 });
 </script> 

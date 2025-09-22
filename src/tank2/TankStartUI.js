@@ -198,19 +198,4 @@ export default class TankStartUI extends PIXI.Container {
         // 例如：this.tankApp.logic.startOnlineGame();
     }
     
-    // 显示/隐藏UI
-    show() {
-        this.visible = true;
-        this.alpha = 1;
-    }
-    
-    hide() {
-        this.visible = false;
-    }
-    
-    destroy() {
-        // 清理资源
-        this.removeChildren();
-        super.destroy();
-    }
 }

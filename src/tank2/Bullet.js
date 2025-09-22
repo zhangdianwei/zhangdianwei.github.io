@@ -46,7 +46,7 @@ export default class Bullet extends PIXI.Container {
     setBlood(blood) {
         this.blood = blood;
         if (this.blood <= 0) {
-            this.destroy();
+            this.makeDead();
         }
     }
 
@@ -77,12 +77,11 @@ export default class Bullet extends PIXI.Container {
         
         // 检查边界
         if (!this.tankApp.ui.isInBounds(this.x, this.y)) {
-            this.destroy();
+            this.makeDead();
         }
     }
     
-    destroy() {
-        // 通知坦克子弹被销毁
+    makeDead() {
         if (this.owner && this.owner.onBulletDestroyed) {
             this.owner.onBulletDestroyed();
         }

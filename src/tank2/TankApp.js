@@ -23,10 +23,6 @@ export class TankApp {
         return TankApp._instance;
     }
 
-    clear(){
-        this.ticker.stop();
-    }
-
     setUI(ui) {
         if (this.ui) {
             this.ui.removeFromParent();

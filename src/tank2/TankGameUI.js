@@ -179,8 +179,7 @@ export default class TankGameUI extends PIXI.Container {
     
     startLevel() {
         this.clearLevel();
-        // this.map.loadLevel(this.tankApp.playerData.levelId);
-        this.map.loadLevel(1);
+        this.map.loadLevel(this.tankApp.playerData.levelId);
         this.createHome();
     }
     

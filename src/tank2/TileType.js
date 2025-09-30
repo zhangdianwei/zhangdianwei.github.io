@@ -29,7 +29,7 @@ export const TankType = {
 
 export const TankConfig = {
     [TankType.PLAYER]: {
-        speed: 300,
+        speed: 100,
         health: 1,
         power: 1
     },

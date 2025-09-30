@@ -37,17 +37,11 @@ export default class TankTile extends PIXI.Container {
             case TileType.IRON: // 铁块
                 this.sprite = PIXI.Sprite.from('tank2/bigtile_2_tile_1.png');
                 break;
-            case TileType.WATER: // 水面
+            case TileType.GRASS: // 草地
                 this.sprite = PIXI.Sprite.from('tank2/bigtile_3_tile_1.png');
                 break;
-            case TileType.GRASS: // 草地
-                this.sprite = PIXI.Sprite.from('tank2/bigtile_4_tile_1.png');
-                break;
-            case TileType.BASE: // 老窝
-                this.sprite = PIXI.Sprite.from('tank2/bigtile_5_tile_1.png');
-                break;
-            case TileType.BASE: // 基地
-                this.sprite = PIXI.Sprite.from('tank2/bigtile_6.png');
+            case TileType.WATER: // 水面
+                this.sprite = PIXI.Sprite.from('tank2/bigtile_3_tile_1.png');
                 break;
             default:
                 // 默认使用Graphics绘制

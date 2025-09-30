@@ -179,7 +179,8 @@ export default class TankGameUI extends PIXI.Container {
     
     startLevel() {
         this.clearLevel();
-        this.map.loadLevel(this.tankApp.playerData.levelId);
+        // this.map.loadLevel(this.tankApp.playerData.levelId);
+        this.map.loadLevel(1);
         this.createHome();
     }
     
@@ -408,8 +409,8 @@ export default class TankGameUI extends PIXI.Container {
             return 1000;
         }
         
-        // 如果距离是负数（坦克在后面），但超过一个坦克的距离，则允许移动
-        if (minDistance < 0 && Math.abs(minDistance) > Math.max(width, height)) {
+        // 如果距离是负数（坦克重叠），允许移动
+        if (minDistance < 0) {
             return 1000; // 返回一个很大的值，允许移动
         }
         
@@ -474,7 +475,7 @@ export default class TankGameUI extends PIXI.Container {
         if (this.tankApp.playerData.levelEndType){
             this.tankApp.ticker.tickOnce(()=>{
                 this.tankApp.logic.setUI('TankEndUI');
-            }, 2);
+            }, 1);
         }
     }
 

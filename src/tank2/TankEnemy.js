@@ -22,8 +22,8 @@ export default class TankEnemy extends TankBase {
 
     onAppearFinish(){
         super.onAppearFinish();
-        // this.checkAI(0);
-        // this.setMoving(true);
+        this.checkAI(0);
+        this.setMoving(true);
         this.setShooting(true);
     }
 
@@ -36,7 +36,7 @@ export default class TankEnemy extends TankBase {
     }
 
     update(deltaTime) {
-        // this.checkAI(deltaTime);
+        this.checkAI(deltaTime);
         super.update(deltaTime);
     }
 

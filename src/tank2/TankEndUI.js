@@ -71,52 +71,6 @@ export default class TankEndUI extends PIXI.Container {
         this.timeText.y = -this.panelHeight/2 + 100;
         this.addChild(this.timeText);
         
-        // 分隔线
-        const line1 = new PIXI.Graphics();
-        line1.lineStyle(2, 0xFFFFFF, 0.5);
-        line1.moveTo(-this.panelWidth/2 + 30, -this.panelHeight/2 + 140);
-        line1.lineTo(this.panelWidth/2 - 30, -this.panelHeight/2 + 140);
-        this.addChild(line1);
-        
-        // 坦克摧毁统计标题
-        const statsTitle = new PIXI.Text('坦克摧毁统计', labelStyle);
-        statsTitle.x = -this.panelWidth/2 + 50;
-        statsTitle.y = -this.panelHeight/2 + 170;
-        this.addChild(statsTitle);
-        
-        // 各种坦克摧毁数量
-        this.enemy1Text = new PIXI.Text('普通坦克: 0', textStyle);
-        this.enemy1Text.x = -this.panelWidth/2 + 70;
-        this.enemy1Text.y = -this.panelHeight/2 + 200;
-        this.addChild(this.enemy1Text);
-        
-        this.enemy2Text = new PIXI.Text('快速坦克: 0', textStyle);
-        this.enemy2Text.x = -this.panelWidth/2 + 70;
-        this.enemy2Text.y = -this.panelHeight/2 + 230;
-        this.addChild(this.enemy2Text);
-        
-        this.enemy3Text = new PIXI.Text('重型坦克: 0', textStyle);
-        this.enemy3Text.x = -this.panelWidth/2 + 70;
-        this.enemy3Text.y = -this.panelHeight/2 + 260;
-        this.addChild(this.enemy3Text);
-        
-        this.enemy4Text = new PIXI.Text('装甲坦克: 0', textStyle);
-        this.enemy4Text.x = -this.panelWidth/2 + 70;
-        this.enemy4Text.y = -this.panelHeight/2 + 290;
-        this.addChild(this.enemy4Text);
-        
-        // 总计
-        this.totalText = new PIXI.Text('总计: 0', textStyle);
-        this.totalText.x = -this.panelWidth/2 + 70;
-        this.totalText.y = -this.panelHeight/2 + 330;
-        this.addChild(this.totalText);
-        
-        // 分隔线
-        const line2 = new PIXI.Graphics();
-        line2.lineStyle(2, 0xFFFFFF, 0.5);
-        line2.moveTo(-this.panelWidth/2 + 30, -this.panelHeight/2 + 370);
-        line2.lineTo(this.panelWidth/2 - 30, -this.panelHeight/2 + 370);
-        this.addChild(line2);
     }
     
     createButtons() {
@@ -221,6 +175,9 @@ export default class TankEndUI extends PIXI.Container {
     onRestart() {
         console.log('重新开始');
         // 重新开始当前关卡
+        if (this.tankApp.playerData) {
+            this.tankApp.playerData.resetOneLevelData(); // 重置关卡数据
+        }
         if (this.tankApp.logic && this.tankApp.logic.setUI) {
             this.tankApp.logic.setUI('TankGameUI');
         }
@@ -243,31 +200,6 @@ export default class TankEndUI extends PIXI.Container {
         
         // 使用playerData的格式化时间方法
         this.timeText.text = `关卡用时: ${this.tankApp.playerData.getFormattedLevelTime()}`;
-        
-        // 从playerData获取各种坦克摧毁数量
-        const enemyDestroyed = this.tankApp.playerData.enermyDestroyed || [];
-        
-        // 统计各种坦克类型
-        let enemy1Count = 0, enemy2Count = 0, enemy3Count = 0, enemy4Count = 0;
-        
-        enemyDestroyed.forEach(enemy => {
-            switch(enemy.type) {
-                case 1: enemy1Count++; break;
-                case 2: enemy2Count++; break;
-                case 3: enemy3Count++; break;
-                case 4: enemy4Count++; break;
-            }
-        });
-        
-        // 更新各种坦克摧毁数量
-        this.enemy1Text.text = `普通坦克: ${enemy1Count}`;
-        this.enemy2Text.text = `快速坦克: ${enemy2Count}`;
-        this.enemy3Text.text = `重型坦克: ${enemy3Count}`;
-        this.enemy4Text.text = `装甲坦克: ${enemy4Count}`;
-        
-        // 更新总计
-        const total = enemy1Count + enemy2Count + enemy3Count + enemy4Count;
-        this.totalText.text = `总计: ${total}`;
     }
     
     setTitle(title) {

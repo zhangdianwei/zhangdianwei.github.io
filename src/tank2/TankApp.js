@@ -37,7 +37,7 @@ export class TankApp {
             this.makeUIAppear(this.ui);
         }
 
-        this.uiContainer.alpha = 0.1;
+        // this.uiContainer.alpha = 0.1;
     }
 
     get winW(){

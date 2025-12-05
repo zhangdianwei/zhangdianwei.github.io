@@ -10,8 +10,17 @@
                     <Button type="primary" size="large">点击上传或拖拽图片</Button>
                 </Upload>
                 <div v-else class="image-wrapper">
-                    <canvas ref="canvasRef" @click="handleCanvasClick" @mousemove="handleCanvasMouseMove"
-                        @mouseleave="handleCanvasMouseLeave"></canvas>
+                    <div class="zoom-controls">
+                        <span class="zoom-label">缩放：</span>
+                        <span class="zoom-percent">{{ zoom }}%</span>
+                        <Button size="small" @click="resetZoom">100%</Button>
+                    </div>
+                    <div class="canvas-container" @wheel.prevent="handleWheel">
+                        <canvas ref="canvasRef"
+                            :style="{ transform: `scale(${zoom / 100})`, transformOrigin: 'center center' }"
+                            @click="handleCanvasClick" @mousemove="handleCanvasMouseMove"
+                            @mouseleave="handleCanvasMouseLeave"></canvas>
+                    </div>
                     <Button type="error" size="small" style="position: absolute; top: 10px; right: 10px;"
                         @click="clearImage">
                         清除图片
@@ -41,19 +50,19 @@
                     </div>
                     <div class="info-row">
                         <span class="label">导出格式：</span>
-                        <CheckboxGroup v-model="exportFormats">
-                            <Checkbox label="plist">plist</Checkbox>
-                            <Checkbox label="json">json</Checkbox>
-                            <Checkbox label="atlas">atlas</Checkbox>
-                        </CheckboxGroup>
+                        <Select v-model="exportFormat" style="width: 120px;">
+                            <Option value="json">json</Option>
+                            <Option value="plist">plist</Option>
+                            <Option value="atlas">atlas</Option>
+                        </Select>
                     </div>
                     <div class="info-row" style="margin-top: 16px;">
                         <Button type="primary" @click="showResult"
-                            :disabled="selectedCells.length === 0 || exportFormats.length === 0">
+                            :disabled="selectedCells.length === 0 || !exportFormat">
                             显示结果
                         </Button>
                         <Button type="success" style="margin-left: 8px;" @click="downloadFiles"
-                            :disabled="selectedCells.length === 0 || exportFormats.length === 0">
+                            :disabled="selectedCells.length === 0 || !exportFormat">
                             下载
                         </Button>
                     </div>
@@ -62,20 +71,18 @@
 
             <!-- 小图展示区 -->
             <Card :bordered="false" title="已选择的小图">
+                <div class="batch-rename-section">
+                    <Input v-model="batchRenamePrefix" placeholder="输入名称前缀" style="margin-bottom: 8px;" />
+                    <Button type="primary" @click="batchRename" :disabled="selectedCells.length === 0">
+                        批量重命名
+                    </Button>
+                </div>
                 <div class="cell-list">
                     <div v-for="(cell, index) in selectedCells" :key="cell.id" class="cell-item">
                         <div class="cell-header">
                             <Input v-model="cell.name" placeholder="输入名称" style="flex: 1;"
                                 @on-change="updateCellName(cell, $event)" />
-                            <Button type="error" size="small" @click="removeCell(index)" style="margin-left: 8px;">
-                                删除
-                            </Button>
-                        </div>
-                        <div class="cell-params">
-                            <Checkbox v-model="cell.rotated">旋转</Checkbox>
-                        </div>
-                        <div class="cell-preview">
-                            <canvas :ref="el => setCellPreviewRef(el, cell.id)" class="preview-canvas"></canvas>
+                            <Checkbox v-model="cell.rotated" style="margin-left: 12px;">已旋转</Checkbox>
                         </div>
                     </div>
                     <div v-if="selectedCells.length === 0" class="empty-tip">
@@ -89,11 +96,7 @@
         <!-- 结果显示模态框 -->
         <Modal v-model="showResultModal" title="导出结果" width="800" :mask-closable="false">
             <div class="result-content">
-                <Tabs v-model="resultTab">
-                    <TabPane v-for="format in exportFormats" :key="format" :label="format.toUpperCase()" :name="format">
-                        <pre class="result-code">{{ getResultByFormat(format) }}</pre>
-                    </TabPane>
-                </Tabs>
+                <pre class="result-code">{{ getResultByFormat(exportFormat) }}</pre>
             </div>
             <template #footer>
                 <Button @click="showResultModal = false">关闭</Button>
@@ -113,10 +116,9 @@ import {
     InputNumber,
     Input,
     Checkbox,
-    CheckboxGroup,
-    Modal,
-    Tabs,
-    TabPane
+    Select,
+    Option,
+    Modal
 } from 'view-ui-plus';
 
 // 图片相关
@@ -127,10 +129,13 @@ const canvasRef = ref(null);
 const image = ref(null);
 
 // 网格相关
-const rows = ref(1);
-const cols = ref(1);
+const rows = ref(3);
+const cols = ref(4);
 const cellWidth = computed(() => imageWidth.value ? Math.floor(imageWidth.value / cols.value) : 0);
 const cellHeight = computed(() => imageHeight.value ? Math.floor(imageHeight.value / rows.value) : 0);
+
+// 缩放相关
+const zoom = ref(100);
 
 // 选中的网格
 const selectedCells = ref([]);
@@ -139,11 +144,13 @@ let lastSelectedIndex = -1;
 let isShiftPressed = false;
 
 // 导出格式
-const exportFormats = ref(['json']);
+const exportFormat = ref('json');
 
 // 结果显示
 const showResultModal = ref(false);
-const resultTab = ref('json');
+
+// 批量重命名
+const batchRenamePrefix = ref('prefix');
 
 // 鼠标悬停
 const hoveredCell = ref(null);
@@ -191,8 +198,7 @@ function clearImage() {
     imageWidth.value = 0;
     imageHeight.value = 0;
     selectedCells.value = [];
-    rows.value = 1;
-    cols.value = 1;
+    zoom.value = 100;
 }
 
 // 绘制图片和网格
@@ -303,15 +309,19 @@ function handleCanvasClick(e) {
 
     const canvas = canvasRef.value;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const zoomScale = zoom.value / 100;
 
-    // 缩放比例
-    const scaleX = imageWidth.value / rect.width;
-    const scaleY = imageHeight.value / rect.height;
+    // 计算canvas中心点在视口中的位置
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
 
-    const actualX = x * scaleX;
-    const actualY = y * scaleY;
+    // 计算点击位置相对于canvas中心的偏移（考虑缩放）
+    const offsetX = (e.clientX - centerX) / zoomScale;
+    const offsetY = (e.clientY - centerY) / zoomScale;
+
+    // 转换为canvas原始坐标（canvas中心在 imageWidth/2, imageHeight/2）
+    const actualX = imageWidth.value / 2 + offsetX;
+    const actualY = imageHeight.value / 2 + offsetY;
 
     const cell = getCellAtPosition(actualX, actualY);
     if (!cell) return;
@@ -377,20 +387,35 @@ function updateCellName(cell, event) {
     cell.name = event.target.value;
 }
 
+// 批量重命名
+function batchRename() {
+    if (selectedCells.value.length === 0) return;
+
+    const prefix = batchRenamePrefix.value || 'prefix';
+    selectedCells.value.forEach((cell, index) => {
+        cell.name = `${prefix}_${index}`;
+    });
+}
+
 // 处理鼠标移动
 function handleCanvasMouseMove(e) {
     if (!image.value) return;
 
     const canvas = canvasRef.value;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const zoomScale = zoom.value / 100;
 
-    const scaleX = imageWidth.value / rect.width;
-    const scaleY = imageHeight.value / rect.height;
+    // 计算canvas中心点在视口中的位置
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
 
-    const actualX = x * scaleX;
-    const actualY = y * scaleY;
+    // 计算鼠标位置相对于canvas中心的偏移（考虑缩放）
+    const offsetX = (e.clientX - centerX) / zoomScale;
+    const offsetY = (e.clientY - centerY) / zoomScale;
+
+    // 转换为canvas原始坐标（canvas中心在 imageWidth/2, imageHeight/2）
+    const actualX = imageWidth.value / 2 + offsetX;
+    const actualY = imageHeight.value / 2 + offsetY;
 
     const cell = getCellAtPosition(actualX, actualY);
     hoveredCell.value = cell;
@@ -412,6 +437,20 @@ function handleCanvasMouseLeave() {
     }
 }
 
+// 处理滚轮缩放
+function handleWheel(e) {
+    if (!image.value) return;
+
+    const delta = e.deltaY > 0 ? -10 : 10;
+    const newZoom = Math.max(10, Math.min(500, zoom.value + delta));
+    zoom.value = newZoom;
+}
+
+// 重置缩放到100%
+function resetZoom() {
+    zoom.value = 100;
+}
+
 // 单元格预览引用
 const cellPreviewRefs = ref({});
 
@@ -421,28 +460,9 @@ function setCellPreviewRef(el, id) {
     }
 }
 
-// 更新单元格预览
+// 更新单元格预览（已移除预览功能，保留函数以避免调用错误）
 function updateCellPreviews() {
-    if (!image.value) return;
-
-    nextTick(() => {
-        selectedCells.value.forEach(cell => {
-            const previewCanvas = cellPreviewRefs.value[cell.id];
-            if (!previewCanvas) return;
-
-            const ctx = previewCanvas.getContext('2d');
-            const x = (cell.col * imageWidth.value) / cols.value;
-            const y = (cell.row * imageHeight.value) / rows.value;
-            const w = cellWidth.value;
-            const h = cellHeight.value;
-
-            previewCanvas.width = w;
-            previewCanvas.height = h;
-
-            ctx.clearRect(0, 0, w, h);
-            ctx.drawImage(image.value, x, y, w, h, 0, 0, w, h);
-        });
-    });
+    // 预览功能已移除
 }
 
 // 生成JSON格式
@@ -562,24 +582,23 @@ function getResultByFormat(format) {
 
 // 显示结果
 function showResult() {
-    if (exportFormats.value.length > 0) {
-        resultTab.value = exportFormats.value[0];
+    if (exportFormat.value) {
         showResultModal.value = true;
     }
 }
 
 // 下载文件
 function downloadFiles() {
-    exportFormats.value.forEach(format => {
-        const content = getResultByFormat(format);
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `texture.${format}`;
-        a.click();
-        URL.revokeObjectURL(url);
-    });
+    if (!exportFormat.value) return;
+
+    const content = getResultByFormat(exportFormat.value);
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `texture.${exportFormat.value}`;
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 // 监听选中单元格变化，更新预览
@@ -624,17 +643,48 @@ watch(selectedCells, () => {
     width: 100%;
     height: 100%;
     position: relative;
+    overflow: hidden;
+}
+
+.zoom-controls {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 12px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.zoom-label {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.zoom-percent {
+    font-size: 14px;
+    color: #666;
+}
+
+.canvas-container {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: auto;
+    padding: 20px;
 }
 
 .image-wrapper canvas {
-    max-width: 100%;
-    max-height: 100%;
     cursor: pointer;
     border: 1px solid #d9d9d9;
+    display: block;
+    background: #fff;
 }
 
 .control-panel {
@@ -661,8 +711,13 @@ watch(selectedCells, () => {
     min-width: 80px;
 }
 
+.batch-rename-section {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e8e8e8;
+}
 .cell-list {
-    max-height: calc(100vh - 400px);
+    max-height: calc(100vh - 500px);
     overflow-y: auto;
 }
 
@@ -677,27 +732,6 @@ watch(selectedCells, () => {
 .cell-header {
     display: flex;
     align-items: center;
-    margin-bottom: 8px;
-}
-
-.cell-params {
-    margin-bottom: 8px;
-}
-
-.cell-preview {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: #fff;
-    border: 1px solid #e8e8e8;
-    border-radius: 4px;
-    padding: 8px;
-}
-
-.preview-canvas {
-    max-width: 100%;
-    max-height: 120px;
-    border: 1px solid #d9d9d9;
 }
 
 .empty-tip {

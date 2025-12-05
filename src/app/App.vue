@@ -43,7 +43,7 @@ const categoryRoutes = [
     children: [
       { id: "TrigoCalc", title: "三角函数计算器", comp: TrigoCalc, img: "preview/TrigoCalc.png" },
       { id: "SplitImage", title: "SplitImage", comp: SplitImage, img: "preview/SplitImage.png" },
-      { id: "ImagePacker", title: "ImagePacker", comp: ImagePacker, img: "preview/SplitImage.png" },
+      // { id: "ImagePacker", title: "ImagePacker", comp: ImagePacker, img: "preview/SplitImage.png" },
     ]
   },
   {

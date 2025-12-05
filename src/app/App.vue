@@ -20,6 +20,7 @@ import Game2048 from "../game2048/Game2048.vue"
 import SplitImage from "../comp/SplitImage.vue"
 import Shooter from "../shooter/Shooter.vue"
 import GameMatch from "../match/GameMatch.vue"
+import ImagePacker from "../comp/ImagePacker.vue"
 import { Row, Col, Card, Divider, Button } from 'view-ui-plus'
 
 const categoryRoutes = [
@@ -42,6 +43,7 @@ const categoryRoutes = [
     children: [
       { id: "TrigoCalc", title: "三角函数计算器", comp: TrigoCalc, img: "preview/TrigoCalc.png" },
       { id: "SplitImage", title: "SplitImage", comp: SplitImage, img: "preview/SplitImage.png" },
+      { id: "ImagePacker", title: "ImagePacker", comp: ImagePacker, img: "preview/SplitImage.png" },
     ]
   },
   {

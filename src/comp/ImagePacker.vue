@@ -15,10 +15,10 @@
                         <span class="zoom-percent">{{ zoom }}%</span>
                         <Button size="small" @click="resetZoom">100%</Button>
                     </div>
-                    <div class="canvas-container" @wheel.prevent="handleWheel">
+                    <div class="canvas-container" @wheel.prevent="handleWheel" @click="handleContainerClick">
                         <canvas ref="canvasRef"
                             :style="{ transform: `scale(${zoom / 100})`, transformOrigin: 'center center' }"
-                            @click="handleCanvasClick" @mousemove="handleCanvasMouseMove"
+                            @click.stop="handleCanvasClick" @mousemove="handleCanvasMouseMove"
                             @mouseleave="handleCanvasMouseLeave"></canvas>
                     </div>
                     <Button type="error" size="small" style="position: absolute; top: 10px; right: 10px;"
@@ -57,13 +57,8 @@
                         </Select>
                     </div>
                     <div class="info-row" style="margin-top: 16px;">
-                        <Button type="primary" @click="showResult"
-                            :disabled="selectedCells.length === 0 || !exportFormat">
+                        <Button type="primary" @click="showResult" :disabled="!imageUrl || !exportFormat">
                             显示结果
-                        </Button>
-                        <Button type="success" style="margin-left: 8px;" @click="downloadFiles"
-                            :disabled="selectedCells.length === 0 || !exportFormat">
-                            下载
                         </Button>
                     </div>
                 </div>
@@ -72,8 +67,7 @@
             <!-- 小图展示区 -->
             <Card :bordered="false" title="已选择的小图">
                 <div class="batch-rename-section">
-                    <Input v-model="batchRenamePrefix" placeholder="输入名称前缀" style="margin-bottom: 8px;" />
-                    <Button type="primary" @click="batchRename" :disabled="selectedCells.length === 0">
+                    <Button type="primary" @click="openBatchRenameModal" :disabled="selectedCells.length === 0">
                         批量重命名
                     </Button>
                 </div>
@@ -82,7 +76,7 @@
                         <div class="cell-header">
                             <Input v-model="cell.name" placeholder="输入名称" style="flex: 1;"
                                 @on-change="updateCellName(cell, $event)" />
-                            <Checkbox v-model="cell.rotated" style="margin-left: 12px;">已旋转</Checkbox>
+                            <Checkbox v-model="cell.rotated" @on-change="updateCellRotated(cell)">已旋转</Checkbox>
                         </div>
                     </div>
                     <div v-if="selectedCells.length === 0" class="empty-tip">
@@ -100,6 +94,18 @@
             </div>
             <template #footer>
                 <Button @click="showResultModal = false">关闭</Button>
+                <Button type="success" style="margin-left: 8px;" @click="downloadFiles">下载</Button>
+            </template>
+        </Modal>
+
+        <!-- 批量重命名Modal -->
+        <Modal v-model="showBatchRenameModal" title="批量重命名" width="400" :mask-closable="false">
+            <div style="padding: 16px 0;">
+                <Input v-model="batchRenamePrefix" placeholder="输入名称前缀" />
+            </div>
+            <template #footer>
+                <Button @click="showBatchRenameModal = false">取消</Button>
+                <Button type="primary" @click="confirmBatchRename" style="margin-left: 8px;">确定</Button>
             </template>
         </Modal>
     </div>
@@ -123,6 +129,7 @@ import {
 
 // 图片相关
 const imageUrl = ref('');
+const imageFileName = ref('texture.png');
 const imageWidth = ref(0);
 const imageHeight = ref(0);
 const canvasRef = ref(null);
@@ -143,6 +150,9 @@ let cellIdCounter = 0;
 let lastSelectedIndex = -1;
 let isShiftPressed = false;
 
+// 保存每个网格的配置信息（即使取消选择也保留）
+const cellDataMap = ref(new Map());
+
 // 导出格式
 const exportFormat = ref('json');
 
@@ -150,6 +160,7 @@ const exportFormat = ref('json');
 const showResultModal = ref(false);
 
 // 批量重命名
+const showBatchRenameModal = ref(false);
 const batchRenamePrefix = ref('prefix');
 
 // 鼠标悬停
@@ -160,6 +171,7 @@ function handleUpload(file) {
     const reader = new FileReader();
     reader.onload = (e) => {
         imageUrl.value = e.target.result;
+        imageFileName.value = file.name || 'texture.png';
         loadImage();
     };
     reader.readAsDataURL(file);
@@ -194,10 +206,12 @@ function loadImage() {
 // 清除图片
 function clearImage() {
     imageUrl.value = '';
+    imageFileName.value = 'texture.png';
     image.value = null;
     imageWidth.value = 0;
     imageHeight.value = 0;
     selectedCells.value = [];
+    cellDataMap.value.clear();
     zoom.value = 100;
 }
 
@@ -303,6 +317,16 @@ function getCellAtPosition(x, y) {
     return null;
 }
 
+// 处理容器点击（点击图片外的区域）
+function handleContainerClick(e) {
+    if (!image.value) return;
+    // 点击容器但不在canvas上，清除所有选择
+    selectedCells.value = [];
+    lastSelectedIndex = -1;
+    drawImage();
+    updateCellPreviews();
+}
+
 // 处理画布点击
 function handleCanvasClick(e) {
     if (!image.value) return;
@@ -365,12 +389,25 @@ function handleCanvasClick(e) {
 
 // 添加网格
 function addCell(row, col) {
+    // 检查是否有之前保存的配置
+    const key = `${row}_${col}`;
+    let savedData = cellDataMap.value.get(key);
+
+    if (!savedData) {
+        // 如果没有保存的配置，创建默认配置
+        savedData = {
+            name: `cell_${row}_${col}`,
+            rotated: false
+        };
+        cellDataMap.value.set(key, savedData);
+    }
+
     const cell = {
         id: cellIdCounter++,
         row,
         col,
-        name: `cell_${row}_${col}`,
-        rotated: false
+        name: savedData.name,
+        rotated: savedData.rotated
     };
     selectedCells.value.push(cell);
 }
@@ -385,16 +422,43 @@ function removeCell(index) {
 // 更新网格名称
 function updateCellName(cell, event) {
     cell.name = event.target.value;
+    // 同时保存到映射中
+    const key = `${cell.row}_${cell.col}`;
+    const savedData = cellDataMap.value.get(key) || { name: cell.name, rotated: cell.rotated };
+    savedData.name = cell.name;
+    cellDataMap.value.set(key, savedData);
 }
 
-// 批量重命名
-function batchRename() {
+// 更新网格旋转状态
+function updateCellRotated(cell) {
+    // 同时保存到映射中
+    const key = `${cell.row}_${cell.col}`;
+    const savedData = cellDataMap.value.get(key) || { name: cell.name, rotated: cell.rotated };
+    savedData.rotated = cell.rotated;
+    cellDataMap.value.set(key, savedData);
+}
+
+// 显示批量重命名Modal
+function openBatchRenameModal() {
+    if (selectedCells.value.length === 0) return;
+    batchRenamePrefix.value = 'prefix';
+    showBatchRenameModal.value = true;
+}
+
+// 确认批量重命名
+function confirmBatchRename() {
     if (selectedCells.value.length === 0) return;
 
     const prefix = batchRenamePrefix.value || 'prefix';
     selectedCells.value.forEach((cell, index) => {
         cell.name = `${prefix}_${index}`;
+        // 同时保存到映射中
+        const key = `${cell.row}_${cell.col}`;
+        const savedData = cellDataMap.value.get(key) || { name: cell.name, rotated: cell.rotated };
+        savedData.name = cell.name;
+        cellDataMap.value.set(key, savedData);
     });
+    showBatchRenameModal.value = false;
 }
 
 // 处理鼠标移动
@@ -465,16 +529,36 @@ function updateCellPreviews() {
     // 预览功能已移除
 }
 
+// 获取所有网格的数据
+function getAllCells() {
+    const allCells = [];
+    for (let r = 0; r < rows.value; r++) {
+        for (let c = 0; c < cols.value; c++) {
+            const key = `${r}_${c}`;
+            const savedData = cellDataMap.value.get(key);
+            const cell = {
+                row: r,
+                col: c,
+                name: savedData ? savedData.name : `cell_${r}_${c}`,
+                rotated: savedData ? savedData.rotated : false
+            };
+            allCells.push(cell);
+        }
+    }
+    return allCells;
+}
+
 // 生成JSON格式
 function generateJSON() {
     const frames = {};
     const meta = {
-        image: 'texture.png',
+        image: imageFileName.value,
         size: { w: imageWidth.value, h: imageHeight.value },
         scale: 1
     };
 
-    selectedCells.value.forEach(cell => {
+    const allCells = getAllCells();
+    allCells.forEach(cell => {
         const x = (cell.col * imageWidth.value) / cols.value;
         const y = (cell.row * imageHeight.value) / rows.value;
         const w = cellWidth.value;
@@ -502,7 +586,8 @@ function generatePlist() {
     <dict>
 `;
 
-    selectedCells.value.forEach(cell => {
+    const allCells = getAllCells();
+    allCells.forEach(cell => {
         const x = (cell.col * imageWidth.value) / cols.value;
         const y = (cell.row * imageHeight.value) / rows.value;
         const w = cellWidth.value;
@@ -530,11 +615,11 @@ function generatePlist() {
         <key>format</key>
         <integer>2</integer>
         <key>realTextureFileName</key>
-        <string>texture.png</string>
+        <string>${imageFileName.value}</string>
         <key>size</key>
         <string>{${imageWidth.value},${imageHeight.value}}</string>
         <key>textureFileName</key>
-        <string>texture.png</string>
+        <string>${imageFileName.value}</string>
     </dict>
 </dict>
 </plist>`;
@@ -547,7 +632,8 @@ function generateAtlas() {
     let atlas = `${imageWidth.value}:${imageHeight.value}
 `;
 
-    selectedCells.value.forEach(cell => {
+    const allCells = getAllCells();
+    allCells.forEach(cell => {
         const x = (cell.col * imageWidth.value) / cols.value;
         const y = (cell.row * imageHeight.value) / rows.value;
         const w = cellWidth.value;
@@ -716,22 +802,21 @@ watch(selectedCells, () => {
     padding-bottom: 16px;
     border-bottom: 1px solid #e8e8e8;
 }
+
 .cell-list {
     max-height: calc(100vh - 500px);
     overflow-y: auto;
 }
 
 .cell-item {
-    margin-bottom: 16px;
-    padding: 12px;
-    border: 1px solid #e8e8e8;
-    border-radius: 4px;
-    background: #fafafa;
+    margin-bottom: 4px;
+        padding: 4px 0;
 }
 
 .cell-header {
     display: flex;
     align-items: center;
+    gap: 8px;
 }
 
 .empty-tip {

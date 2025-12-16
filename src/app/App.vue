@@ -27,7 +27,6 @@ const categoryRoutes = [
       { id: "BallGame", title: "抓住狗屎运", comp: BallGame, img: "preview/BallGame.png" },
       { id: "GameMatch", title: "GameMatch", comp: GameMatch, img: "preview/GameMatch.png" },
       { id: "Game2048", title: "Game2048", comp: Game2048, img: "preview/Game2048.png" },
-      // { id: "tetris", title: "俄罗斯方块", comp: EasyLink, link: 'tetris/index.html', img: "preview/tetris.png" },
       { id: "TankGame", title: "坦克大战", comp: TankGame, img: "preview/TankMain.png" },
     ]
   },

@@ -2,12 +2,7 @@
 import { ref, computed } from "vue"
 import AppItem from './AppItem.vue'
 import TankGame from '../tank2/TankGame.vue'
-import KonvaMain from '../konva/KonvaMain.vue'
 import EasyLink from '../easy_link/EasyLink.vue'
-import GridSquare from "../comp/GridSquare.vue"
-import GridParallelogramH from "../comp/GridParallelogramH.vue"
-import GridParallelogramV from "../comp/GridParallelogramV.vue"
-import KonvaStageTest from "../konva/KonvaStageTest.vue"
 import TrigoCalc from "../comp/TrigoCalc.vue"
 import ShaderFragBase from "../shader/ShaderFragBase.vue"
 import ShaderImageBase from "../shader/ShaderImageBase.vue"
@@ -62,14 +57,6 @@ const categoryRoutes = [
     ]
   },
   {
-    name: "网格展示",
-    children: [
-      { id: "GridSquare", title: "矩形网格", comp: GridSquare },
-      { id: "GridParallelogramH", title: "横向平行四边形网格", comp: GridParallelogramH },
-      { id: "GridParallelogramV", title: "纵向平行四边形网格", comp: GridParallelogramV },
-    ]
-  },
-  {
     name: "曲线展示",
     children: [
       { id: "CurveRope", title: "曲线绳子(Three)", comp: CurveRope },
@@ -79,8 +66,6 @@ const categoryRoutes = [
   {
     name: "其他杂项",
     children: [
-      { id: "KonvaMain", title: "Konva示例", comp: KonvaMain },
-      { id: "KonvaStageTest", title: "KonvaStageTest", comp: KonvaStageTest },
       { id: "ThreeHello", title: "ThreeHello", comp: ThreeHello },
     ]
   }

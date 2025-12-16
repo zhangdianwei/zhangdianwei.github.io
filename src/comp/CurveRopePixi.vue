@@ -2,7 +2,6 @@
 import { onMounted, reactive, ref, watch } from 'vue';
 import { Shader, Geometry, Point, Mesh, Circle, Graphics, Application, Assets, Container } from 'pixi.js';
 import { Bezier } from "bezier-js";
-import { Label } from 'konva/lib/shapes/Label';
 
 const rootRef = ref(null);
 let app = null;

@@ -12,7 +12,4 @@ app.use(ViewUIPlus)
 import Tres from '@tresjs/core'
 app.use(Tres);
 
-import VueKonva from 'vue-konva'
-app.use(VueKonva)
-
 app.mount('#app');

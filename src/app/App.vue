@@ -13,7 +13,6 @@ import CurveRope from "../comp/CurveRope.vue"
 import CurveRopePixi from "../comp/CurveRopePixi.vue"
 import Game2048 from "../game2048/Game2048.vue"
 import SplitImage from "../comp/SplitImage.vue"
-import Shooter from "../shooter/Shooter.vue"
 import GameMatch from "../match/GameMatch.vue"
 import ImagePacker from "../comp/ImagePacker.vue"
 import { Row, Col, Card, Divider, Button } from 'view-ui-plus'
@@ -29,7 +28,6 @@ const categoryRoutes = [
       { id: "GameMatch", title: "GameMatch", comp: GameMatch, img: "preview/GameMatch.png" },
       { id: "Game2048", title: "Game2048", comp: Game2048, img: "preview/Game2048.png" },
       // { id: "tetris", title: "俄罗斯方块", comp: EasyLink, link: 'tetris/index.html', img: "preview/tetris.png" },
-      // { id: "Shooter", title: "Shooter", comp: Shooter, img: "preview/Shooter.png" },
       { id: "TankGame", title: "坦克大战", comp: TankGame, img: "preview/TankMain.png" },
     ]
   },

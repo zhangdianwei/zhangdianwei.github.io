@@ -7,7 +7,7 @@ class TetrisGame {
     init(domElement, textures) {
         initDom(domElement, {
             designWidth: 960,
-            designHeight: 640,
+            designHeight: 540,
             isFullScreen: false
         });
         this.pixi = createPixi(domElement, {

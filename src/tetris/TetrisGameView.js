@@ -23,7 +23,7 @@ class TetrisGameView extends PIXI.Container {
         this.rowCount = 20;
         this.colCount = 10;
         this.tileSize = 25;
-        this.dropSpeed = 500;
+        this.speedLevel = 1;
         this.dropSpeedTimer = 0;
         this.dropPaused = false;
 
@@ -67,8 +67,12 @@ class TetrisGameView extends PIXI.Container {
         this.checkTotalDrop();
     }
 
+    dropSpeed() {
+        return 500 - (this.speedLevel - 1) * (500 - 100) / (10 - 1);
+    }
+
     get moveAnimationDuration() {
-        return this.dropSpeed / 3;
+        return this.dropSpeed() / 3;
     }
 
     initShapeQueue() {
@@ -92,7 +96,7 @@ class TetrisGameView extends PIXI.Container {
         const shapeTypes = Object.values(TetrisShape.TetrisShapeType);
         while (this.nextShapInfos.length < 2) {
             let newShapeIndex = this.shapeGenerator.nextInt(TetrisShape.TetrisShapeCount);
-            newShapeIndex = 0;
+            // newShapeIndex = 0;
             const newShapeType = shapeTypes[newShapeIndex];
             const newColorIndex = newShapeIndex; // shapeType 的索引直接作为 colorIndex
             this.nextShapInfos.push({shapeType: newShapeType, colorIndex: newColorIndex});
@@ -250,7 +254,47 @@ class TetrisGameView extends PIXI.Container {
     }
 
     handleDrop() {
-        this.checkTotalDrop();
+        if (!this.dropInfo) return;
+        
+        const landingRCs = this.getDropLandingRCs();
+        if (landingRCs.length === 0) return;
+        
+        let minDistance = Infinity;
+        for (let i = 0; i < this.dropInfo.rcs.length; i++) {
+            const currentR = this.dropInfo.rcs[i].r;
+            const landingR = landingRCs[i].r;
+            const distance = currentR - landingR;
+            minDistance = Math.min(minDistance, distance);
+        }
+        
+        if (minDistance > 200) {
+            for (let i = 0; i < this.dropInfo.rcs.length; i++) {
+                const currentR = this.dropInfo.rcs[i].r;
+                const landingR = landingRCs[i].r;
+                const targetR = landingR + 1;
+                
+                const tile = this.dropInfo.tiles[i];
+                this.dropInfo.rcs[i].r = targetR;
+                
+                const targetPos = this.getPosByRC(targetR, this.dropInfo.rcs[i].c);
+                tile.animateToPosition(targetPos, this.moveAnimationDuration);
+            }
+            this.updateDropIndicator();
+            this.dropSpeedTimer = 0;
+        } else if (minDistance >= 0) {
+            for (let i = 0; i < this.dropInfo.rcs.length; i++) {
+                const newRC = landingRCs[i];
+                const tile = this.dropInfo.tiles[i];
+                
+                this.dropInfo.rcs[i] = newRC;
+                
+                const targetPos = this.getPosByRC(newRC.r, newRC.c);
+                tile.animateToPosition(targetPos, this.moveAnimationDuration);
+            }
+
+            this.updateDropIndicator();
+            this.dropSpeedTimer = 0;
+        }
     }
 
     handleMoveLeft() {
@@ -290,7 +334,7 @@ class TetrisGameView extends PIXI.Container {
 
         if (!this.dropPaused){
             this.dropSpeedTimer += deltaMS;
-            if (this.dropSpeedTimer >= this.dropSpeed) {
+            if (this.dropSpeedTimer >= this.dropSpeed()) {
                 this.dropSpeedTimer = 0;
                 this.checkTotalDrop();
             }
@@ -382,11 +426,16 @@ class TetrisGameView extends PIXI.Container {
     }
 
     removeFullRows(fullRows) {
-        // 更新得分和消除行数
         const lineCount = fullRows.length;
+        const oldLinesCleared = this.linesCleared;
         this.linesCleared += lineCount;
         
-        // 根据消除行数计算得分
+        const oldLevel = Math.floor(oldLinesCleared / 10);
+        const newLevel = Math.floor(this.linesCleared / 10);
+        if (newLevel > oldLevel && this.speedLevel < 10) {
+            this.speedLevel = Math.min(this.speedLevel + (newLevel - oldLevel), 10);
+        }
+        
         let points = 1000;
         if (lineCount === 1) {
             points = 100;
@@ -399,7 +448,6 @@ class TetrisGameView extends PIXI.Container {
         }
         this.score += points;
         
-        // 更新信息显示
         this.updateInfoDisplay();
         
         // 先移除满行的 tile
@@ -718,7 +766,7 @@ class TetrisGameView extends PIXI.Container {
         
         this.speedValue = new PIXI.Text('500ms', textStyle);
         this.speedValue.anchor.set(0, 0);
-        this.speedValue.x = infoX + 90;
+        this.speedValue.x = infoX + 60;
         this.speedValue.y = infoY;
         this.infoDisplayContainer.addChild(this.speedValue);
         
@@ -731,7 +779,7 @@ class TetrisGameView extends PIXI.Container {
         
         this.linesValue = new PIXI.Text('0', textStyle);
         this.linesValue.anchor.set(0, 0);
-        this.linesValue.x = infoX + 90;
+        this.linesValue.x = infoX + 60;
         this.linesValue.y = infoY + 25;
         this.infoDisplayContainer.addChild(this.linesValue);
         
@@ -744,12 +792,12 @@ class TetrisGameView extends PIXI.Container {
         
         this.scoreValue = new PIXI.Text('0', textStyle);
         this.scoreValue.anchor.set(0, 0);
-        this.scoreValue.x = infoX + 90;
+        this.scoreValue.x = infoX + 60;
         this.scoreValue.y = infoY + 50;
         this.infoDisplayContainer.addChild(this.scoreValue);
         
         // 初始化 animState
-        this.animRollNum(this.speedValue, this.dropSpeed);
+        this.animRollNum(this.speedValue, this.speedLevel);
         this.animRollNum(this.linesValue, this.linesCleared);
         this.animRollNum(this.scoreValue, this.score);
         
@@ -803,7 +851,7 @@ class TetrisGameView extends PIXI.Container {
 
     updateInfoDisplay() {
         if (!this.infoDisplayContainer) return;
-        this.animRollNum(this.speedValue, this.dropSpeed);
+        this.animRollNum(this.speedValue, this.speedLevel);
         this.animRollNum(this.linesValue, this.linesCleared);
         this.animRollNum(this.scoreValue, this.score);
     }

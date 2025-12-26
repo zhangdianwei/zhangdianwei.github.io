@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 import * as TWEEN from '@tweenjs/tween.js';
 import TetrisTile from './TetrisTile.js';
 import * as TetrisShape from './TetrisShape.js';
+import RandGenerator from './RandGenerator.js';
 
 class TetrisGameView extends PIXI.Container {
     
@@ -14,6 +15,7 @@ class TetrisGameView extends PIXI.Container {
         this.initBgCenter();
         this.initBg();
         this.initGameLogic();
+        this.initNextShapePreview();
     }
 
     initGameLogic() {
@@ -37,6 +39,11 @@ class TetrisGameView extends PIXI.Container {
         this.particlePoolSize = 100; // 缓存池大小
         this.initParticlePool();
 
+        // 初始化随机数生成器和形状队列
+        this.shapeGenerator = new RandGenerator();
+        this.nextShapInfos = [];
+        this.initShapeQueue();
+
         // debug
         // for (let r = 0; r < 17; r++) {
         //     for (let c = 0; c < this.colCount; c++) {
@@ -57,6 +64,35 @@ class TetrisGameView extends PIXI.Container {
 
     get moveAnimationDuration() {
         return this.dropSpeed / 3;
+    }
+
+    initShapeQueue() {
+        // 初始化队列，包含 2 个随机形状信息对象 {shapeType, colorIndex}
+        this.nextShapInfos = [];
+        const shapeTypes = Object.values(TetrisShape.TetrisShapeType);
+        for (let i = 0; i < 2; i++) {
+            const shapeIndex = this.shapeGenerator.nextInt(TetrisShape.TetrisShapeCount);
+            const shapeType = shapeTypes[shapeIndex];
+            const colorIndex = shapeIndex; // shapeType 的索引直接作为 colorIndex
+            this.nextShapInfos.push({shapeType, colorIndex});
+        }
+    }
+
+    getNextShapeInfo() {
+        // 从队列头部取出一个形状信息对象
+        const shapeInfo = this.nextShapInfos.shift();
+        
+        // 生成新的形状信息对象并添加到队列尾部，保持队列长度为 2
+        const shapeTypes = Object.values(TetrisShape.TetrisShapeType);
+        const newShapeIndex = this.shapeGenerator.nextInt(TetrisShape.TetrisShapeCount);
+        const newShapeType = shapeTypes[newShapeIndex];
+        const newColorIndex = newShapeIndex; // shapeType 的索引直接作为 colorIndex
+        this.nextShapInfos.push({shapeType: newShapeType, colorIndex: newColorIndex});
+        
+        // 更新下一个形状预览
+        this.updateNextShapePreview();
+        
+        return shapeInfo;
     }
 
     initKeyboard() {
@@ -416,7 +452,8 @@ class TetrisGameView extends PIXI.Container {
 
     createNewShape() {
         this.dropInfo = {};
-        this.dropInfo.shapeType = TetrisShape.getRandomShapeType();
+        const shapeInfo = this.getNextShapeInfo();
+        this.dropInfo.shapeType = shapeInfo.shapeType;
         this.dropInfo.rotation = 0;
         this.dropInfo.rcs = [];
         this.dropInfo.tiles = [];
@@ -436,7 +473,7 @@ class TetrisGameView extends PIXI.Container {
         let row = this.rowCount - 1 - minRow;
         let col = Math.floor((this.colCount - shapeTiles[0].length) / 2);
 
-        let colorIndex = TetrisShape.getRandomColorIndex();
+        let colorIndex = shapeInfo.colorIndex;
         this.dropInfo.previewSprites = [];
         const textureUrl = 'tetris/tile' + (colorIndex + 1) + '.png';
         const texture = this.game.textures[textureUrl];
@@ -613,6 +650,120 @@ class TetrisGameView extends PIXI.Container {
         this.bgCenterUp.x = 0;
         this.bgCenterUp.y = 0;
         this.addChild(this.bgCenterUp);
+    }
+
+    initNextShapePreview() {
+        // 创建预览容器
+        this.nextShapePreviewContainer = new PIXI.Container();
+        
+        // 获取 bgCenterUp 的右边缘位置
+        const bgCenterUpRight = this.bgCenterUp.x + this.bgCenterUp.width / 2;
+        
+        // 创建底板
+        const bgTexture = this.game.textures['tetris/bg_r_1.png'];
+        this.nextShapePreviewBg = new PIXI.Sprite(bgTexture);
+        this.nextShapePreviewBg.anchor.set(0, 0.5); // 左锚点，垂直居中
+        this.nextShapePreviewBg.x = bgCenterUpRight; // 紧贴 bgCenterUp 的右侧
+        this.nextShapePreviewBg.y = -200; // 与 bgCenterUp 同一水平线
+        this.nextShapePreviewContainer.addChild(this.nextShapePreviewBg);
+        
+        // 存储预览 tile 的容器
+        this.nextShapePreviewTiles = [[], []]; // [0] 用于 nextShapInfos[0], [1] 用于 nextShapInfos[1]
+        
+        this.addChild(this.nextShapePreviewContainer);
+        
+        // 初始化显示
+        this.updateNextShapePreview();
+    }
+
+    updateNextShapePreview() {
+        if (!this.nextShapePreviewContainer || this.nextShapePreviewTiles.length < 2) {
+            return;
+        }
+        
+        // 清除旧的预览 tile
+        for (let i = 0; i < 2; i++) {
+            for (let j = 0; j < this.nextShapePreviewTiles[i].length; j++) {
+                if (this.nextShapePreviewTiles[i][j].parent) {
+                    this.nextShapePreviewTiles[i][j].parent.removeChild(this.nextShapePreviewTiles[i][j]);
+                }
+            }
+            this.nextShapePreviewTiles[i] = [];
+        }
+        
+        if (this.nextShapInfos.length < 2) {
+            return;
+        }
+        
+        // 获取底板的位置和尺寸
+        const bgLeft = this.nextShapePreviewBg.x;
+        const bgWidth = this.nextShapePreviewBg.width;
+        const bgY = this.nextShapePreviewBg.y;
+        
+        const previewTileSize = 15; // 预览 tile 的大小，比游戏中的小
+        
+        // 左侧部分：显示 nextShapInfos[0] (不透明)
+        const leftX = bgLeft + bgWidth * 0.25; // 左侧 1/4 位置（左侧部分的中心）
+        const leftY = bgY;
+        const shapeInfo0 = this.nextShapInfos[0];
+        this.renderShapePreview(shapeInfo0, leftX, leftY, previewTileSize, 1.0, 0);
+        
+        // 右侧部分：显示 nextShapInfos[1] (半透明)
+        const rightX = bgLeft + bgWidth * 0.75; // 右侧 3/4 位置（右侧部分的中心）
+        const rightY = bgY;
+        const shapeInfo1 = this.nextShapInfos[1];
+        this.renderShapePreview(shapeInfo1, rightX, rightY, previewTileSize, 0.5, 1);
+    }
+
+    renderShapePreview(shapeInfo, centerX, centerY, tileSize, alpha, previewIndex) {
+        if (!shapeInfo) return;
+        
+        const shapeDef = TetrisShape.TetrisShapeDef[shapeInfo.shapeType];
+        const shapeTiles = shapeDef.rotations[0];
+        
+        // 计算形状的边界
+        let minR = Infinity, maxR = -Infinity;
+        let minC = Infinity, maxC = -Infinity;
+        for (let r = 0; r < shapeTiles.length; r++) {
+            for (let c = 0; c < shapeTiles[r].length; c++) {
+                if (shapeTiles[r][c] > 0) {
+                    minR = Math.min(minR, r);
+                    maxR = Math.max(maxR, r);
+                    minC = Math.min(minC, c);
+                    maxC = Math.max(maxC, c);
+                }
+            }
+        }
+        
+        // 计算形状的中心偏移
+        const shapeWidth = (maxC - minC + 1) * tileSize;
+        const shapeHeight = (maxR - minR + 1) * tileSize;
+        const offsetX = -shapeWidth / 2 + tileSize / 2;
+        const offsetY = -shapeHeight / 2 + tileSize / 2;
+        
+        // 创建 tile
+        const textureUrl = 'tetris/tile' + (shapeInfo.colorIndex + 1) + '.png';
+        const texture = this.game.textures[textureUrl];
+        
+        for (let r = 0; r < shapeTiles.length; r++) {
+            for (let c = 0; c < shapeTiles[r].length; c++) {
+                if (shapeTiles[r][c] > 0) {
+                    const tileSprite = new PIXI.Sprite(texture);
+                    tileSprite.anchor.set(0.5, 0.5);
+                    tileSprite.alpha = alpha;
+                    tileSprite.width = tileSize;
+                    tileSprite.height = tileSize;
+                    
+                    const x = centerX + offsetX + (c - minC) * tileSize;
+                    // 使用与实际游戏一致的坐标系统：r 增加时 y 减小（向上）
+                    const y = centerY + offsetY - (r - minR) * tileSize;
+                    tileSprite.position.set(x, y);
+                    
+                    this.nextShapePreviewContainer.addChild(tileSprite);
+                    this.nextShapePreviewTiles[previewIndex].push(tileSprite);
+                }
+            }
+        }
     }
     
     addSprite(texture, region, x, y, width, height) {

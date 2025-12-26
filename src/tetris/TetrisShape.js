@@ -8,36 +8,18 @@ export const TetrisShapeType = {
     T: 'T',
     Z: 'Z',
 };
-
-export function getRandomShapeType() {
-    const shapeTypes = Object.values(TetrisShapeType);
-    return shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
-}
-
-export function getRandomColorIndex() {
-    return Math.floor(Math.random() * 5);
-}
+export const TetrisShapeCount = 7;
 
 export const colorIndexColors = [
     0xff6b6b,
     0x4ecdc4,
     0x45b7d1,
     0xf9ca24,
-    0x6c5ce7
+    0x6c5ce7,
+    0xff9ff3,
+    0x54a0ff
 ];
-
-function rotateMatrix90(matrix) {
-    const rows = matrix.length;
-    const cols = matrix[0].length;
-    const rotated = [];
-    for (let c = 0; c < cols; c++) {
-        rotated[c] = [];
-        for (let r = rows - 1; r >= 0; r--) {
-            rotated[c][rows - 1 - r] = matrix[r][c];
-        }
-    }
-    return rotated;
-}
+export const colorIndexCount = 7;
 
 export const TetrisShapeDef = {
     'I': {

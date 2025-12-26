@@ -20,8 +20,9 @@ class TetrisGameView extends PIXI.Container {
         this.rowCount = 20;
         this.colCount = 10;
         this.tileSize = 25;
-        this.dropSpeed = 500; // 多少毫秒下落一次
+        this.dropSpeed = 500;
         this.dropSpeedTimer = 0;
+        this.dropPaused = false;
 
         this.tiles = [];
         for (let r = 0; r < this.rowCount+4; r++) {
@@ -60,9 +61,15 @@ class TetrisGameView extends PIXI.Container {
 
     initKeyboard() {
         this.onKeyDown = (e) => {
-            if (!this.dropingInfo) return;
-            
             const key = e.key.toLowerCase();
+            if (key === ' ') {
+                e.preventDefault();
+                this.dropPaused = !this.dropPaused;
+                return;
+            }
+            
+            if (!this.dropInfo) return;
+            
             if (key === 'w') {
                 this.handleRotate();
             } else if (key === 's') {
@@ -81,17 +88,17 @@ class TetrisGameView extends PIXI.Container {
     }
 
     handleRotate() {
-        if (!this.dropingInfo) return;
+        if (!this.dropInfo) return;
         
         const rotationOrder = [0, 'R', 2, 'L'];
-        const currentIndex = rotationOrder.indexOf(this.dropingInfo.rotation);
+        const currentIndex = rotationOrder.indexOf(this.dropInfo.rotation);
         const nextRotation = rotationOrder[(currentIndex + 1) % 4];
         
-        this.tryRotate(this.dropingInfo.rotation, nextRotation);
+        this.tryRotate(this.dropInfo.rotation, nextRotation);
     }
 
     tryRotate(fromRotation, toRotation) {
-        const shapeDef = TetrisShape.TetrisShapeDef[this.dropingInfo.shapeType];
+        const shapeDef = TetrisShape.TetrisShapeDef[this.dropInfo.shapeType];
         const fromTiles = shapeDef.rotations[fromRotation];
         const toTiles = shapeDef.rotations[toRotation];
         
@@ -152,9 +159,9 @@ class TetrisGameView extends PIXI.Container {
     getShapeBaseRC() {
         let minR = Infinity;
         let minC = Infinity;
-        for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
-            minR = Math.min(minR, this.dropingInfo.rcs[i].r);
-            minC = Math.min(minC, this.dropingInfo.rcs[i].c);
+        for (let i = 0; i < this.dropInfo.rcs.length; i++) {
+            minR = Math.min(minR, this.dropInfo.rcs[i].r);
+            minC = Math.min(minC, this.dropInfo.rcs[i].c);
         }
         return {r: minR, c: minC};
     }
@@ -184,18 +191,17 @@ class TetrisGameView extends PIXI.Container {
     }
 
     applyRotation(newRCs, newRotation) {
-        for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
+        for (let i = 0; i < this.dropInfo.rcs.length; i++) {
             const newRC = newRCs[i];
-            const tile = this.dropingInfo.tiles[i];
+            const tile = this.dropInfo.tiles[i];
             
-            // 更新逻辑位置
-            this.dropingInfo.rcs[i] = newRC;
+            this.dropInfo.rcs[i] = newRC;
             
-            // 计算目标位置并调用 tile 的动画方法
             const targetPos = this.getPosByRC(newRC.r, newRC.c);
             tile.animateToPosition(targetPos, this.moveAnimationDuration);
         }
-        this.dropingInfo.rotation = newRotation;
+        this.dropInfo.rotation = newRotation;
+        this.updateDropIndicator();
     }
 
     handleDrop() {
@@ -215,9 +221,9 @@ class TetrisGameView extends PIXI.Container {
     }
 
     canMoveLeft() {
-        if (!this.dropingInfo) return false;
-        for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
-            let rc = this.dropingInfo.rcs[i];
+        if (!this.dropInfo) return false;
+        for (let i = 0; i < this.dropInfo.rcs.length; i++) {
+            let rc = this.dropInfo.rcs[i];
             if (rc.c <= 0) return false;
             if (this.tiles[rc.r][rc.c - 1]) return false;
         }
@@ -225,29 +231,32 @@ class TetrisGameView extends PIXI.Container {
     }
 
     canMoveRight() {
-        if (!this.dropingInfo) return false;
-        for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
-            let rc = this.dropingInfo.rcs[i];
+        if (!this.dropInfo) return false;
+        for (let i = 0; i < this.dropInfo.rcs.length; i++) {
+            let rc = this.dropInfo.rcs[i];
             if (rc.c >= this.colCount - 1) return false;
             if (this.tiles[rc.r][rc.c + 1]) return false;
         }
         return true;
     }
 
-    update(delta) {
+    update() {
         const deltaMS = this.game.pixi.ticker.deltaMS;
-        this.dropSpeedTimer += deltaMS;
-        if (this.dropSpeedTimer >= this.dropSpeed) {
-            this.dropSpeedTimer = 0;
-            this.checkTotalDrop();
+
+        if (!this.dropPaused){
+            this.dropSpeedTimer += deltaMS;
+            if (this.dropSpeedTimer >= this.dropSpeed) {
+                this.dropSpeedTimer = 0;
+                this.checkTotalDrop();
+            }
         }
     }
 
     checkTotalDrop() {
-        if (this.isAtBottom(this.dropingInfo)) {
+        if (this.isAtBottom(this.dropInfo)) {
             this.removeDropingShape();
         }
-        else if (this.dropingInfo) {
+        else if (this.dropInfo) {
             this.doDrop();
         }
         else {
@@ -256,33 +265,37 @@ class TetrisGameView extends PIXI.Container {
     }
 
     removeDropingShape() {
-        // 先将 dropingInfo 的 tile 放入 tiles 数组
-        for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
-            let rc = this.dropingInfo.rcs[i];
-            this.tiles[rc.r][rc.c] = this.dropingInfo.tiles[i];
+        for (let i = 0; i < this.dropInfo.rcs.length; i++) {
+            let rc = this.dropInfo.rcs[i];
+            this.tiles[rc.r][rc.c] = this.dropInfo.tiles[i];
         }
         
-        // 在 dropingInfo = null 之前检查满行，只检查新放置方块相关的行
-        this.checkBreakLine();
-        
-        // 检查完成后再清空 dropingInfo
-        this.dropingInfo = null;
-    }
-
-    checkBreakLine() {
-        // 获取 dropingInfo 中所有涉及的行号（去重）
-        const affectedRows = new Set();
-        for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
-            const row = this.dropingInfo.rcs[i].r;
-            // 只检查游戏区域内的行（不包括上方的4行）
+        const affectedRows = [];
+        for (let i = 0; i < this.dropInfo.rcs.length; i++) {
+            const row = this.dropInfo.rcs[i].r;
             if (row >= 0 && row < this.rowCount) {
-                affectedRows.add(row);
+                if (!affectedRows.includes(row)) {
+                    affectedRows.push(row);
+                }
             }
         }
         
-        // 检查这些行是否满了
+        if (this.dropInfo.previewSprites) {
+            for (let i = 0; i < this.dropInfo.previewSprites.length; i++) {
+                this.removeChild(this.dropInfo.previewSprites[i]);
+            }
+            this.dropInfo.previewSprites = null;
+        }
+        
+        this.dropInfo = null;
+        
+        this.checkBreakLine(affectedRows);
+    }
+
+    checkBreakLine(affectedRows) {
         const fullRows = [];
-        for (const row of affectedRows) {
+        for (let i = 0; i < affectedRows.length; i++) {
+            const row = affectedRows[i];
             let isFull = true;
             // 检查这一行是否所有列都有 tile
             for (let c = 0; c < this.colCount; c++) {
@@ -300,6 +313,9 @@ class TetrisGameView extends PIXI.Container {
         if (fullRows.length === 0) {
             return;
         }
+        
+        // 暂停下落
+        this.dropPaused = true;
         
         // 对每个满行的 tile 播放破碎动画
         for (let i = 0; i < fullRows.length; i++) {
@@ -374,6 +390,10 @@ class TetrisGameView extends PIXI.Container {
                 }
             }
         }
+        
+        setTimeout(() => {
+            this.dropPaused = false;
+        }, this.moveAnimationDuration);
     }
 
     doDrop() {
@@ -381,28 +401,27 @@ class TetrisGameView extends PIXI.Container {
     }
 
     moveDropingInfo(diffRC) {
-        for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
-            let rc = this.dropingInfo.rcs[i];
-            const tile = this.dropingInfo.tiles[i];
+        for (let i = 0; i < this.dropInfo.rcs.length; i++) {
+            let rc = this.dropInfo.rcs[i];
+            const tile = this.dropInfo.tiles[i];
             
-            // 更新逻辑位置
             rc.r += diffRC.r;
             rc.c += diffRC.c;
             
-            // 计算目标位置并调用 tile 的动画方法
             const targetPos = this.getPosByRC(rc.r, rc.c);
             tile.animateToPosition(targetPos, this.moveAnimationDuration);
         }
+        this.updateDropIndicator();
     }
 
     createNewShape() {
-        this.dropingInfo = {};
-        this.dropingInfo.shapeType = TetrisShape.getRandomShapeType();
-        this.dropingInfo.rotation = 0;
-        this.dropingInfo.rcs = [];
-        this.dropingInfo.tiles = [];
+        this.dropInfo = {};
+        this.dropInfo.shapeType = TetrisShape.getRandomShapeType();
+        this.dropInfo.rotation = 0;
+        this.dropInfo.rcs = [];
+        this.dropInfo.tiles = [];
 
-        let shapeDef = TetrisShape.TetrisShapeDef[this.dropingInfo.shapeType];
+        let shapeDef = TetrisShape.TetrisShapeDef[this.dropInfo.shapeType];
         let shapeTiles = shapeDef.rotations[0];
         
         let minRow = 0;
@@ -418,6 +437,10 @@ class TetrisGameView extends PIXI.Container {
         let col = Math.floor((this.colCount - shapeTiles[0].length) / 2);
 
         let colorIndex = TetrisShape.getRandomColorIndex();
+        this.dropInfo.previewSprites = [];
+        const textureUrl = 'tetris/tile' + (colorIndex + 1) + '.png';
+        const texture = this.game.textures[textureUrl];
+        
         for (let r = 0; r < shapeTiles.length; r++) {
             for (let c = 0; c < shapeTiles[r].length; c++) {
                 let tileType = shapeTiles[r][c];
@@ -428,12 +451,20 @@ class TetrisGameView extends PIXI.Container {
                     let pos = this.getPosByRC(row + r, col + c);
                     tile.position.set(pos.x, pos.y);
 
-                    this.dropingInfo.rcs.push({r: row + r, c: col + c});
-                    this.dropingInfo.tiles.push(tile);
+                    this.dropInfo.rcs.push({r: row + r, c: col + c});
+                    this.dropInfo.tiles.push(tile);
+                    
+                    const previewSprite = new PIXI.Sprite(texture);
+                    previewSprite.anchor.set(0.5, 0.5);
+                    previewSprite.alpha = 0.1;
+                    previewSprite.tint = 0x000000;
+                    this.addChild(previewSprite);
+                    this.dropInfo.previewSprites.push(previewSprite);
                 }
             }
         }
 
+        this.updateDropIndicator();
     }
 
     getPosByRC(row, col) {
@@ -447,7 +478,7 @@ class TetrisGameView extends PIXI.Container {
 
     isAtBottom(dropingInfo) {
         if (!dropingInfo) {
-            dropingInfo = this.dropingInfo;
+            dropingInfo = this.dropInfo;
         }
         if (!dropingInfo) return false;
 
@@ -461,6 +492,54 @@ class TetrisGameView extends PIXI.Container {
             }
         }
         return false;
+    }
+
+    getDropLandingRCs() {
+        if (!this.dropInfo) return [];
+        
+        const currentRCs = this.dropInfo.rcs.map(rc => ({r: rc.r, c: rc.c}));
+        let dropOffset = 0;
+        
+        while (true) {
+            const testRCs = currentRCs.map(rc => ({r: rc.r - dropOffset - 1, c: rc.c}));
+            
+            let canDrop = true;
+            for (let i = 0; i < testRCs.length; i++) {
+                const testRC = testRCs[i];
+                if (testRC.r < 0) {
+                    canDrop = false;
+                    break;
+                }
+                if (this.tiles[testRC.r] && this.tiles[testRC.r][testRC.c]) {
+                    canDrop = false;
+                    break;
+                }
+            }
+            
+            if (!canDrop) {
+                break;
+            }
+            
+            dropOffset++;
+        }
+        
+        const landingRCs = currentRCs.map(rc => ({r: rc.r - dropOffset, c: rc.c}));
+        return landingRCs;
+    }
+
+    updateDropIndicator() {
+        if (!this.dropInfo || !this.dropInfo.previewSprites) {
+            return;
+        }
+
+        const landingRCs = this.getDropLandingRCs();
+
+        for (let i = 0; i < this.dropInfo.previewSprites.length; i++) {
+            const previewSprite = this.dropInfo.previewSprites[i];
+            const landingRC = landingRCs[i];
+            const landingPos = this.getPosByRC(landingRC.r, landingRC.c);
+            previewSprite.position.set(landingPos.x, landingPos.y);
+        }
     }
 
     getNextTileRCByRC(fromRC) {
@@ -595,19 +674,19 @@ class TetrisGameView extends PIXI.Container {
     }
 
     playBreakAnim() {
-        if (!this.dropingInfo || !this.dropingInfo.tiles) return;
+        if (!this.dropInfo || !this.dropInfo.tiles) return;
 
         // 遍历所有 tile，调用每个 tile 的炸裂动画
-        for (let i = 0; i < this.dropingInfo.tiles.length; i++) {
-            const tile = this.dropingInfo.tiles[i];
+        for (let i = 0; i < this.dropInfo.tiles.length; i++) {
+            const tile = this.dropInfo.tiles[i];
             tile.playBreakAnim();
         }
     }
 
     safeRemoveSelf(){
         // 停止所有 tile 的移动动画
-        if (this.dropingInfo && this.dropingInfo.tiles) {
-            this.dropingInfo.tiles.forEach(tile => {
+        if (this.dropInfo && this.dropInfo.tiles) {
+            this.dropInfo.tiles.forEach(tile => {
                 if (tile.MoveTween) {
                     tile.MoveTween.stop();
                     tile.MoveTween = null;

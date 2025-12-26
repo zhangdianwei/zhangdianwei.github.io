@@ -18,6 +18,14 @@ export function getRandomColorIndex() {
     return Math.floor(Math.random() * 5);
 }
 
+export const colorIndexColors = [
+    0xff6b6b,
+    0x4ecdc4,
+    0x45b7d1,
+    0xf9ca24,
+    0x6c5ce7
+];
+
 function rotateMatrix90(matrix) {
     const rows = matrix.length;
     const cols = matrix[0].length;

@@ -16,6 +16,7 @@ class TetrisGameView extends PIXI.Container {
         this.initBg();
         this.initGameLogic();
         this.initNextShapePreview();
+        this.initInfoDisplay();
     }
 
     initGameLogic() {
@@ -25,6 +26,10 @@ class TetrisGameView extends PIXI.Container {
         this.dropSpeed = 500;
         this.dropSpeedTimer = 0;
         this.dropPaused = false;
+
+        // 游戏统计信息
+        this.score = 0;
+        this.linesCleared = 0;
 
         this.tiles = [];
         for (let r = 0; r < this.rowCount+4; r++) {
@@ -69,25 +74,29 @@ class TetrisGameView extends PIXI.Container {
     initShapeQueue() {
         // 初始化队列，包含 2 个随机形状信息对象 {shapeType, colorIndex}
         this.nextShapInfos = [];
-        const shapeTypes = Object.values(TetrisShape.TetrisShapeType);
-        for (let i = 0; i < 2; i++) {
-            const shapeIndex = this.shapeGenerator.nextInt(TetrisShape.TetrisShapeCount);
-            const shapeType = shapeTypes[shapeIndex];
-            const colorIndex = shapeIndex; // shapeType 的索引直接作为 colorIndex
-            this.nextShapInfos.push({shapeType, colorIndex});
-        }
+        this.getNextShapeInfo();
+        // const shapeTypes = Object.values(TetrisShape.TetrisShapeType);
+        // for (let i = 0; i < 2; i++) {
+        //     const shapeIndex = this.shapeGenerator.nextInt(TetrisShape.TetrisShapeCount);
+        //     const shapeType = shapeTypes[shapeIndex];
+        //     const colorIndex = shapeIndex; // shapeType 的索引直接作为 colorIndex
+        //     this.nextShapInfos.push({shapeType, colorIndex});
+        // }
     }
 
     getNextShapeInfo() {
         // 从队列头部取出一个形状信息对象
         const shapeInfo = this.nextShapInfos.shift();
         
-        // 生成新的形状信息对象并添加到队列尾部，保持队列长度为 2
+        // 如果队列数量不足2个，补足到2个
         const shapeTypes = Object.values(TetrisShape.TetrisShapeType);
-        const newShapeIndex = this.shapeGenerator.nextInt(TetrisShape.TetrisShapeCount);
-        const newShapeType = shapeTypes[newShapeIndex];
-        const newColorIndex = newShapeIndex; // shapeType 的索引直接作为 colorIndex
-        this.nextShapInfos.push({shapeType: newShapeType, colorIndex: newColorIndex});
+        while (this.nextShapInfos.length < 2) {
+            let newShapeIndex = this.shapeGenerator.nextInt(TetrisShape.TetrisShapeCount);
+            newShapeIndex = 0;
+            const newShapeType = shapeTypes[newShapeIndex];
+            const newColorIndex = newShapeIndex; // shapeType 的索引直接作为 colorIndex
+            this.nextShapInfos.push({shapeType: newShapeType, colorIndex: newColorIndex});
+        }
         
         // 更新下一个形状预览
         this.updateNextShapePreview();
@@ -373,6 +382,26 @@ class TetrisGameView extends PIXI.Container {
     }
 
     removeFullRows(fullRows) {
+        // 更新得分和消除行数
+        const lineCount = fullRows.length;
+        this.linesCleared += lineCount;
+        
+        // 根据消除行数计算得分
+        let points = 1000;
+        if (lineCount === 1) {
+            points = 100;
+        } else if (lineCount === 2) {
+            points = 200;
+        } else if (lineCount === 3) {
+            points = 600;
+        } else if (lineCount === 4) {
+            points = 800;
+        }
+        this.score += points;
+        
+        // 更新信息显示
+        this.updateInfoDisplay();
+        
         // 先移除满行的 tile
         for (let i = 0; i < fullRows.length; i++) {
             const row = fullRows[i];
@@ -650,6 +679,133 @@ class TetrisGameView extends PIXI.Container {
         this.bgCenterUp.x = 0;
         this.bgCenterUp.y = 0;
         this.addChild(this.bgCenterUp);
+    }
+
+    initInfoDisplay() {
+        // 创建信息展示容器
+        this.infoDisplayContainer = new PIXI.Container();
+        
+        // 获取预览容器的位置
+        const bgCenterUpRight = this.bgCenterUp.x + this.bgCenterUp.width / 2;
+        const previewBgBottom = this.nextShapePreviewBg.y + this.nextShapePreviewBg.height / 2;
+        
+        // 信息展示区在预览容器下方
+        const infoX = bgCenterUpRight;
+        const infoY = previewBgBottom + 20; // 距离预览容器底部 20 像素
+        
+        // 创建底板
+        const bgTexture = this.game.textures['tetris/bg_r_1.png'];
+        this.infoDisplayBg = new PIXI.Sprite(bgTexture);
+        this.infoDisplayBg.anchor.set(0, 0); // 左上锚点
+        this.infoDisplayBg.x = infoX;
+        this.infoDisplayBg.y = infoY - 10; // 稍微向上偏移，为文本留出空间
+        this.infoDisplayContainer.addChild(this.infoDisplayBg);
+        
+        // 创建文本样式（黑色字体）
+        const textStyle = new PIXI.TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 16,
+            fill: 0x000000,
+            align: 'left'
+        });
+        
+        // 速度
+        this.speedLabel = new PIXI.Text('速度:', textStyle);
+        this.speedLabel.anchor.set(0, 0);
+        this.speedLabel.x = infoX + 10; // 左边距
+        this.speedLabel.y = infoY;
+        this.infoDisplayContainer.addChild(this.speedLabel);
+        
+        this.speedValue = new PIXI.Text('500ms', textStyle);
+        this.speedValue.anchor.set(0, 0);
+        this.speedValue.x = infoX + 90;
+        this.speedValue.y = infoY;
+        this.infoDisplayContainer.addChild(this.speedValue);
+        
+        // 消行
+        this.linesLabel = new PIXI.Text('消行:', textStyle);
+        this.linesLabel.anchor.set(0, 0);
+        this.linesLabel.x = infoX + 10;
+        this.linesLabel.y = infoY + 25;
+        this.infoDisplayContainer.addChild(this.linesLabel);
+        
+        this.linesValue = new PIXI.Text('0', textStyle);
+        this.linesValue.anchor.set(0, 0);
+        this.linesValue.x = infoX + 90;
+        this.linesValue.y = infoY + 25;
+        this.infoDisplayContainer.addChild(this.linesValue);
+        
+        // 得分
+        this.scoreLabel = new PIXI.Text('得分:', textStyle);
+        this.scoreLabel.anchor.set(0, 0);
+        this.scoreLabel.x = infoX + 10;
+        this.scoreLabel.y = infoY + 50;
+        this.infoDisplayContainer.addChild(this.scoreLabel);
+        
+        this.scoreValue = new PIXI.Text('0', textStyle);
+        this.scoreValue.anchor.set(0, 0);
+        this.scoreValue.x = infoX + 90;
+        this.scoreValue.y = infoY + 50;
+        this.infoDisplayContainer.addChild(this.scoreValue);
+        
+        // 初始化 animState
+        this.animRollNum(this.speedValue, this.dropSpeed);
+        this.animRollNum(this.linesValue, this.linesCleared);
+        this.animRollNum(this.scoreValue, this.score);
+        
+        this.addChild(this.infoDisplayContainer);
+        
+        // 初始化显示
+        this.updateInfoDisplay();
+    }
+
+    animRollNum(valueObj, targetNum) {
+        // 如果没有 animState，创建默认的并直接设置值
+        if (!valueObj.animState) {
+            valueObj.animState = { current: targetNum, target: targetNum, tween: null };
+            valueObj.text = targetNum.toString();
+            return;
+        }
+        
+        const animState = valueObj.animState;
+        
+        // 如果 target 和 targetNum 一样，什么都不做
+        if (animState.target === targetNum) {
+            return;
+        }
+        
+        // 更新 target
+        animState.target = targetNum;
+        
+        // 如果存在旧动画，停止它
+        if (animState.tween) {
+            animState.tween.stop();
+        }
+        
+        // 从 animState 中获取当前值（current）
+        const currentValue = animState.current;
+        
+        // 创建新的滚动动画，从 current 变化到 targetNum
+        animState.tween = new TWEEN.Tween({ value: currentValue })
+            .to({ value: targetNum }, 200)
+            .onUpdate((obj) => {
+                const roundedValue = Math.round(obj.value);
+                animState.current = roundedValue;
+                valueObj.text = roundedValue.toString();
+            })
+            .onComplete(() => {
+                // 动画完成后，确保值精确等于目标值
+                animState.current = targetNum;
+                valueObj.text = targetNum.toString();
+            })
+            .start();
+    }
+
+    updateInfoDisplay() {
+        if (!this.infoDisplayContainer) return;
+        this.animRollNum(this.speedValue, this.dropSpeed);
+        this.animRollNum(this.linesValue, this.linesCleared);
+        this.animRollNum(this.scoreValue, this.score);
     }
 
     initNextShapePreview() {

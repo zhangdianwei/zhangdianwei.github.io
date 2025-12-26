@@ -256,11 +256,124 @@ class TetrisGameView extends PIXI.Container {
     }
 
     removeDropingShape() {
+        // 先将 dropingInfo 的 tile 放入 tiles 数组
         for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
             let rc = this.dropingInfo.rcs[i];
             this.tiles[rc.r][rc.c] = this.dropingInfo.tiles[i];
         }
+        
+        // 在 dropingInfo = null 之前检查满行，只检查新放置方块相关的行
+        this.checkBreakLine();
+        
+        // 检查完成后再清空 dropingInfo
         this.dropingInfo = null;
+    }
+
+    checkBreakLine() {
+        // 获取 dropingInfo 中所有涉及的行号（去重）
+        const affectedRows = new Set();
+        for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
+            const row = this.dropingInfo.rcs[i].r;
+            // 只检查游戏区域内的行（不包括上方的4行）
+            if (row >= 0 && row < this.rowCount) {
+                affectedRows.add(row);
+            }
+        }
+        
+        // 检查这些行是否满了
+        const fullRows = [];
+        for (const row of affectedRows) {
+            let isFull = true;
+            // 检查这一行是否所有列都有 tile
+            for (let c = 0; c < this.colCount; c++) {
+                if (!this.tiles[row][c]) {
+                    isFull = false;
+                    break;
+                }
+            }
+            if (isFull) {
+                fullRows.push(row);
+            }
+        }
+        
+        // 如果没有满行，直接返回
+        if (fullRows.length === 0) {
+            return;
+        }
+        
+        // 对每个满行的 tile 播放破碎动画
+        for (let i = 0; i < fullRows.length; i++) {
+            const row = fullRows[i];
+            for (let c = 0; c < this.colCount; c++) {
+                const tile = this.tiles[row][c];
+                if (tile) {
+                    // 播放破碎动画
+                    tile.playBreakAnim();
+                }
+            }
+        }
+        
+        // 等待动画完成后移除满行并下落
+        // 这里使用 setTimeout 来延迟执行，等待破碎动画播放
+        setTimeout(() => {
+            this.removeFullRows(fullRows);
+        }, 100); // 给一点时间让动画开始
+    }
+
+    removeFullRows(fullRows) {
+        // 先移除满行的 tile
+        for (let i = 0; i < fullRows.length; i++) {
+            const row = fullRows[i];
+            for (let c = 0; c < this.colCount; c++) {
+                const tile = this.tiles[row][c];
+                if (tile && tile.parent) {
+                    tile.parent.removeChild(tile);
+                }
+                this.tiles[row][c] = null;
+            }
+        }
+        
+        // 计算每个 tile 需要下落多少行
+        // 从下往上处理，计算每个 tile 的最终位置
+        const fullRowsSet = new Set(fullRows);
+        
+        // 从下往上遍历所有行
+        for (let r = 0; r < this.rowCount + 4; r++) {
+            // 如果这一行是满行，跳过
+            if (fullRowsSet.has(r)) {
+                continue;
+            }
+            
+            // 计算这一行需要下落多少行（下方有多少个满行）
+            let dropCount = 0;
+            for (let checkRow = 0; checkRow < r; checkRow++) {
+                if (fullRowsSet.has(checkRow)) {
+                    dropCount++;
+                }
+            }
+            
+            // 如果不需要下落，跳过
+            if (dropCount === 0) {
+                continue;
+            }
+            
+            // 处理这一行的所有 tile
+            for (let c = 0; c < this.colCount; c++) {
+                const tile = this.tiles[r][c];
+                if (tile) {
+                    // 计算最终位置
+                    const finalRow = r - dropCount;
+                    
+                    // 更新逻辑位置（直接移动到最终位置）
+                    this.tiles[finalRow][c] = tile;
+                    this.tiles[r][c] = null;
+                    
+                    // 更新视觉位置（一次性动画到最终位置）
+                    const pos = this.getPosByRC(finalRow, c);
+                    tile.animateToPosition(pos, this.moveAnimationDuration);
+                }
+            }
+        }
     }
 
     doDrop() {

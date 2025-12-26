@@ -8,6 +8,9 @@ class TetrisGameView extends PIXI.Container {
     constructor(game) {
         super();
         this.game = game;
+    }
+
+    init(){
         this.initBgCenter();
         this.initBg();
         this.initGameLogic();
@@ -27,6 +30,11 @@ class TetrisGameView extends PIXI.Container {
                 this.tiles[r][c] = null;
             }
         }
+
+        // 初始化粒子缓存池
+        this.particlePool = [];
+        this.particlePoolSize = 100; // 缓存池大小
+        this.initParticlePool();
 
         // debug
         // for (let r = 0; r < 17; r++) {
@@ -63,6 +71,9 @@ class TetrisGameView extends PIXI.Container {
                 this.handleMoveLeft();
             } else if (key === 'd') {
                 this.handleMoveRight();
+            }
+            else if (key === 'q') {
+                this.playBreakAnim();
             }
         };
         
@@ -298,7 +309,8 @@ class TetrisGameView extends PIXI.Container {
             for (let c = 0; c < shapeTiles[r].length; c++) {
                 let tileType = shapeTiles[r][c];
                 if (tileType > 0) {
-                    let tile = new TetrisTile(this.game, colorIndex);
+                    let tile = new TetrisTile(this.game);
+                    tile.init(colorIndex);
                     this.addChild(tile);
                     let pos = this.getPosByRC(row + r, col + c);
                     tile.position.set(pos.x, pos.y);
@@ -418,6 +430,65 @@ class TetrisGameView extends PIXI.Container {
         sprite.width = width;
         sprite.height = height;
         this.bg.addChild(sprite);
+    }
+
+    // 初始化粒子缓存池
+    initParticlePool() {
+        // 预创建一些粒子（使用通用纹理，后续可以替换）
+        for (let i = 0; i < this.particlePoolSize; i++) {
+            const sprite = new PIXI.Sprite();
+            sprite.anchor.set(0.5, 0.5);
+            sprite.visible = false;
+            this.particlePool.push(sprite);
+        }
+    }
+
+    // 从缓存池获取粒子
+    getParticle(texture) {
+        let sprite = this.particlePool.pop();
+        if (!sprite) {
+            // 如果缓存池为空，创建新的粒子
+            sprite = new PIXI.Sprite();
+            sprite.anchor.set(0.5, 0.5);
+        }
+        
+        // 设置纹理和初始状态
+        sprite.texture = texture;
+        sprite.visible = true;
+        sprite.alpha = 1;
+        sprite.scale.set(1);
+        sprite.rotation = 0;
+        
+        return sprite;
+    }
+
+    // 归还粒子到缓存池
+    returnParticle(sprite) {
+        if (!sprite) return;
+        
+        // 重置状态
+        sprite.visible = false;
+        sprite.alpha = 1;
+        sprite.scale.set(1);
+        sprite.rotation = 0;
+        
+        // 从父容器移除
+        if (sprite.parent) {
+            sprite.parent.removeChild(sprite);
+        }
+        
+        // 归还粒子到缓存池（总是归还，因为粒子是从缓存池取出的）
+        this.particlePool.push(sprite);
+    }
+
+    playBreakAnim() {
+        if (!this.dropingInfo || !this.dropingInfo.tiles) return;
+
+        // 遍历所有 tile，调用每个 tile 的炸裂动画
+        for (let i = 0; i < this.dropingInfo.tiles.length; i++) {
+            const tile = this.dropingInfo.tiles[i];
+            tile.playBreakAnim();
+        }
     }
 
     safeRemoveSelf(){

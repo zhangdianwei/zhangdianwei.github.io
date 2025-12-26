@@ -39,9 +39,11 @@ class TetrisGame {
     gotoView(name) {
         if(this.currentView) {
             this.currentView.safeRemoveSelf();
+            this.currentView = null;
         }
         let ViewClass = this.viewCreators[name];
         this.currentView = new ViewClass(this);
+        this.currentView.init();
         this.root.addChild(this.currentView);
     }
 }

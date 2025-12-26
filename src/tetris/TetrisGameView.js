@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import * as TWEEN from '@tweenjs/tween.js';
 import TetrisTile from './TetrisTile.js';
 import * as TetrisShape from './TetrisShape.js';
 
@@ -43,6 +44,10 @@ class TetrisGameView extends PIXI.Container {
 
         this.initKeyboard();
         this.checkTotalDrop();
+    }
+
+    get moveAnimationDuration() {
+        return this.dropSpeed / 3;
     }
 
     initKeyboard() {
@@ -170,9 +175,14 @@ class TetrisGameView extends PIXI.Container {
     applyRotation(newRCs, newRotation) {
         for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
             const newRC = newRCs[i];
+            const tile = this.dropingInfo.tiles[i];
+            
+            // 更新逻辑位置
             this.dropingInfo.rcs[i] = newRC;
-            const pos = this.getPosByRC(newRC.r, newRC.c);
-            this.dropingInfo.tiles[i].position.set(pos.x, pos.y);
+            
+            // 计算目标位置并调用 tile 的动画方法
+            const targetPos = this.getPosByRC(newRC.r, newRC.c);
+            tile.animateToPosition(targetPos, this.moveAnimationDuration);
         }
         this.dropingInfo.rotation = newRotation;
     }
@@ -213,16 +223,6 @@ class TetrisGameView extends PIXI.Container {
         return true;
     }
 
-    destroy() {
-        if (this.onKeyDown) {
-            window.removeEventListener('keydown', this.onKeyDown);
-        }
-        if (this.tagUpdate) {
-            this.game.pixi.ticker.remove(this.tagUpdate);
-        }
-        super.destroy();
-    }
-
     update(delta) {
         const deltaMS = this.game.pixi.ticker.deltaMS;
         this.dropSpeedTimer += deltaMS;
@@ -259,14 +259,15 @@ class TetrisGameView extends PIXI.Container {
     moveDropingInfo(diffRC) {
         for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
             let rc = this.dropingInfo.rcs[i];
+            const tile = this.dropingInfo.tiles[i];
+            
+            // 更新逻辑位置
             rc.r += diffRC.r;
             rc.c += diffRC.c;
-            this.dropingInfo.tiles[i].position.x += diffRC.c * this.tileSize;
-            this.dropingInfo.tiles[i].position.y -= diffRC.r * this.tileSize;
-
-            // if (rc.r < 0 || rc.r >= this.rowCount || rc.c < 0 || rc.c >= this.colCount) {
-            //     console.error('rc不合法', diffRC, rc);
-            // }
+            
+            // 计算目标位置并调用 tile 的动画方法
+            const targetPos = this.getPosByRC(rc.r, rc.c);
+            tile.animateToPosition(targetPos, this.moveAnimationDuration);
         }
     }
 
@@ -420,6 +421,27 @@ class TetrisGameView extends PIXI.Container {
     }
 
     safeRemoveSelf(){
+        // 停止所有 tile 的移动动画
+        if (this.dropingInfo && this.dropingInfo.tiles) {
+            this.dropingInfo.tiles.forEach(tile => {
+                if (tile.MoveTween) {
+                    tile.MoveTween.stop();
+                    tile.MoveTween = null;
+                }
+            });
+        }
+        
+        // 停止所有已放置 tile 的移动动画
+        for (let r = 0; r < this.tiles.length; r++) {
+            for (let c = 0; c < this.tiles[r].length; c++) {
+                const tile = this.tiles[r][c];
+                if (tile && tile.MoveTween) {
+                    tile.MoveTween.stop();
+                    tile.MoveTween = null;
+                }
+            }
+        }
+        
         window.removeEventListener('keydown', this.onKeyDown);
         this.game.pixi.ticker.remove(this.tagUpdate);
         this.parent.removeChild(this);

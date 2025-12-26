@@ -1,5 +1,6 @@
 import { createPixi, initDom } from '../pixi/PixiHelper.js';
 import * as PIXI from 'pixi.js';
+import * as TWEEN from '@tweenjs/tween.js';
 import TetrisGameView from './TetrisGameView.js';
 
 class TetrisGame {
@@ -24,7 +25,15 @@ class TetrisGame {
             "TetrisGameView": TetrisGameView,
         }
 
+        // 添加 TWEEN 更新到 ticker
+        this.pixi.ticker.add(this.update, this);
+
         this.gotoView("TetrisGameView");
+    }
+
+    update(delta) {
+        // 更新 TWEEN 动画
+        TWEEN.update();
     }
 
     gotoView(name) {

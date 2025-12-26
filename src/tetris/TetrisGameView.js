@@ -65,7 +65,116 @@ class TetrisGameView extends PIXI.Container {
     }
 
     handleRotate() {
+        if (!this.dropingInfo) return;
         
+        const rotationOrder = [0, 'R', 2, 'L'];
+        const currentIndex = rotationOrder.indexOf(this.dropingInfo.rotation);
+        const nextRotation = rotationOrder[(currentIndex + 1) % 4];
+        
+        this.tryRotate(this.dropingInfo.rotation, nextRotation);
+    }
+
+    tryRotate(fromRotation, toRotation) {
+        const shapeDef = TetrisShape.TetrisShapeDef[this.dropingInfo.shapeType];
+        const fromTiles = shapeDef.rotations[fromRotation];
+        const toTiles = shapeDef.rotations[toRotation];
+        
+        const kickKey = `${fromRotation}->${toRotation}`;
+        const kickTable = shapeDef.kickTable[kickKey] || [[0, 0]];
+        
+        const currentMinRC = this.getShapeBaseRC();
+        
+        const fromPositions = [];
+        for (let r = 0; r < fromTiles.length; r++) {
+            for (let c = 0; c < fromTiles[r].length; c++) {
+                if (fromTiles[r][c] > 0) {
+                    fromPositions.push({r, c});
+                }
+            }
+        }
+        
+        const toPositions = [];
+        for (let r = 0; r < toTiles.length; r++) {
+            for (let c = 0; c < toTiles[r].length; c++) {
+                if (toTiles[r][c] > 0) {
+                    toPositions.push({r, c});
+                }
+            }
+        }
+        
+        if (fromPositions.length !== toPositions.length) {
+            return false;
+        }
+        
+        const fromMinR = Math.min(...fromPositions.map(p => p.r));
+        const fromMinC = Math.min(...fromPositions.map(p => p.c));
+        const toMinR = Math.min(...toPositions.map(p => p.r));
+        const toMinC = Math.min(...toPositions.map(p => p.c));
+        
+        for (let kickIndex = 0; kickIndex < kickTable.length; kickIndex++) {
+            const kick = kickTable[kickIndex];
+            const newRCs = [];
+            
+            for (let i = 0; i < toPositions.length; i++) {
+                const toPos = toPositions[i];
+                const newRC = {
+                    r: currentMinRC.r - fromMinR + toPos.r + kick[1],
+                    c: currentMinRC.c - fromMinC + toPos.c + kick[0]
+                };
+                newRCs.push(newRC);
+            }
+            
+            if (this.isValidPosition(newRCs)) {
+                this.applyRotation(newRCs, toRotation);
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    getShapeBaseRC() {
+        let minR = Infinity;
+        let minC = Infinity;
+        for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
+            minR = Math.min(minR, this.dropingInfo.rcs[i].r);
+            minC = Math.min(minC, this.dropingInfo.rcs[i].c);
+        }
+        return {r: minR, c: minC};
+    }
+
+    getFirstTilePosition(tiles) {
+        for (let r = 0; r < tiles.length; r++) {
+            for (let c = 0; c < tiles[r].length; c++) {
+                if (tiles[r][c] > 0) {
+                    return {r, c};
+                }
+            }
+        }
+        return {r: 0, c: 0};
+    }
+
+    isValidPosition(rcs) {
+        for (let i = 0; i < rcs.length; i++) {
+            const rc = rcs[i];
+            if (rc.r < 0 || rc.r >= this.rowCount + 4 || rc.c < 0 || rc.c >= this.colCount) {
+                return false;
+            }
+            if (this.tiles[rc.r] && this.tiles[rc.r][rc.c]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    applyRotation(newRCs, newRotation) {
+        for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
+            const newRC = newRCs[i];
+            this.dropingInfo.rcs[i] = newRC;
+            const pos = this.getPosByRC(newRC.r, newRC.c);
+            this.dropingInfo.tiles[i].position.set(pos.x, pos.y);
+        }
+        this.dropingInfo.rotation = newRotation;
     }
 
     handleDrop() {
@@ -164,25 +273,34 @@ class TetrisGameView extends PIXI.Container {
     createNewShape() {
         this.dropingInfo = {};
         this.dropingInfo.shapeType = TetrisShape.getRandomShapeType();
+        this.dropingInfo.rotation = 0;
         this.dropingInfo.rcs = [];
         this.dropingInfo.tiles = [];
 
-        let row = 19;
-        let col = 0;
-
         let shapeDef = TetrisShape.TetrisShapeDef[this.dropingInfo.shapeType];
-        let shapeTiles = shapeDef.tiles;
+        let shapeTiles = shapeDef.rotations[0];
+        
+        let minRow = 0;
+        for (let r = 0; r < shapeTiles.length; r++) {
+            for (let c = 0; c < shapeTiles[r].length; c++) {
+                if (shapeTiles[r][c] > 0) {
+                    minRow = Math.max(minRow, r);
+                }
+            }
+        }
+        
+        let row = this.rowCount - 1 - minRow;
+        let col = Math.floor((this.colCount - shapeTiles[0].length) / 2);
+
         let colorIndex = TetrisShape.getRandomColorIndex();
         for (let r = 0; r < shapeTiles.length; r++) {
             for (let c = 0; c < shapeTiles[r].length; c++) {
                 let tileType = shapeTiles[r][c];
                 if (tileType > 0) {
                     let tile = new TetrisTile(this.game, colorIndex);
-                    // this.tiles[row + r][col + c] = tile;
                     this.addChild(tile);
                     let pos = this.getPosByRC(row + r, col + c);
                     tile.position.set(pos.x, pos.y);
-                    // console.log('tile', tile.position.x, tile.position.y);
 
                     this.dropingInfo.rcs.push({r: row + r, c: col + c});
                     this.dropingInfo.tiles.push(tile);

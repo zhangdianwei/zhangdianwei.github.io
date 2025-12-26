@@ -20,7 +20,7 @@ class TetrisGameView extends PIXI.Container {
         this.dropSpeedTimer = 0;
 
         this.tiles = [];
-        for (let r = 0; r < this.rowCount; r++) {
+        for (let r = 0; r < this.rowCount+4; r++) {
             this.tiles[r] = [];
             for (let c = 0; c < this.colCount; c++) {
                 this.tiles[r][c] = null;
@@ -41,7 +41,77 @@ class TetrisGameView extends PIXI.Container {
         this.tagUpdate = this.update.bind(this);
         this.game.pixi.ticker.add(this.tagUpdate, this);
 
+        this.initKeyboard();
         this.checkTotalDrop();
+    }
+
+    initKeyboard() {
+        this.onKeyDown = (e) => {
+            if (!this.dropingInfo) return;
+            
+            const key = e.key.toLowerCase();
+            if (key === 'w') {
+                this.handleRotate();
+            } else if (key === 's') {
+                this.handleDrop();
+            } else if (key === 'a') {
+                this.handleMoveLeft();
+            } else if (key === 'd') {
+                this.handleMoveRight();
+            }
+        };
+        
+        window.addEventListener('keydown', this.onKeyDown);
+    }
+
+    handleRotate() {
+        
+    }
+
+    handleDrop() {
+        this.checkTotalDrop();
+    }
+
+    handleMoveLeft() {
+        if (this.canMoveLeft()) {
+            this.moveDropingInfo({r: 0, c: -1});
+        }
+    }
+
+    handleMoveRight() {
+        if (this.canMoveRight()) {
+            this.moveDropingInfo({r: 0, c: 1});
+        }
+    }
+
+    canMoveLeft() {
+        if (!this.dropingInfo) return false;
+        for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
+            let rc = this.dropingInfo.rcs[i];
+            if (rc.c <= 0) return false;
+            if (this.tiles[rc.r][rc.c - 1]) return false;
+        }
+        return true;
+    }
+
+    canMoveRight() {
+        if (!this.dropingInfo) return false;
+        for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
+            let rc = this.dropingInfo.rcs[i];
+            if (rc.c >= this.colCount - 1) return false;
+            if (this.tiles[rc.r][rc.c + 1]) return false;
+        }
+        return true;
+    }
+
+    destroy() {
+        if (this.onKeyDown) {
+            window.removeEventListener('keydown', this.onKeyDown);
+        }
+        if (this.tagUpdate) {
+            this.game.pixi.ticker.remove(this.tagUpdate);
+        }
+        super.destroy();
     }
 
     update(delta) {
@@ -74,10 +144,20 @@ class TetrisGameView extends PIXI.Container {
     }
 
     doDrop() {
+        this.moveDropingInfo({r: -1, c: 0});
+    }
+
+    moveDropingInfo(diffRC) {
         for (let i = 0; i < this.dropingInfo.rcs.length; i++) {
             let rc = this.dropingInfo.rcs[i];
-            rc.r -= 1;
-            this.dropingInfo.tiles[i].position.y += this.tileSize;
+            rc.r += diffRC.r;
+            rc.c += diffRC.c;
+            this.dropingInfo.tiles[i].position.x += diffRC.c * this.tileSize;
+            this.dropingInfo.tiles[i].position.y -= diffRC.r * this.tileSize;
+
+            // if (rc.r < 0 || rc.r >= this.rowCount || rc.c < 0 || rc.c >= this.colCount) {
+            //     console.error('rc不合法', diffRC, rc);
+            // }
         }
     }
 
@@ -219,6 +299,12 @@ class TetrisGameView extends PIXI.Container {
         sprite.width = width;
         sprite.height = height;
         this.bg.addChild(sprite);
+    }
+
+    safeRemoveSelf(){
+        window.removeEventListener('keydown', this.onKeyDown);
+        this.game.pixi.ticker.remove(this.tagUpdate);
+        this.parent.removeChild(this);
     }
 }
 

@@ -14,6 +14,10 @@ export function getRandomShapeType() {
     return shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
 }
 
+export function getRandomColorIndex() {
+    return Math.floor(Math.random() * 5);
+}
+
 export const TetrisShapeDef = {
     'I': {
         tiles: [

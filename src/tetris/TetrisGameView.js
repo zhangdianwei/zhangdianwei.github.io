@@ -172,7 +172,7 @@ class TetrisGameView extends PIXI.Container {
 
         let shapeDef = TetrisShape.TetrisShapeDef[this.dropingInfo.shapeType];
         let shapeTiles = shapeDef.tiles;
-        let colorIndex = 0;
+        let colorIndex = TetrisShape.getRandomColorIndex();
         for (let r = 0; r < shapeTiles.length; r++) {
             for (let c = 0; c < shapeTiles[r].length; c++) {
                 let tileType = shapeTiles[r][c];
@@ -211,7 +211,7 @@ class TetrisGameView extends PIXI.Container {
             let rc = dropingInfo.rcs[i];
             if (rc.r == 0)
                 return true;
-            let topRC = this.getTopRCByCol(rc.c);
+            let topRC = this.getNextTileRCByRC(rc);
             if (topRC && rc.r - topRC.r == 1) {
                 return true;
             }
@@ -219,10 +219,10 @@ class TetrisGameView extends PIXI.Container {
         return false;
     }
 
-    getTopRCByCol(col) {
-        for (let r = this.rowCount-1; r >= 0; r--) {
-            if (this.tiles[r][col]) {
-                return {r, c: col};
+    getNextTileRCByRC(fromRC) {
+        for (let r = fromRC.r - 1; r >= 0; r--) {
+            if (this.tiles[r] && this.tiles[r][fromRC.c]) {
+                return {r, c: fromRC.c};
             }
         }
         return null;

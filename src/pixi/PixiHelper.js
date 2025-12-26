@@ -37,12 +37,14 @@ export function initDom(domElement, options = {}) {
     console.log("initDom", width, height, domElement.clientWidth, domElement.clientHeight, domElement.style.transform, domElement.style.transformOrigin);
 }
 
-export function createPixi(domElement) {
-    return new PIXI.Application({
+export function createPixi(domElement, options = {}) {
+    let defaultOptions = {
         width: domElement.clientWidth,
         height: domElement.clientHeight,
         antialias: false,
         autoDensity: false,
         view: domElement
-    });
+    }
+    let finalOptions = { ...defaultOptions, ...options };
+    return new PIXI.Application(finalOptions);
 }

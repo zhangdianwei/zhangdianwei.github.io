@@ -2,6 +2,7 @@ import { createPixi, initDom } from '../pixi/PixiHelper.js';
 import * as PIXI from 'pixi.js';
 import * as TWEEN from '@tweenjs/tween.js';
 import TetrisGameView from './TetrisGameView.js';
+import TetrisStartView from './TetrisStartView.js';
 
 class TetrisGame {
     
@@ -23,12 +24,13 @@ class TetrisGame {
 
         this.viewCreators = {
             "TetrisGameView": TetrisGameView,
+            "TetrisStartView": TetrisStartView,
         }
 
         // 添加 TWEEN 更新到 ticker
         this.pixi.ticker.add(this.update, this);
 
-        this.gotoView("TetrisGameView");
+        this.replaceView("TetrisStartView");
     }
 
     update(delta) {
@@ -36,7 +38,7 @@ class TetrisGame {
         TWEEN.update();
     }
 
-    gotoView(name) {
+    replaceView(name) {
         if(this.currentView) {
             this.currentView.safeRemoveSelf();
             this.currentView = null;
@@ -46,6 +48,7 @@ class TetrisGame {
         this.currentView.init();
         this.root.addChild(this.currentView);
     }
+
 }
 
 export default TetrisGame;

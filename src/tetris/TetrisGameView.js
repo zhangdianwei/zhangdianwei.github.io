@@ -21,7 +21,6 @@ class TetrisGameView extends PIXI.Container {
         this.tagUpdate = this.update.bind(this);
         this.game.pixi.ticker.add(this.tagUpdate, this);
         this.initKeyboard();
-        // this.initDirectionButtons();
     }
 
     initGameLogic() {
@@ -133,13 +132,13 @@ class TetrisGameView extends PIXI.Container {
             
             if (!this.dropInfo) return;
             
-            if (key === 'w') {
+            if (key === 'w' || e.key === 'ArrowUp') {
                 this.handleRotate();
-            } else if (key === 's') {
+            } else if (key === 's' || e.key === 'ArrowDown') {
                 this.handleDrop();
-            } else if (key === 'a') {
+            } else if (key === 'a' || e.key === 'ArrowLeft') {
                 this.handleMoveLeft();
-            } else if (key === 'd') {
+            } else if (key === 'd' || e.key === 'ArrowRight') {
                 this.handleMoveRight();
             }
             else if (key === 'q') {
@@ -694,8 +693,8 @@ class TetrisGameView extends PIXI.Container {
         deadText.position.set(0, 0);
         this.deadContainer.addChild(deadText);
 
-        const backButton = new TetrisButton(this.game, 'Restart', () => {
-            this.restartGame();
+        const backButton = new TetrisButton(this.game, 'Return Main', () => {
+            this.game.replaceView("TetrisStartView");
         });
         backButton.position.set(0, 150);
         this.deadContainer.addChild(backButton);
@@ -1195,66 +1194,6 @@ class TetrisGameView extends PIXI.Container {
             const tile = this.dropInfo.tiles[i];
             tile.playBreakAnim();
         }
-    }
-
-    initDirectionButtons() {
-        this.directionButtonsContainer = new PIXI.Container();
-        this.directionButtonsContainer.position.set(200, 50);
-        this.addChild(this.directionButtonsContainer);
-        this.directionButtonsContainer.scale.set(0.8);
-        
-        const arrowTexture = this.game.textures['tetris/arrow.png'];
-
-        const buttonConfigs = [
-            { angle: 270, action: this.handleMoveLeft.bind(this),   offset: {x: 0, y: -12} },
-            { angle: 90,  action: this.handleDrop.bind(this),       offset: {x: 0, y: 12} },
-            { angle: 180, action: this.handleMoveLeft.bind(this),   offset: {x: -12, y: 0} },
-            { angle: 0,   action: this.handleMoveRight.bind(this),  offset: {x: 12, y: 0} },
-        ];
-        
-        this.directionButtons = [];
-        
-        for (let i = 0; i < buttonConfigs.length; i++) {
-            const config = buttonConfigs[i];
-            const angleRad = (config.angle * Math.PI) / 180;
-            
-            const arrowSprite = new PIXI.Sprite(arrowTexture);
-            arrowSprite.anchor.set(0, 0.5);
-            arrowSprite.rotation = angleRad;
-            arrowSprite.position.set(config.offset.x, config.offset.y);
-            
-            arrowSprite.eventMode = 'static';
-            arrowSprite.cursor = 'pointer';
-            
-            const onButtonDown = () => {
-                arrowSprite.scale.set(0.9);
-            };
-            
-            const onButtonUp = () => {
-                arrowSprite.scale.set(1);
-            };
-            
-            const onButtonClick = () => {
-                config.action();
-            };
-            
-            arrowSprite.on('pointerdown', onButtonDown);
-            arrowSprite.on('pointerup', onButtonUp);
-            arrowSprite.on('pointerupoutside', onButtonUp);
-            arrowSprite.on('pointertap', onButtonClick);
-            
-            arrowSprite.on('touchstart', onButtonDown);
-            arrowSprite.on('touchend', onButtonUp);
-            arrowSprite.on('touchendoutside', onButtonUp);
-            arrowSprite.on('tap', onButtonClick);
-            
-            this.directionButtonsContainer.addChild(arrowSprite);
-            this.directionButtons.push({
-                sprite: arrowSprite,
-                action: config.action
-            });
-        }
-        
     }
 
     safeRemoveSelf(){

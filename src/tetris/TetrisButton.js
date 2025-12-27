@@ -24,7 +24,7 @@ export default class TetrisButton extends PIXI.Container {
         
         const textStyle = new PIXI.TextStyle({
             fontFamily: 'Comic Sans MS, Marker Felt, Chalkduster, cursive',
-            fontSize: 32,
+            fontSize: 24,
             fill: 0x000000,
             fontWeight: 'bold',
             align: 'center'

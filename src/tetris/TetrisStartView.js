@@ -11,17 +11,12 @@ export default class TetrisStartView extends PIXI.Container {
     init() {
         this.initTitle();
         
-        const createRoomButton = new TetrisButton(this.game, 'Create Room', () => {
-            this.game.replaceView("TetrisCreateRoomView");
-        });
-        createRoomButton.position.set(0, 50);
-        this.addChild(createRoomButton);
-
-        const joinRoomButton = new TetrisButton(this.game, 'Join Room', () => {
+        const playButton = new TetrisButton(this.game, 'Start Game', () => {
+            // TODO: 实现开始游戏的逻辑
             this.game.replaceView("TetrisGameView");
         });
-        joinRoomButton.position.set(0, 120);
-        this.addChild(joinRoomButton);
+        playButton.position.set(0, 50);
+        this.addChild(playButton);
 
         this.animationTime = 0;
         this.tagUpdate = this.update.bind(this);

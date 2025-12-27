@@ -3,8 +3,8 @@ import * as PIXI from 'pixi.js';
 import * as TWEEN from '@tweenjs/tween.js';
 import TetrisGameView from './TetrisGameView.js';
 import TetrisStartView from './TetrisStartView.js';
-import TetrisCreateRoomView from './TetrisCreateRoomView.js';
 import TetrisNet from './TetrisNet.js';
+import { TetrisEvents } from './TetrisEvents.js';
 
 class TetrisGame {
 
@@ -25,31 +25,54 @@ class TetrisGame {
         this.textures = textures;
 
         this.userId = this.genUserId();
-        this.players = []; // { userId, name, colorIndex, ip}
-
         this.eventListeners = {};
+        this.setPlayers([]);
 
         this.net = new TetrisNet(this);
         this.net.init();
 
         this.viewCreators = {
-            "TetrisGameView": TetrisGameView,
             "TetrisStartView": TetrisStartView,
-            "TetrisCreateRoomView": TetrisCreateRoomView,
+            "TetrisGameView": TetrisGameView,
         }
 
-        // 添加 TWEEN 更新到 ticker
         this.pixi.ticker.add(this.update, this);
 
         this.replaceView("TetrisStartView");
     }
 
+    setPlayers(players) {
+        this.players = players;
+        this.emit(TetrisEvents.PlayerChanged, {
+            players: this.players
+        });
+    }
+
+    addPlayer(player) {
+        if (this.players.find(p => p.userId === player.userId)) return;
+        this.setPlayers([...this.players, player]);
+        if (this.net) {
+            this.net.updatePlayerList();
+        }
+    }
+
+    removePlayer(userId) {
+        this.setPlayers(this.players.filter(p => p.userId !== userId));
+        if (this.net) {
+            this.net.updatePlayerList();
+        }
+    }
+
+    getMyPlayerIndex() {
+        return this.players.findIndex(p => p.userId === this.userId);
+    }
+
     genUserId() {
-        return Math.floor(Math.random() * 1000000);
+        return "zhangdw"
+        return "Player" + Math.floor(Math.random() * 10000);
     }
 
     update(delta) {
-        // 更新 TWEEN 动画
         TWEEN.update();
     }
 

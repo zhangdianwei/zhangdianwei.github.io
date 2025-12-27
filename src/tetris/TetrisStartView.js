@@ -12,7 +12,7 @@ export default class TetrisStartView extends PIXI.Container {
         this.initTitle();
         
         const createRoomButton = new TetrisButton(this.game, 'Create Room', () => {
-            // TODO: 实现创建房间的逻辑
+            this.game.replaceView("TetrisCreateRoomView");
         });
         createRoomButton.position.set(0, 50);
         this.addChild(createRoomButton);

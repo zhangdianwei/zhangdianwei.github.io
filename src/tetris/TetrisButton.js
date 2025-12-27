@@ -35,8 +35,8 @@ export default class TetrisButton extends PIXI.Container {
         this.text.position.set(0, 0);
         this.addChild(this.text);
         
-        this.eventMode = 'static';
-        this.cursor = 'pointer';
+        this.enabledCount = 1;
+        this.updateEnabledState();
 
         this.on('pointerdown', this.onButtonDown.bind(this));
         this.on('pointerup', this.onButtonUp.bind(this));
@@ -47,6 +47,21 @@ export default class TetrisButton extends PIXI.Container {
         this.on('touchend', this.onButtonUp.bind(this));
         this.on('touchendoutside', this.onButtonUp.bind(this));
         this.on('tap', this.onButtonClick.bind(this));
+    }
+    
+    setEnabled(enabled) {
+        if (enabled) {
+            this.enabledCount++;
+        } else {
+            this.enabledCount--;
+        }
+        this.updateEnabledState();
+    }
+    
+    updateEnabledState() {
+        const isEnabled = this.enabledCount > 0;
+        this.eventMode = isEnabled ? 'static' : 'none';
+        this.cursor = isEnabled ? 'pointer' : 'default';
     }
     
     onButtonDown() {

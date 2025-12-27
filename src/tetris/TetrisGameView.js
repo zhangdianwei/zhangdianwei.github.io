@@ -3,6 +3,7 @@ import * as TWEEN from '@tweenjs/tween.js';
 import TetrisTile from './TetrisTile.js';
 import * as TetrisShape from './TetrisShape.js';
 import RandGenerator from './RandGenerator.js';
+import TetrisButton from './TetrisButton.js';
 
 class TetrisGameView extends PIXI.Container {
     
@@ -27,6 +28,7 @@ class TetrisGameView extends PIXI.Container {
         this.speedLevel = 1;
         this.dropSpeedTimer = 0;
         this.dropPaused = false;
+        this.isDead = false;
 
         // 游戏统计信息
         this.score = 0;
@@ -51,15 +53,16 @@ class TetrisGameView extends PIXI.Container {
         this.initShapeQueue();
 
         // debug
-        // for (let r = 0; r < 17; r++) {
-        //     for (let c = 0; c < this.colCount; c++) {
-        //         let tile = new TetrisTile(this.game, 0);
-        //         this.addChild(tile);
-        //         let pos = this.getPosByRC(r, c);
-        //         tile.position.set(pos.x, pos.y);
-        //         this.tiles[r][c] = tile;
-        //     }
-        // }
+        for (let r = 0; r < 17; r++) {
+            for (let c = 0; c < this.colCount; c++) {
+                let tile = new TetrisTile(this.game);
+                tile.init(0);
+                this.addChild(tile);
+                let pos = this.getPosByRC(r, c);
+                tile.position.set(pos.x, pos.y);
+                this.tiles[r][c] = tile;
+            }
+        }
 
         this.tagUpdate = this.update.bind(this);
         this.game.pixi.ticker.add(this.tagUpdate, this);
@@ -122,6 +125,8 @@ class TetrisGameView extends PIXI.Container {
 
     initKeyboard() {
         this.onKeyDown = (e) => {
+            if (this.isDead) return;
+
             const key = e.key.toLowerCase();
             if (key === ' ') {
                 e.preventDefault();
@@ -368,6 +373,10 @@ class TetrisGameView extends PIXI.Container {
         else {
             this.createNewShape();
         }
+
+        if (!this.isDead && this.checkDead()) {
+            this.onDead();
+        }
     }
 
     removeDropingShape() {
@@ -598,6 +607,100 @@ class TetrisGameView extends PIXI.Container {
         this.updateDropIndicator();
     }
 
+    checkDead() {
+        if (!this.dropInfo || !this.dropInfo.rcs) {
+            return false;
+        }
+        
+        for (let i = 0; i < this.dropInfo.rcs.length; i++) {
+            const rc = this.dropInfo.rcs[i];
+            if (this.tiles[rc.r] && this.tiles[rc.r][rc.c]) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    onDead() {
+        this.isDead = true;
+        this.dropPaused = true;
+        setTimeout(() => {
+            this.playDeadAppearAnim();
+        }, 500);
+    }
+
+    playDeadAppearAnim() {
+        const bgCenterUpTexture = this.game.textures['tetris/bg_center_up.png'];
+        const circleTexture = this.game.textures['tetris/circle.png'];
+        if (!circleTexture || !bgCenterUpTexture) {
+            return;
+        }
+
+        const maskGraphics = new PIXI.Graphics();
+        maskGraphics.beginFill(0x000000, 0.5);
+        const cornerRadius = 10;
+        maskGraphics.drawRoundedRect(-bgCenterUpTexture.width / 2, -bgCenterUpTexture.height / 2, bgCenterUpTexture.width, bgCenterUpTexture.height, cornerRadius);
+        maskGraphics.endFill();
+        maskGraphics.position.set(0, 0);
+        maskGraphics.alpha = 0;
+        this.addChild(maskGraphics);
+
+        const maskAlphaTween = new TWEEN.Tween({ alpha: 0 })
+            .to({ alpha: 1 }, 250)
+            .onUpdate((obj) => {
+                maskGraphics.alpha = obj.alpha;
+            })
+            .start();
+
+        const deadContainer = new PIXI.Container();
+        deadContainer.position.set(0, 0);
+
+        const circleSprite = new PIXI.Sprite(circleTexture);
+        circleSprite.anchor.set(0.5, 0.5);
+        circleSprite.position.set(0, 0);
+        deadContainer.addChild(circleSprite);
+
+        const textStyle = new PIXI.TextStyle({
+            fontFamily: 'Comic Sans MS, Marker Felt, Chalkduster, cursive',
+            fontSize: 64,
+            fill: 0xFFD700,
+            fontWeight: 'bold',
+            align: 'center'
+        });
+
+        const deadText = new PIXI.Text('DEAD', textStyle);
+        deadText.anchor.set(0.5, 0.5);
+        deadText.position.set(0, 0);
+        deadContainer.addChild(deadText);
+
+        const backButton = new TetrisButton(this.game, '回主界面', () => {
+            // TODO: 实现返回主界面的逻辑
+        });
+        backButton.position.set(0, 150);
+        deadContainer.addChild(backButton);
+
+        deadContainer.alpha = 0;
+        deadContainer.scale.set(0.1);
+
+        this.addChild(deadContainer);
+
+        const scaleTween = new TWEEN.Tween({ scale: 0.1 })
+            .to({ scale: 1.0 }, 800)
+            .easing(TWEEN.Easing.Elastic.Out)
+            .onUpdate((obj) => {
+                deadContainer.scale.set(obj.scale);
+            })
+            .start();
+
+        const alphaTween = new TWEEN.Tween({ alpha: 0 })
+            .to({ alpha: 1 }, 250)
+            .onUpdate((obj) => {
+                deadContainer.alpha = obj.alpha;
+            })
+            .start();
+    }
+
     getPosByRC(row, col) {
         let pos = {x: col * this.tileSize, y: - row * this.tileSize};
         pos.x += this.tileSize / 2;
@@ -768,7 +871,7 @@ class TetrisGameView extends PIXI.Container {
         
         // 创建文本样式（黑色字体）
         const textStyle = new PIXI.TextStyle({
-            fontFamily: 'Arial',
+            fontFamily: 'Comic Sans MS, Marker Felt, Chalkduster, cursive',
             fontSize: 16,
             fill: 0x000000,
             align: 'left'

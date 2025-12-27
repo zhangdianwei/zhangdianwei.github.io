@@ -57,18 +57,18 @@ class TetrisGameView extends PIXI.Container {
         this.initShapeQueue();
 
         // debug
-        for (let r = 0; r < 17; r++) {
-            for (let c = 0; c < this.colCount; c++) {
-                let tile = new TetrisTile(this.game);
-                tile.init(0);
-                this.addChild(tile);
-                let pos = this.getPosByRC(r, c);
-                tile.position.set(pos.x, pos.y);
-                this.tiles[r][c] = tile;
-            }
-        }
+        // for (let r = 0; r < 17; r++) {
+        //     for (let c = 0; c < this.colCount; c++) {
+        //         let tile = new TetrisTile(this.game);
+        //         tile.init(0);
+        //         this.addChild(tile);
+        //         let pos = this.getPosByRC(r, c);
+        //         tile.position.set(pos.x, pos.y);
+        //         this.tiles[r][c] = tile;
+        //     }
+        // }
 
-        this.checkTotalDrop();
+        // this.checkTotalDrop();
     }
 
     dropSpeed() {
@@ -80,16 +80,8 @@ class TetrisGameView extends PIXI.Container {
     }
 
     initShapeQueue() {
-        // 初始化队列，包含 2 个随机形状信息对象 {shapeType, colorIndex}
         this.nextShapInfos = [];
         this.getNextShapeInfo();
-        // const shapeTypes = Object.values(TetrisShape.TetrisShapeType);
-        // for (let i = 0; i < 2; i++) {
-        //     const shapeIndex = this.shapeGenerator.nextInt(TetrisShape.TetrisShapeCount);
-        //     const shapeType = shapeTypes[shapeIndex];
-        //     const colorIndex = shapeIndex; // shapeType 的索引直接作为 colorIndex
-        //     this.nextShapInfos.push({shapeType, colorIndex});
-        // }
     }
 
     getNextShapeInfo() {

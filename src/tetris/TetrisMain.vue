@@ -23,6 +23,7 @@ const textureUrls = ref([
     "tetris/tile5.png",
     "tetris/tile6.png",
     "tetris/tile7.png",
+    "tetris/arrow.png",
 ]);
 
 let game = new TetrisGame();

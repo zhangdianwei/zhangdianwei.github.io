@@ -23,6 +23,13 @@ class TetrisGame {
         this.pixi.stage.addChild(this.root);
         this.root.position.set(this.pixi.screen.width / 2, this.pixi.screen.height / 2);
 
+        this.uiRoot = new PIXI.Container();
+        this.root.addChild(this.uiRoot);
+
+        this.toastRoot = new PIXI.Container();
+        this.root.addChild(this.toastRoot);
+        this.toasts = [];
+
         this.textures = textures;
 
         this.userId = this.genUserId();
@@ -70,7 +77,6 @@ class TetrisGame {
     }
 
     genUserId() {
-        return "zhangdw"
         return "Player" + Math.floor(Math.random() * 10000);
     }
 
@@ -86,7 +92,7 @@ class TetrisGame {
         let ViewClass = this.viewCreators[name];
         this.currentView = new ViewClass(this);
         this.currentView.init();
-        this.root.addChild(this.currentView);
+        this.uiRoot.addChild(this.currentView);
     }
 
     on(eventType, callback) {
@@ -111,6 +117,64 @@ class TetrisGame {
         listeners.forEach(callback => {
             callback(eventType, eventData);
         });
+    }
+
+    Toast(message) {
+        const toast = new PIXI.Container();
+        
+        const textStyle = new PIXI.TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 24,
+            fill: 0xFFFFFF,
+            align: 'center'
+        });
+        
+        const text = new PIXI.Text(message, textStyle);
+        text.anchor.set(0.5, 0.5);
+        
+        const paddingX = 40;
+        const paddingY = 12;
+        const bgWidth = Math.max(text.width + paddingX * 2, 200);
+        const bgHeight = text.height + paddingY * 2;
+        
+        const bg = new PIXI.Graphics();
+        bg.beginFill(0x000000, 0.7);
+        bg.drawRoundedRect(-bgWidth / 2, -bgHeight / 2, bgWidth, bgHeight, 8);
+        bg.endFill();
+        
+        toast.addChild(bg);
+        toast.addChild(text);
+        
+        toast.position.set(0, 0);
+        toast.alpha = 0;
+        
+        this.toastRoot.addChild(toast);
+        
+        this.toasts.forEach(existingToast => {
+            new TWEEN.Tween(existingToast)
+                .to({ y: existingToast.y - 60 }, 200)
+                .start();
+        });
+        
+        this.toasts.push(toast);
+        
+        const fadeIn = new TWEEN.Tween(toast)
+            .to({ alpha: 1 }, 200)
+            .onComplete(() => {
+                setTimeout(() => {
+                    const fadeOut = new TWEEN.Tween(toast)
+                        .to({ alpha: 0, y: toast.y - 30 }, 300)
+                        .onComplete(() => {
+                            const index = this.toasts.indexOf(toast);
+                            if (index > -1) {
+                                this.toasts.splice(index, 1);
+                            }
+                            this.toastRoot.removeChild(toast);
+                        })
+                        .start();
+                }, 2000);
+            })
+            .start();
     }
 }
 

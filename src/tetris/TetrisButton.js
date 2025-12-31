@@ -62,6 +62,14 @@ export default class TetrisButton extends PIXI.Container {
         const isEnabled = this.enabledCount > 0;
         this.eventMode = isEnabled ? 'static' : 'none';
         this.cursor = isEnabled ? 'pointer' : 'default';
+        
+        // 置灰效果
+        if (this.bgSprite) {
+            this.bgSprite.tint = isEnabled ? 0xFFFFFF : 0x808080; // 禁用时置灰
+        }
+        if (this.text) {
+            this.text.style.fill = isEnabled ? 0x000000 : 0x666666; // 文字也变灰
+        }
     }
     
     onButtonDown() {

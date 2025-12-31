@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 import * as TWEEN from '@tweenjs/tween.js';
 import TetrisButton from './TetrisButton.js';
+import { NetState } from './TetrisNet.js';
 
 export default class TetrisStartView extends PIXI.Container {
     constructor(game) {
@@ -12,18 +13,20 @@ export default class TetrisStartView extends PIXI.Container {
         this.initTitle();
         
         // Single Player 按钮 - 单人游戏
-        const singlePlayerButton = new TetrisButton(this.game, 'Single Player', () => {
+        this.singlePlayerButton = new TetrisButton(this.game, 'Single Player', () => {
             this.game.replaceView("TetrisGameView");
         });
-        singlePlayerButton.position.set(0, 30);
-        this.addChild(singlePlayerButton);
+        this.singlePlayerButton.position.set(0, 30);
+        this.addChild(this.singlePlayerButton);
 
         // Match Player 按钮 - 匹配玩家（多人游戏）
-        const matchPlayerButton = new TetrisButton(this.game, 'Match Player', () => {
+        this.matchPlayerButton = new TetrisButton(this.game, 'Match Player', () => {
             this.joinMatch();
         });
-        matchPlayerButton.position.set(0, 90);
-        this.addChild(matchPlayerButton);
+        this.matchPlayerButton.position.set(0, 90);
+        this.addChild(this.matchPlayerButton);
+
+        this.clickMatchCount = 0;
 
         this.animationTime = 0;
         this.tagUpdate = this.update.bind(this);
@@ -31,21 +34,27 @@ export default class TetrisStartView extends PIXI.Container {
     }
 
     async joinMatch() {
-        // 如果已经在房间中，直接切换到房间视图
-        if (this.game.net && this.game.net.isInRoom) {
-            this.game.replaceView("TetrisRoomView");
-            return;
+        // if (this.game.net.state === NetState.IN_ROOM) {
+        //     this.game.replaceView("TetrisRoomView");
+        //     return;
+        // }
+
+        this.clickMatchCount++;
+
+        if (this.game.net.state === NetState.IDLE) {
+            this.game.net.connect();
+        } else if (this.game.net.state === NetState.CONNECTED) {
+            this.game.net.joinRoom();
         }
 
-        // 如果已连接但未在房间，尝试加入房间
-        if (this.game.net && this.game.net.isConnected) {
-            try {
-                await this.game.net.joinRoom();
-            } catch (error) {
-                console.error('加入房间失败:', error);
+        if (this.clickMatchCount >= 2) {
+            if (this.game.net.state === NetState.CONNECTING) {
+                this.game.Toast('正在连接服务器...');
+            } else if (this.game.net.state === NetState.CONNECTED) {
+                this.game.Toast('已连接，正在加入房间...');
+            } else if (this.game.net.state === NetState.JOINING) {
+                this.game.Toast('正在加入房间...');
             }
-        } else {
-            console.log('等待网络连接...');
         }
     }
 

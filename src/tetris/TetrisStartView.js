@@ -14,6 +14,9 @@ export default class TetrisStartView extends PIXI.Container {
         
         // Single Player 按钮 - 单人游戏
         this.singlePlayerButton = new TetrisButton(this.game, 'Single Player', () => {
+            this.game.GameStartOption = {
+                shapeGeneratorSeed: Date.now()
+            };
             this.game.replaceView("TetrisGameView");
         });
         this.singlePlayerButton.position.set(0, 30);

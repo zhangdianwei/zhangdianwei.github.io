@@ -177,7 +177,8 @@ export default class TetrisNet {
         const { eventId, eventData, senderId } = event;
         console.log('收到自定义事件:', eventId, eventData, senderId);
         
-        if (eventId === NetEventId.StartGame && eventData && eventData.action === 'startGame') {
+        if (eventId === NetEventId.StartGame) {
+            this.game.GameStartOption = eventData;
             this.game.replaceView("TetrisGameView");
         } else if (eventId === NetEventId.SyncRobots && eventData && eventData.robots) {
             eventData.robots.forEach(robotData => {

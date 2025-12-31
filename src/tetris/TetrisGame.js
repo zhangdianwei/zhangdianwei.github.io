@@ -51,6 +51,13 @@ class TetrisGame {
         this.replaceView("TetrisStartView");
     }
 
+    get GameStartOption() {
+        return this.gameStartOption;
+    }
+    set GameStartOption(option) {
+        this.gameStartOption = option;
+    }
+
     syncFromLean(leanPlayers) {
         this.players = leanPlayers.map(p => new TetrisPlayer(p));
         this._notifyPlayerChanged();

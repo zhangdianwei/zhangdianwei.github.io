@@ -51,7 +51,7 @@ class TetrisGameView extends PIXI.Container {
         this.initParticlePool();
 
         // 初始化随机数生成器和形状队列
-        this.shapeGenerator = new RandGenerator();
+        this.shapeGenerator = new RandGenerator(this.game.GameStartOption.shapeGeneratorSeed);
         this.nextShapInfos = [];
         this.initShapeQueue();
 
@@ -624,8 +624,6 @@ class TetrisGameView extends PIXI.Container {
     checkDead(affectedRows) {
         const topRows = [20, 21, 22, 23];
         const intersection = affectedRows.filter(row => topRows.includes(row));
-        
-        console.log('affectedRows', affectedRows);
 
         const rowsToCheck = intersection.length > 0 ? intersection : topRows;
         

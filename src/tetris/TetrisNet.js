@@ -1,4 +1,6 @@
 import { Client, Event, ReceiverGroup } from '@leancloud/play';
+import TetrisPlayer from './TetrisPlayer.js';
+import { NetEventId } from './TetrisEvents.js';
 
 // LeanCloud 配置 - 请到 https://console.leancloud.cn 注册并创建应用，然后填入以下信息
 const APP_ID = 'tQwiRbYg8otBOPgaCK273AnT-gzGzoHsz';
@@ -65,18 +67,18 @@ export default class TetrisNet {
 
         this.client.on(Event.PLAYER_ROOM_JOINED, (event) => {
             console.log('玩家加入房间:', event);
-            this.syncPlayerList();
+            this.syncPlayerListToLocal();
         });
 
         this.client.on(Event.PLAYER_ROOM_LEFT, (event) => {
             console.log('玩家离开房间:', event);
-            this.syncPlayerList();
+            this.syncPlayerListToLocal();
         });
 
         // 监听玩家属性变化事件
         this.client.on(Event.PLAYER_CUSTOM_PROPERTIES_CHANGED, (event) => {
             console.log('玩家属性变化:', event);
-            this.syncPlayerList();
+            this.syncPlayerListToLocal();
         });
 
         // 监听自定义事件
@@ -136,56 +138,20 @@ export default class TetrisNet {
     onRoomJoined(room) {
         console.log('成功加入房间');
         this.state = NetState.IN_ROOM;
-        this.syncPlayerListFromRoom(room);
+        this.syncPlayerListToLocal();
         this.game.replaceView("TetrisRoomView");
     }
 
-    syncPlayerList() {
+    syncPlayerListToLocal() {
         if (!this.client || this.state !== NetState.IN_ROOM) return;
 
         try {
             const room = this.client.room;
             if (!room) return;
-
-            this.syncPlayerListFromRoom(room);
-        } catch (error) {
-            console.error('同步玩家列表失败:', error);
-        }
-    }
-
-    syncPlayerListFromRoom(room) {
-        if (!room) return;
-
-        try {
-            const players = [];
             const playerList = room.playerList || [];
-            
-            playerList.forEach((player) => {
-                players.push({
-                    userId: player.userId,
-                    actorId: player.actorId,
-                    isMaster: player.isMaster,
-                    customProperties: player.customProperties || {}
-                });
-            });
-
-            this.game.setPlayers(players);
+            this.game.syncFromLean(playerList);
         } catch (error) {
             console.error('同步玩家列表失败:', error);
-        }
-    }
-
-    async updatePlayerList() {
-        if (!this.client || this.state !== NetState.IN_ROOM) return;
-
-        try {
-            const player = this.client.player;
-            if (player) {
-                // 可以更新玩家的自定义属性
-                // player.setCustomProperties({ ... });
-            }
-        } catch (error) {
-            console.error('更新玩家列表失败:', error);
         }
     }
 
@@ -209,12 +175,16 @@ export default class TetrisNet {
     // 处理自定义事件
     handleCustomEvent(event) {
         const { eventId, eventData, senderId } = event;
-        // 在这里处理收到的自定义事件
-        // 例如：游戏状态同步、玩家操作等
         console.log('收到自定义事件:', eventId, eventData, senderId);
         
-        if (eventId === 1 && eventData && eventData.action === 'startGame') {
+        if (eventId === NetEventId.StartGame && eventData && eventData.action === 'startGame') {
             this.game.replaceView("TetrisGameView");
+        } else if (eventId === NetEventId.SyncRobots && eventData && eventData.robots) {
+            eventData.robots.forEach(robotData => {
+                if (!this.game.players.find(p => p.userId === robotData.userId)) {
+                    this.game.players.push(TetrisPlayer.fromJson(robotData));
+                }
+            });
         }
     }
 

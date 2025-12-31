@@ -5,7 +5,8 @@ import TetrisGameView from './TetrisGameView.js';
 import TetrisStartView from './TetrisStartView.js';
 import TetrisRoomView from './TetrisRoomView.js';
 import TetrisNet from './TetrisNet.js';
-import { TetrisEvents } from './TetrisEvents.js';
+import { TetrisEvents, NetEventId } from './TetrisEvents.js';
+import TetrisPlayer from './TetrisPlayer.js';
 
 class TetrisGame {
 
@@ -32,9 +33,9 @@ class TetrisGame {
 
         this.textures = textures;
 
-        this.userId = this.genUserId();
+        this.userId = TetrisPlayer.generateUserId('Player');
         this.eventListeners = {};
-        this.setPlayers([]);
+        this.players = [];
 
         this.net = new TetrisNet(this);
         this.net.init();
@@ -50,34 +51,39 @@ class TetrisGame {
         this.replaceView("TetrisStartView");
     }
 
-    setPlayers(players) {
-        this.players = players;
-        this.emit(TetrisEvents.PlayerChanged, {
-            players: this.players
-        });
+    syncFromLean(leanPlayers) {
+        this.players = leanPlayers.map(p => new TetrisPlayer(p));
+        this._notifyPlayerChanged();
     }
 
-    addPlayer(player) {
-        if (this.players.find(p => p.userId === player.userId)) return;
-        this.setPlayers([...this.players, player]);
-        if (this.net) {
-            this.net.updatePlayerList();
+    fillRobotPlayers() {
+        const robots = [];
+        while (this.players.length < 2) {
+            const robot = {
+                userId: TetrisPlayer.generateUserId('Robot'),
+                isRobot: true
+            };
+            robots.push(robot);
+        }
+        if (robots.length > 0) {
+            this.net.sendEvent(NetEventId.SyncRobots, { robots });
         }
     }
 
-    removePlayer(userId) {
-        this.setPlayers(this.players.filter(p => p.userId !== userId));
-        if (this.net) {
-            this.net.updatePlayerList();
-        }
+    findPlayer(userId) {
+        return this.players.find(p => p.userId === userId) || null;
+    }
+
+    getMyPlayer() {
+        return this.findPlayer(this.userId);
     }
 
     getMyPlayerIndex() {
         return this.players.findIndex(p => p.userId === this.userId);
     }
 
-    genUserId() {
-        return "Player" + Math.floor(Math.random() * 10000);
+    _notifyPlayerChanged() {
+        this.emit(TetrisEvents.PlayerChanged, { players: this.players });
     }
 
     update(delta) {

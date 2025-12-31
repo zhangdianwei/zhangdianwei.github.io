@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import * as TWEEN from '@tweenjs/tween.js';
 import TetrisButton from './TetrisButton.js';
-import { TetrisEvents } from './TetrisEvents.js';
+import { TetrisEvents, NetEventId } from './TetrisEvents.js';
 import { NetState } from './TetrisNet.js';
 
 export default class TetrisRoomView extends PIXI.Container {
@@ -106,11 +106,14 @@ export default class TetrisRoomView extends PIXI.Container {
                 align: 'left'
             });
 
-            const playerId = player.userId || `Player ${player.actorId || index}`;
-            let displayText = playerId;
+            let displayText = player.isRobot ? `🤖 ${player.userId}` : player.userId;
+            
+            // 添加房主标识
             if (player.isMaster) {
                 displayText = '👑 ' + displayText;
             }
+            
+            // 添加本地玩家标识
             if (player.userId === this.game.userId) {
                 displayText = displayText + ' (我)';
             }
@@ -185,8 +188,10 @@ export default class TetrisRoomView extends PIXI.Container {
             return;
         }
 
+        this.game.fillRobotPlayers();
+
         // 发送开始游戏事件给所有玩家
-        this.game.net.sendEvent(1, { action: 'startGame' });
+        this.game.net.sendEvent(NetEventId.StartGame, { action: 'startGame' });
 
         // 切换到游戏视图
         this.game.replaceView("TetrisGameView");

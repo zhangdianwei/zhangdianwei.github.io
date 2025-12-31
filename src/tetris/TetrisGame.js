@@ -7,6 +7,7 @@ import TetrisRoomView from './TetrisRoomView.js';
 import TetrisNet from './TetrisNet.js';
 import { TetrisEvents, NetEventId } from './TetrisEvents.js';
 import TetrisPlayer from './TetrisPlayer.js';
+import TetrisGameStartOption from './TetrisGameStartOption.js';
 
 class TetrisGame {
 
@@ -40,6 +41,8 @@ class TetrisGame {
         this.net = new TetrisNet(this);
         this.net.init();
 
+        this.gameStartOption = new TetrisGameStartOption();
+
         this.viewCreators = {
             "TetrisStartView": TetrisStartView,
             "TetrisGameView": TetrisGameView,
@@ -51,13 +54,6 @@ class TetrisGame {
         this.replaceView("TetrisStartView");
     }
 
-    get GameStartOption() {
-        return this.gameStartOption;
-    }
-    set GameStartOption(option) {
-        this.gameStartOption = option;
-    }
-
     syncFromLean(leanPlayers) {
         this.players = leanPlayers.map(p => new TetrisPlayer(p));
         this._notifyPlayerChanged();
@@ -65,16 +61,16 @@ class TetrisGame {
 
     fillRobotPlayers() {
         const robots = [];
-        while (this.players.length < 2) {
+        const robotCount = 2 - this.players.length;
+        if (robotCount <= 0) return;
+        for (let i = 0; i < robotCount; i++) {
             const robot = {
                 userId: TetrisPlayer.generateUserId('Robot'),
                 isRobot: true
             };
             robots.push(robot);
         }
-        if (robots.length > 0) {
-            this.net.sendEvent(NetEventId.SyncRobots, { robots });
-        }
+        this.net.sendEvent(NetEventId.SyncRobots, { robots });
     }
 
     findPlayer(userId) {
@@ -91,6 +87,10 @@ class TetrisGame {
 
     _notifyPlayerChanged() {
         this.emit(TetrisEvents.PlayerChanged, { players: this.players });
+    }
+
+    get GameStartOption() {
+        return this.gameStartOption;
     }
 
     update(delta) {

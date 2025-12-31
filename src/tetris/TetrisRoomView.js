@@ -137,7 +137,14 @@ export default class TetrisRoomView extends PIXI.Container {
         }
 
         this.game.fillRobotPlayers();
-        this.game.net.sendEvent(NetEventId.StartGame, { shapeGeneratorSeed: 10000 });
+
+        // 将时间戳转换为字符串，避免 LeanCloud Play SDK 序列化大数字时的 Int32 溢出问题
+        const now = Date.now();
+        const startOption = {
+            shapeGeneratorSeed: String(1000),
+            startTime: String(now),
+        };
+        this.game.net.sendEvent(NetEventId.StartGame, startOption);
     }
 
 

@@ -51,7 +51,7 @@ class TetrisGameView extends PIXI.Container {
         this.initParticlePool();
 
         // 初始化随机数生成器和形状队列
-        this.shapeGenerator = new RandGenerator(this.game.GameStartOption.shapeGeneratorSeed);
+        this.shapeGenerator = new RandGenerator(this.game.GameStartOption.ShapeGeneratorSeed);
         this.nextShapInfos = [];
         this.initShapeQueue();
 

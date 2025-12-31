@@ -35,6 +35,8 @@ const onTexturesLoaded = (textures) => {
 };
 
 onUnmounted(() => {
-
+    if (game && game.net) {
+        game.net.close();
+    }
 });
 </script> 

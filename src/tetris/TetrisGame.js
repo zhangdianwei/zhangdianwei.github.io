@@ -3,6 +3,7 @@ import * as PIXI from 'pixi.js';
 import * as TWEEN from '@tweenjs/tween.js';
 import TetrisGameView from './TetrisGameView.js';
 import TetrisStartView from './TetrisStartView.js';
+import TetrisRoomView from './TetrisRoomView.js';
 import TetrisNet from './TetrisNet.js';
 import { TetrisEvents } from './TetrisEvents.js';
 
@@ -34,6 +35,7 @@ class TetrisGame {
         this.viewCreators = {
             "TetrisStartView": TetrisStartView,
             "TetrisGameView": TetrisGameView,
+            "TetrisRoomView": TetrisRoomView,
         }
 
         this.pixi.ticker.add(this.update, this);

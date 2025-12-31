@@ -11,16 +11,42 @@ export default class TetrisStartView extends PIXI.Container {
     init() {
         this.initTitle();
         
-        const playButton = new TetrisButton(this.game, 'Start Game', () => {
-            // TODO: 实现开始游戏的逻辑
+        // Single Player 按钮 - 单人游戏
+        const singlePlayerButton = new TetrisButton(this.game, 'Single Player', () => {
             this.game.replaceView("TetrisGameView");
         });
-        playButton.position.set(0, 50);
-        this.addChild(playButton);
+        singlePlayerButton.position.set(0, 30);
+        this.addChild(singlePlayerButton);
+
+        // Match Player 按钮 - 匹配玩家（多人游戏）
+        const matchPlayerButton = new TetrisButton(this.game, 'Match Player', () => {
+            this.joinMatch();
+        });
+        matchPlayerButton.position.set(0, 90);
+        this.addChild(matchPlayerButton);
 
         this.animationTime = 0;
         this.tagUpdate = this.update.bind(this);
         this.game.pixi.ticker.add(this.tagUpdate, this);
+    }
+
+    async joinMatch() {
+        // 如果已经在房间中，直接切换到房间视图
+        if (this.game.net && this.game.net.isInRoom) {
+            this.game.replaceView("TetrisRoomView");
+            return;
+        }
+
+        // 如果已连接但未在房间，尝试加入房间
+        if (this.game.net && this.game.net.isConnected) {
+            try {
+                await this.game.net.joinRoom();
+            } catch (error) {
+                console.error('加入房间失败:', error);
+            }
+        } else {
+            console.log('等待网络连接...');
+        }
     }
 
     initTitle() {

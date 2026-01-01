@@ -1,28 +1,20 @@
 import { NetEventId, GameAction, GameStartMode } from './TetrisEvents.js';
-import RandGenerator from './RandGenerator.js';
+import Tetris7BagGenerator from './Tetris7BagGenerator.js';
 import * as TetrisShape from '../TetrisShape.js';
 
-/**
- * 机器人控制器
- * 负责处理机器人逻辑，操作 TetrisGameUserView，并记录和广播操作
- */
 export default class TetrisControlRobot {
     constructor(game) {
         this.game = game;
         this.thinkTimer = 0;
-        this.thinkInterval = 500;
-        
-        // 游戏状态
+        this.thinkInterval = 100;
         this.speedLevel = 1;
         this.isDead = false;
-        
-        // 游戏统计信息
         this.score = 0;
         this.linesCleared = 0;
-        
-        // 形状生成器
         this.shapeGenerator = null;
         this.nextShapInfos = [];
+        this.isExecutingMove = false;
+        this.moveQueue = [];
     }
 
     init(userView, player) {
@@ -31,8 +23,7 @@ export default class TetrisControlRobot {
         this.dropSpeedTimer = 0;
         this.dropPaused = false;
         
-        // 初始化随机数生成器和形状队列
-        this.shapeGenerator = new RandGenerator(this.game.GameStartOption.ShapeGeneratorSeed);
+        this.shapeGenerator = new Tetris7BagGenerator(this.game.GameStartOption.ShapeGeneratorSeed);
         this.nextShapInfos = [];
         this.initShapeQueue();
     }
@@ -43,19 +34,13 @@ export default class TetrisControlRobot {
     }
 
     getNextShapeInfo() {
-        // 从队列头部取出一个形状信息对象
         const shapeInfo = this.nextShapInfos.shift();
         
-        // 如果队列数量不足2个，补足到2个
-        const shapeTypes = Object.values(TetrisShape.TetrisShapeType);
         while (this.nextShapInfos.length < 2) {
-            let newShapeIndex = this.shapeGenerator.nextInt(TetrisShape.TetrisShapeCount);
-            const newShapeType = shapeTypes[newShapeIndex];
-            const newColorIndex = newShapeIndex; // shapeType 的索引直接作为 colorIndex
-            this.nextShapInfos.push({shapeType: newShapeType, colorIndex: newColorIndex});
+            const nextShape = this.shapeGenerator.next();
+            this.nextShapInfos.push(nextShape);
         }
         
-        // 通知 view 更新下一个形状预览
         if (this.userView && this.userView.updateNextShapePreview) {
             this.userView.updateNextShapePreview();
         }
@@ -69,7 +54,6 @@ export default class TetrisControlRobot {
             this.nextShapInfos[0] = this.nextShapInfos[1];
             this.nextShapInfos[1] = temp;
             
-            // 通知 view 更新下一个形状预览
             if (this.userView && this.userView.updateNextShapePreview) {
                 this.userView.updateNextShapePreview();
             }
@@ -87,10 +71,12 @@ export default class TetrisControlRobot {
             this.doAction(GameAction.AutoDrop);
         }
 
-        this.thinkTimer += deltaMS;
-        if (this.thinkTimer >= this.thinkInterval) {
-            this.thinkTimer = 0;
-            this.thinkAndAct();
+        if (!this.isExecutingMove) {
+            this.thinkTimer += deltaMS;
+            if (this.thinkTimer >= this.thinkInterval) {
+                this.thinkTimer = 0;
+                this.thinkAndAct();
+            }
         }
     }
 
@@ -102,23 +88,422 @@ export default class TetrisControlRobot {
         return this.dropSpeed() / 3;
     }
 
-    /**
-     * 机器人思考和行动
-     */
     thinkAndAct() {
-        let action = GameAction.MoveLeft;
-        
-        if (this.userView.canMoveLeft() && Math.random() < 0.3) {
-            action = GameAction.MoveLeft;
-        } else if (this.userView.canMoveRight() && Math.random() < 0.3) {
-            action = GameAction.MoveRight;
-        } else if (Math.random() < 0.2) {
-            action = GameAction.Rotate;
-        } else if (Math.random() < 0.1) {
-            action = GameAction.Drop;
+        if (!this.userView.dropInfo) {
+            return;
         }
 
+        try {
+            const bestMove = this.findBestMove();
+            if (bestMove) {
+                this.executeMove(bestMove);
+            } else {
+                console.warn('Robot: No valid move found, using fallback. Shape:', this.userView.dropInfo.shapeType);
+            }
+        } catch (error) {
+            console.error('Robot thinkAndAct error:', error, error.stack);
+        }
+    }
+
+    findBestMove() {
+        const currentShape = this.userView.dropInfo.shapeType;
+        const currentRotation = this.userView.dropInfo.rotation;
+        const nextShapeInfo = this.nextShapInfos[0];
+        
+        let bestScore = -Infinity;
+        let bestMove = null;
+        const currentMoves = this.getAllPossibleMoves(currentShape, currentRotation);
+        
+        if (currentMoves.length === 0) {
+            console.warn('Robot: No possible moves found for shape', currentShape, 'rotation', currentRotation);
+            console.warn('Current grid state:', this.getCurrentGrid().map((row, i) => `${i}: ${row.join('')}`).join('\n'));
+            return null;
+        }
+        
+        console.log(`Robot: Found ${currentMoves.length} possible moves for shape ${currentShape}`);
+        
+        for (const move of currentMoves) {
+            try {
+                const gridAfterCurrent = this.simulatePlacePiece(
+                    this.getCurrentGrid(),
+                    currentShape,
+                    move.rotation,
+                    move.col,
+                    move.row
+                );
+
+                if (this.isGameOver(gridAfterCurrent)) {
+                    continue;
+                }
+
+                let score = this.evaluateGrid(gridAfterCurrent);
+                
+                if (nextShapeInfo) {
+                    const nextMoves = this.getAllPossibleMoves(nextShapeInfo.shapeType, 0);
+                    let bestNextScore = -Infinity;
+                    
+                    for (const nextMove of nextMoves) {
+                        const gridAfterNext = this.simulatePlacePiece(
+                            gridAfterCurrent,
+                            nextShapeInfo.shapeType,
+                            nextMove.rotation,
+                            nextMove.col,
+                            nextMove.row
+                        );
+                        
+                        if (!this.isGameOver(gridAfterNext)) {
+                            const nextScore = this.evaluateGrid(gridAfterNext);
+                            bestNextScore = Math.max(bestNextScore, nextScore);
+                        }
+                    }
+                    
+                    if (bestNextScore > -Infinity) {
+                        score = (score + bestNextScore) / 2;
+                    }
+                }
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
+            } catch (error) {
+                console.error('Error evaluating move:', error, move);
+                continue;
+            }
+        }
+
+        if (bestMove) {
+            console.log(`Robot: Best move selected - rotation: ${bestMove.rotation}, col: ${bestMove.col}, row: ${bestMove.row}, score: ${bestScore.toFixed(2)}`);
+        } else {
+            console.warn('Robot: No valid move found after evaluating all moves');
+        }
+
+        return bestMove;
+    }
+
+    getAllPossibleMoves(shapeType, startRotation) {
+        const moves = [];
+        const shapeDef = TetrisShape.TetrisShapeDef[shapeType];
+        const rotations = [0, 'R', 2, 'L'];
+        
+        for (const rotation of rotations) {
+            if (!shapeDef.rotations[rotation]) continue;
+            
+            const shapeTiles = shapeDef.rotations[rotation];
+            const shapeWidth = shapeTiles[0].length;
+            
+            for (let col = 0; col <= this.userView.colCount - shapeWidth; col++) {
+                const row = this.findLowestValidRow(shapeType, rotation, col);
+                
+                if (row !== null) {
+                    moves.push({
+                        rotation,
+                        col,
+                        row,
+                        startRotation
+                    });
+                }
+            }
+        }
+        
+        return moves;
+    }
+
+    findLowestValidRow(shapeType, rotation, col) {
+        const shapeDef = TetrisShape.TetrisShapeDef[shapeType];
+        const shapeTiles = shapeDef.rotations[rotation];
+        const grid = this.getCurrentGrid();
+        const relativePositions = [];
+        for (let r = 0; r < shapeTiles.length; r++) {
+            for (let c = 0; c < shapeTiles[r].length; c++) {
+                if (shapeTiles[r][c] > 0) {
+                    relativePositions.push({r, c});
+                }
+            }
+        }
+        
+        if (relativePositions.length === 0) {
+            return null;
+        }
+        
+        const minRowInShape = Math.min(...relativePositions.map(p => p.r));
+        const maxRowInShape = Math.max(...relativePositions.map(p => p.r));
+        
+        for (let topRow = this.userView.rowCount + this.userView.extraTopRowCount - 1; topRow >= 0; topRow--) {
+            const bottomRow = topRow + (maxRowInShape - minRowInShape);
+            
+            if (bottomRow >= this.userView.rowCount + this.userView.extraTopRowCount) {
+                continue;
+            }
+            
+            const testRcs = relativePositions.map(pos => ({
+                r: topRow + (pos.r - minRowInShape),
+                c: col + pos.c
+            }));
+            
+            if (this.isValidPositionForGrid(grid, testRcs)) {
+                if (topRow > 0) {
+                    const testRcsBelow = relativePositions.map(pos => ({
+                        r: topRow - 1 + (pos.r - minRowInShape),
+                        c: col + pos.c
+                    }));
+                    
+                    if (this.isValidPositionForGrid(grid, testRcsBelow)) {
+                        continue;
+                    }
+                }
+                
+                return topRow;
+            }
+        }
+        
+        return null;
+    }
+
+    isValidPositionForGrid(grid, rcs) {
+        for (const rc of rcs) {
+            if (rc.r < 0 || rc.r >= this.userView.rowCount + this.userView.extraTopRowCount || 
+                rc.c < 0 || rc.c >= this.userView.colCount) {
+                return false;
+            }
+            if (grid[rc.r] && grid[rc.r][rc.c]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    getCurrentGrid() {
+        const grid = [];
+        for (let r = 0; r < this.userView.rowCount + this.userView.extraTopRowCount; r++) {
+            grid[r] = [];
+            for (let c = 0; c < this.userView.colCount; c++) {
+                grid[r][c] = this.userView.tiles[r] && this.userView.tiles[r][c] ? 1 : 0;
+            }
+        }
+        return grid;
+    }
+
+    simulatePlacePiece(grid, shapeType, rotation, col, topRow) {
+        const newGrid = grid.map(r => [...r]);
+        const shapeDef = TetrisShape.TetrisShapeDef[shapeType];
+        const shapeTiles = shapeDef.rotations[rotation];
+        const relativePositions = [];
+        for (let r = 0; r < shapeTiles.length; r++) {
+            for (let c = 0; c < shapeTiles[r].length; c++) {
+                if (shapeTiles[r][c] > 0) {
+                    relativePositions.push({r, c});
+                }
+            }
+        }
+        
+        const minRowInShape = Math.min(...relativePositions.map(p => p.r));
+        
+        for (const pos of relativePositions) {
+            const gridRow = topRow + (pos.r - minRowInShape);
+            const gridCol = col + pos.c;
+            if (gridRow >= 0 && gridRow < newGrid.length && 
+                gridCol >= 0 && gridCol < newGrid[0].length) {
+                newGrid[gridRow][gridCol] = 1;
+            }
+        }
+        
+        return this.clearFullLines(newGrid);
+    }
+
+    clearFullLines(grid) {
+        const newGrid = [];
+        const rowCount = grid.length;
+        const colCount = grid[0].length;
+        
+        for (let r = 0; r < rowCount; r++) {
+            let isFull = true;
+            for (let c = 0; c < colCount; c++) {
+                if (!grid[r][c]) {
+                    isFull = false;
+                    break;
+                }
+            }
+            
+            if (!isFull) {
+                newGrid.push([...grid[r]]);
+            }
+        }
+        
+        while (newGrid.length < rowCount) {
+            newGrid.unshift(new Array(colCount).fill(0));
+        }
+        
+        return newGrid;
+    }
+
+    isGameOver(grid) {
+        for (let r = 0; r < this.userView.extraTopRowCount; r++) {
+            for (let c = 0; c < this.userView.colCount; c++) {
+                if (grid[r] && grid[r][c]) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    evaluateGrid(grid) {
+        const aggregateHeight = this.getAggregateHeight(grid);
+        const completeLines = this.getCompleteLines(grid);
+        const holes = this.getHoles(grid);
+        const bumpiness = this.getBumpiness(grid);
+        
+        const a = -0.510066;
+        const b = 0.760666;
+        const c = -0.35663;
+        const d = -0.184483;
+        
+        return a * aggregateHeight + b * completeLines + c * holes + d * bumpiness;
+    }
+
+    getAggregateHeight(grid) {
+        const colCount = grid[0].length;
+        let totalHeight = 0;
+        
+        for (let c = 0; c < colCount; c++) {
+            let height = 0;
+            for (let r = 0; r < grid.length; r++) {
+                if (grid[r][c]) {
+                    height = grid.length - r;
+                    break;
+                }
+            }
+            totalHeight += height;
+        }
+        
+        return totalHeight;
+    }
+
+    getCompleteLines(grid) {
+        let completeLines = 0;
+        
+        for (let r = 0; r < grid.length; r++) {
+            let isComplete = true;
+            for (let c = 0; c < grid[r].length; c++) {
+                if (!grid[r][c]) {
+                    isComplete = false;
+                    break;
+                }
+            }
+            if (isComplete) {
+                completeLines++;
+            }
+        }
+        
+        return completeLines;
+    }
+
+    getHoles(grid) {
+        const colCount = grid[0].length;
+        let holes = 0;
+        
+        for (let c = 0; c < colCount; c++) {
+            let hasBlock = false;
+            for (let r = 0; r < grid.length; r++) {
+                if (grid[r][c]) {
+                    hasBlock = true;
+                } else if (hasBlock) {
+                    holes++;
+                }
+            }
+        }
+        
+        return holes;
+    }
+
+    getBumpiness(grid) {
+        const colCount = grid[0].length;
+        const heights = [];
+        
+        for (let c = 0; c < colCount; c++) {
+            let height = 0;
+            for (let r = 0; r < grid.length; r++) {
+                if (grid[r][c]) {
+                    height = grid.length - r;
+                    break;
+                }
+            }
+            heights.push(height);
+        }
+        
+        let bumpiness = 0;
+        for (let i = 0; i < heights.length - 1; i++) {
+            bumpiness += Math.abs(heights[i] - heights[i + 1]);
+        }
+        
+        return bumpiness;
+    }
+
+    executeMove(move) {
+        if (!this.userView.dropInfo) {
+            return;
+        }
+        
+        this.isExecutingMove = true;
+        const currentRotation = this.userView.dropInfo.rotation;
+        const targetRotation = move.rotation;
+        const targetCol = move.col;
+        const currentCol = this.userView.dropInfo.rcs[0]?.c || 0;
+        
+        this.moveQueue = [];
+        
+        if (currentRotation !== targetRotation) {
+            const rotationOrder = [0, 'R', 2, 'L'];
+            const currentIndex = rotationOrder.indexOf(currentRotation);
+            const targetIndex = rotationOrder.indexOf(targetRotation);
+            
+            let rotations = targetIndex - currentIndex;
+            if (rotations < 0) rotations += 4;
+            if (rotations > 2) rotations = rotations - 4;
+            
+            for (let i = 0; i < Math.abs(rotations); i++) {
+                this.moveQueue.push(GameAction.Rotate);
+            }
+        }
+        
+        const colDiff = targetCol - currentCol;
+        if (colDiff > 0) {
+            for (let i = 0; i < colDiff; i++) {
+                this.moveQueue.push(GameAction.MoveRight);
+            }
+        } else if (colDiff < 0) {
+            for (let i = 0; i < Math.abs(colDiff); i++) {
+                this.moveQueue.push(GameAction.MoveLeft);
+            }
+        }
+        
+        this.moveQueue.push(GameAction.Drop);
+        this.executeNextAction();
+    }
+
+    executeNextAction() {
+        if (!this.userView.dropInfo) {
+            this.isExecutingMove = false;
+            this.moveQueue = [];
+            return;
+        }
+        
+        if (this.moveQueue.length === 0) {
+            this.isExecutingMove = false;
+            return;
+        }
+        
+        const action = this.moveQueue.shift();
         this.doAction(action);
+        
+        if (action === GameAction.Drop) {
+            this.isExecutingMove = false;
+        } else {
+            setTimeout(() => {
+                this.executeNextAction();
+            }, 50);
+        }
     }
 
     doAction(action) {

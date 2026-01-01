@@ -9,7 +9,6 @@ export default class TetrisControlPlayer {
         this.dropPaused = false;
         
         // 游戏状态
-        this.speedLevel = 1;
         this.isDead = false;
         
         // 游戏统计信息
@@ -27,10 +26,12 @@ export default class TetrisControlPlayer {
         this.onKeyDownHandler = this.onKeyDown.bind(this);
         window.addEventListener('keydown', this.onKeyDownHandler);
         
-        // 初始化 7-bag 随机生成器和形状队列
         this.shapeGenerator = new Tetris7BagGenerator(this.game.GameStartOption.ShapeGeneratorSeed);
         this.nextShapInfos = [];
         this.initShapeQueue();
+        
+        this.updateHandler = this.update.bind(this);
+        this.game.pixi.ticker.add(this.updateHandler, this);
     }
 
     initShapeQueue() {
@@ -69,19 +70,20 @@ export default class TetrisControlPlayer {
         }
     }
 
-    dropSpeed() {
-        return 500 - (this.speedLevel - 1) * (500 - 100) / (10 - 1);
+    dropDiff() {
+        return Math.max(100, 500 - this.linesCleared * 100);
     }
 
     get moveAnimationDuration() {
-        return this.dropSpeed() / 3;
+        return this.dropDiff() / 3;
     }
 
-    update(deltaMS) {
+    update() {
         if (this.dropPaused) return;
         
+        const deltaMS = this.game.pixi.ticker.deltaMS;
         this.dropSpeedTimer += deltaMS;
-        if (this.dropSpeedTimer >= this.dropSpeed()) {
+        if (this.dropSpeedTimer >= this.dropDiff()) {
             this.dropSpeedTimer = 0;
             this.doAction(GameAction.AutoDrop);
         }
@@ -132,6 +134,9 @@ export default class TetrisControlPlayer {
 
     safeRemoveSelf() {
         window.removeEventListener('keydown', this.onKeyDownHandler);
+        if (this.updateHandler) {
+            this.game.pixi.ticker.remove(this.updateHandler);
+        }
     }
 }
 

@@ -7,7 +7,6 @@ export default class TetrisControlRobot {
         this.game = game;
         this.thinkTimer = 0;
         this.thinkInterval = 100;
-        this.speedLevel = 1;
         this.isDead = false;
         this.score = 0;
         this.linesCleared = 0;
@@ -26,6 +25,9 @@ export default class TetrisControlRobot {
         this.shapeGenerator = new Tetris7BagGenerator(this.game.GameStartOption.ShapeGeneratorSeed);
         this.nextShapInfos = [];
         this.initShapeQueue();
+        
+        this.updateHandler = this.update.bind(this);
+        this.game.pixi.ticker.add(this.updateHandler, this);
     }
 
     initShapeQueue() {
@@ -60,13 +62,14 @@ export default class TetrisControlRobot {
         }
     }
 
-    update(deltaMS) {
+    update() {
         if (this.isDead || this.dropPaused) {
             return;
         }
 
+        const deltaMS = this.game.pixi.ticker.deltaMS;
         this.dropSpeedTimer += deltaMS;
-        if (this.dropSpeedTimer >= this.dropSpeed()) {
+        if (this.dropSpeedTimer >= this.dropDiff()) {
             this.dropSpeedTimer = 0;
             this.doAction(GameAction.AutoDrop);
         }
@@ -80,12 +83,12 @@ export default class TetrisControlRobot {
         }
     }
 
-    dropSpeed() {
-        return 500 - (this.speedLevel - 1) * (500 - 100) / (10 - 1);
+    dropDiff() {
+        return Math.max(100, 500 - this.linesCleared * 100);
     }
 
     get moveAnimationDuration() {
-        return this.dropSpeed() / 3;
+        return this.dropDiff() / 3;
     }
 
     thinkAndAct() {
@@ -593,6 +596,9 @@ export default class TetrisControlRobot {
     }
 
     safeRemoveSelf() {
+        if (this.updateHandler) {
+            this.game.pixi.ticker.remove(this.updateHandler);
+        }
     }
 }
 

@@ -1,34 +1,31 @@
 import { GameAction } from './TetrisEvents.js';
 import Tetris7BagGenerator from './Tetris7BagGenerator.js';
-import * as TetrisShape from '../TetrisShape.js';
 
 export default class TetrisControlFromNet {
     constructor(game) {
         this.game = game;
-        
-        // 游戏状态
-        this.speedLevel = 1;
         this.isDead = false;
-        
-        // 游戏统计信息
         this.score = 0;
         this.linesCleared = 0;
-        
-        // 形状生成器
         this.shapeGenerator = null;
         this.nextShapInfos = [];
+        this.currentTime = 0;
+        this.processedFrameIndex = 0;
     }
 
     init(userView, player) {
         this.userView = userView;
         this.player = player;
-        this.dropSpeedTimer = 0;
         this.dropPaused = false;
+        this.currentTime = 0;
+        this.processedFrameIndex = 0;
         
-        // 初始化 7-bag 随机生成器和形状队列
         this.shapeGenerator = new Tetris7BagGenerator(this.game.GameStartOption.ShapeGeneratorSeed);
         this.nextShapInfos = [];
         this.initShapeQueue();
+        
+        this.updateHandler = this.update.bind(this);
+        this.game.pixi.ticker.add(this.updateHandler, this);
     }
 
     initShapeQueue() {
@@ -37,16 +34,13 @@ export default class TetrisControlFromNet {
     }
 
     getNextShapeInfo() {
-        // 从队列头部取出一个形状信息对象
         const shapeInfo = this.nextShapInfos.shift();
         
-        // 如果队列数量不足2个，补足到2个（使用 7-bag 生成器）
         while (this.nextShapInfos.length < 2) {
             const nextShape = this.shapeGenerator.next();
             this.nextShapInfos.push(nextShape);
         }
         
-        // 通知 view 更新下一个形状预览
         if (this.userView && this.userView.updateNextShapePreview) {
             this.userView.updateNextShapePreview();
         }
@@ -60,39 +54,49 @@ export default class TetrisControlFromNet {
             this.nextShapInfos[0] = this.nextShapInfos[1];
             this.nextShapInfos[1] = temp;
             
-            // 通知 view 更新下一个形状预览
             if (this.userView && this.userView.updateNextShapePreview) {
                 this.userView.updateNextShapePreview();
             }
         }
     }
 
-    update(deltaMS) {
-        if (this.dropPaused) return;
+    update() {
+        if (this.dropPaused || this.isDead) return;
         
-        this.dropSpeedTimer += deltaMS;
-        if (this.dropSpeedTimer >= this.dropSpeed()) {
-            this.dropSpeedTimer = 0;
-            const elapsed = Date.now() - this.game.GameStartOption.StartTime;
-            const actionData = {
-                GameAction: GameAction.AutoDrop,
-                elapsed
-            };
-            this.userView.doGameAction(actionData);
+        if (this.player.frames.length === 0) {
+            return;
+        }
+        
+        const elapsed = Date.now() - this.game.GameStartOption.StartTime;
+        const maxExecutionsPerFrame = 1;
+        let executedCount = 0;
+        
+        while (this.processedFrameIndex < this.player.frames.length && executedCount < maxExecutionsPerFrame) {
+            const frame = this.player.frames[this.processedFrameIndex];
+            
+            if (frame.elapsed <= elapsed) {
+                const actionData = {
+                    GameAction: frame.GameAction || frame.type,
+                    ...frame
+                };
+                this.userView.doGameAction(actionData);
+                this.processedFrameIndex++;
+                executedCount++;
+            } else {
+                break;
+            }
         }
     }
 
-    dropSpeed() {
-        return 500 - (this.speedLevel - 1) * (500 - 100) / (10 - 1);
+    dropDiff() {
+        return Math.max(100, 500 - this.linesCleared * 100);
     }
 
     get moveAnimationDuration() {
-        return this.dropSpeed() / 3;
+        return this.dropDiff() / 3;
     }
 
     applyAction(actionData) {
-        this.userView.doGameAction(actionData);
-        
         const frame = {
             type: actionData.GameAction,
             ...actionData
@@ -101,6 +105,9 @@ export default class TetrisControlFromNet {
     }
 
     safeRemoveSelf() {
+        if (this.updateHandler) {
+            this.game.pixi.ticker.remove(this.updateHandler);
+        }
     }
 }
 

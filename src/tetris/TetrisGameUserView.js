@@ -29,8 +29,6 @@ export default class TetrisGameUserView extends PIXI.Container {
         this.initNextShapePreview();
         this.initInfoDisplay();
         this.initUserInfoDisplay();
-        this.updateHandler = this.update.bind(this);
-        this.game.pixi.ticker.add(this.updateHandler, this);
     }
 
     initControllers() {
@@ -341,13 +339,6 @@ export default class TetrisGameUserView extends PIXI.Container {
         return true;
     }
 
-    update() {
-        const deltaMS = this.game.pixi.ticker.deltaMS;
-        if (this.controller && this.controller.update) {
-            this.controller.update(deltaMS);
-        }
-    }
-
     removeDropingShape() {
         for (let i = 0; i < this.dropInfo.rcs.length; i++) {
             let rc = this.dropInfo.rcs[i];
@@ -430,12 +421,6 @@ export default class TetrisGameUserView extends PIXI.Container {
         const lineCount = fullRows.length;
         const oldLinesCleared = this.controller.linesCleared;
         this.controller.linesCleared += lineCount;
-        
-        const oldLevel = Math.floor(oldLinesCleared / 10);
-        const newLevel = Math.floor(this.controller.linesCleared / 10);
-        if (newLevel > oldLevel && this.controller.speedLevel < 10) {
-            this.controller.speedLevel = Math.min(this.controller.speedLevel + (newLevel - oldLevel), 10);
-        }
         
         let points = 1000;
         if (lineCount === 1) {
@@ -941,7 +926,6 @@ export default class TetrisGameUserView extends PIXI.Container {
         });
 
         this.infoDisplayConfigs = [
-            {title: 'Speed:', getValue: () => this.controller.speedLevel, valueLabel: null},
             {title: 'Lines:', getValue: () => this.controller.linesCleared, valueLabel: null},
             {title: 'Score:', getValue: () => this.controller.score, valueLabel: null},
         ]
@@ -1266,7 +1250,6 @@ export default class TetrisGameUserView extends PIXI.Container {
             }
         }
 
-        this.game.pixi.ticker.remove(this.updateHandler);
         this.parent.removeChild(this);
     }
 }

@@ -20,6 +20,12 @@ class TetrisGameView extends PIXI.Container {
     initUserViews() {
         const players = this.game.players;
 
+        // 找到当前用户的索引
+        const myPlayerIndex = players.findIndex(p => p.userId === this.game.userId);
+        if (myPlayerIndex >= 0) {
+            this.centerIndex = myPlayerIndex;
+        }
+
         // 为每个玩家创建视图
         for (let index = 0; index < players.length; index++) {
             const player = players[index];

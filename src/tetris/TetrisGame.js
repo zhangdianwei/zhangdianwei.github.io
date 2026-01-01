@@ -5,9 +5,9 @@ import TetrisGameView from './TetrisGameView.js';
 import TetrisStartView from './TetrisStartView.js';
 import TetrisRoomView from './TetrisRoomView.js';
 import TetrisNet from './TetrisNet.js';
-import { TetrisEvents, NetEventId } from './TetrisEvents.js';
+import { TetrisEvents, NetEventId } from './data/TetrisEvents.js';
 import TetrisPlayer from './TetrisPlayer.js';
-import TetrisGameStartOption from './TetrisGameStartOption.js';
+import TetrisGameStartOption from './data/TetrisGameStartOption.js';
 
 class TetrisGame {
 

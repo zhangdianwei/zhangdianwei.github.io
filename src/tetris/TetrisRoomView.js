@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import TetrisButton from './TetrisButton.js';
-import { TetrisEvents, NetEventId } from './TetrisEvents.js';
+import { TetrisEvents, NetEventId } from './data/TetrisEvents.js';
 
 const TEXT_STYLE = new PIXI.TextStyle({
     fontFamily: 'Comic Sans MS, Marker Felt, Chalkduster, cursive',

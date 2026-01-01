@@ -4,8 +4,6 @@ export default class TetrisGameStartOption {
 
         this.startTime = Date.now();
         this.shapeGeneratorSeed = Date.now();
-
-        this.frames = [];
     }
 
     get StartTime() {
@@ -27,13 +25,6 @@ export default class TetrisGameStartOption {
     }
     set SingleMode(value) {
         this.singleMode = value;
-    }
-
-    get Frames() {
-        return this.frames;
-    }
-    AddFrame(frame) {
-        this.frames.push(frame);
     }
 
     // 从对象数据初始化字段

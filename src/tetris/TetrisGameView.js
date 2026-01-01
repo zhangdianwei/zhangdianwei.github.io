@@ -2,7 +2,7 @@ import * as PIXI from 'pixi.js';
 import * as TWEEN from '@tweenjs/tween.js';
 import TetrisTile from './TetrisTile.js';
 import * as TetrisShape from './TetrisShape.js';
-import RandGenerator from './RandGenerator.js';
+import RandGenerator from './data/RandGenerator.js';
 import TetrisButton from './TetrisButton.js';
 
 class TetrisGameView extends PIXI.Container {
@@ -18,8 +18,9 @@ class TetrisGameView extends PIXI.Container {
         this.initGameLogic();
         this.initNextShapePreview();
         this.initInfoDisplay();
-        this.tagUpdate = this.update.bind(this);
-        this.game.pixi.ticker.add(this.tagUpdate, this);
+        this.initUserInfoDisplay();
+        this.updateHandler = this.update.bind(this);
+        this.game.pixi.ticker.add(this.updateHandler, this);
         this.initKeyboard();
     }
 
@@ -963,6 +964,56 @@ class TetrisGameView extends PIXI.Container {
         });
     }
 
+    initUserInfoDisplay() {
+        // 创建用户信息展示容器，放在 info 区下面
+        this.userInfoDisplayContainer = new PIXI.Container();
+        // info 区位置是 (125, -150)，info 区高度大约是 86，所以 userInfo 放在 (125, -150 + 86 + 10) = (125, -54)
+        this.userInfoDisplayContainer.position.set(125, -54);
+        this.addChild(this.userInfoDisplayContainer);
+        
+        // 创建底板
+        const bgTexture = this.game.textures['tetris/bg_r_1.png'];
+        this.userInfoDisplayBg = new PIXI.Sprite(bgTexture);
+        this.userInfoDisplayBg.anchor.set(0, 0);
+        this.userInfoDisplayContainer.addChild(this.userInfoDisplayBg);
+        
+        // 创建文本样式（黑色字体）
+        const textStyle = new PIXI.TextStyle({
+            fontFamily: 'Comic Sans MS, Marker Felt, Chalkduster, cursive',
+            fontSize: 16,
+            fill: 0x000000,
+            align: 'left'
+        });
+
+        // 获取当前玩家信息
+        const myPlayer = this.game.getMyPlayer();
+        const userId = this.game.userId;
+        const isMaster = myPlayer ? myPlayer.isMaster : false;
+        const isRobot = myPlayer ? myPlayer.isRobot : false;
+
+        // 显示用户ID
+        const userIdLabel = new PIXI.Text('User:', textStyle);
+        userIdLabel.anchor.set(1, 0);
+        userIdLabel.x = 50;
+        userIdLabel.y = 14;
+        this.userInfoDisplayContainer.addChild(userIdLabel);
+
+        const userIdValue = new PIXI.Text(userId, textStyle);
+        userIdValue.anchor.set(0, 0);
+        userIdValue.x = 55;
+        userIdValue.y = 14;
+        this.userInfoDisplayContainer.addChild(userIdValue);
+
+        // 如果是机器人，显示机器人标识
+        if (isRobot) {
+            const robotLabel = new PIXI.Text('🤖 Robot', textStyle);
+            robotLabel.anchor.set(0, 0);
+            robotLabel.x = 64;
+            robotLabel.y = 62;
+            this.userInfoDisplayContainer.addChild(robotLabel);
+        }
+    }
+
     animRollNum(valueObj, targetNum) {
         // 如果没有 animState，创建默认的并直接设置值
         if (!valueObj.animState) {
@@ -1217,7 +1268,7 @@ class TetrisGameView extends PIXI.Container {
         }
         
         window.removeEventListener('keydown', this.onKeyDown);
-        this.game.pixi.ticker.remove(this.tagUpdate);
+        this.game.pixi.ticker.remove(this.updateHandler);
         this.parent.removeChild(this);
     }
 }

@@ -14,6 +14,8 @@ const gameContainer = ref(null);
 const textureUrls = ref([
     "tetris/bg_center_up.png",
     "tetris/bg_center.png",
+    "tetris/bg_center_self.png",
+    "tetris/bg_center_other.png",
     "tetris/bg_r_1.png",
     "tetris/bg_total.png",
     "tetris/tile1.png",

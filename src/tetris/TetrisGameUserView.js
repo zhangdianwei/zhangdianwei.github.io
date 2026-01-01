@@ -14,6 +14,11 @@ export default class TetrisGameUserView extends PIXI.Container {
 
     init(playerIndex){
         this.playerIndex = playerIndex;
+        
+        // 记录是否是当前玩家
+        const player = this.game.players[this.playerIndex];
+        this.isControllable = player && player.userId === this.game.userId;
+        
         this.initBgCenter();
         this.initGameLogic();
         this.initNextShapePreview();
@@ -23,8 +28,7 @@ export default class TetrisGameUserView extends PIXI.Container {
         this.game.pixi.ticker.add(this.updateHandler, this);
         
         // 只有当前玩家才响应键盘输入
-        const player = this.game.players[this.playerIndex];
-        if (player && player.userId === this.game.userId) {
+        if (this.isControllable) {
             this.initKeyboard();
         }
     }
@@ -654,7 +658,8 @@ export default class TetrisGameUserView extends PIXI.Container {
     }
 
     playDeadAppearAnim() {
-        const bgCenterUpTexture = this.game.textures['tetris/bg_center_up.png'];
+        // 使用当前背景的纹理（可能是 self 或 other）
+        const bgCenterUpTexture = this.bgCenterUp ? this.bgCenterUp.texture : this.game.textures['tetris/bg_center_up.png'];
         const circleTexture = this.game.textures['tetris/circle.png'];
         if (!circleTexture || !bgCenterUpTexture) {
             return;
@@ -915,8 +920,22 @@ export default class TetrisGameUserView extends PIXI.Container {
     }
     
     initBgCenter() {
-        const bgCenterUpTexture = this.game.textures['tetris/bg_center_up.png'];
-        this.bgCenterUp = new PIXI.Sprite(bgCenterUpTexture);
+        // 根据是否可操作选择不同的背景图片
+        const textureKey = this.isControllable 
+            ? 'tetris/bg_center_self.png' 
+            : 'tetris/bg_center_other.png';
+        const bgCenterUpTexture = this.game.textures[textureKey];
+        if (!bgCenterUpTexture) {
+            console.warn(`Texture not found: ${textureKey}, falling back to bg_center_up.png`);
+            const fallbackTexture = this.game.textures['tetris/bg_center_up.png'];
+            if (fallbackTexture) {
+                this.bgCenterUp = new PIXI.Sprite(fallbackTexture);
+            } else {
+                return;
+            }
+        } else {
+            this.bgCenterUp = new PIXI.Sprite(bgCenterUpTexture);
+        }
         this.bgCenterUp.anchor.set(0.5, 0.5);
         this.bgCenterUp.x = 0;
         this.bgCenterUp.y = 0;

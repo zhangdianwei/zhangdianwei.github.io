@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import * as TWEEN from '@tweenjs/tween.js';
 import TetrisGameUserView from './TetrisGameUserView.js';
 
 class TetrisGameView extends PIXI.Container {
@@ -7,19 +8,17 @@ class TetrisGameView extends PIXI.Container {
         super();
         this.game = game;
         this.userViews = [];
+        this.centerIndex = 0; // 当前中间显示的视图索引
     }
 
     init() {
         this.initUserViews();
+        this.initArrows();
+        this.updateViewsLayout();
     }
 
     initUserViews() {
         const players = this.game.players;
-        const playerCount = players.length;
-        
-        // 计算每个视图的宽度和位置
-        const screenWidth = this.game.pixi.screen.width;
-        const viewWidth = screenWidth / playerCount;
 
         // 为每个玩家创建视图
         for (let index = 0; index < players.length; index++) {
@@ -27,10 +26,8 @@ class TetrisGameView extends PIXI.Container {
             const userView = new TetrisGameUserView(this.game);
             userView.player = player; // 保存玩家信息
             
-            // 设置视图位置，让它们并排显示
-            const x = -screenWidth / 2 + viewWidth * index + viewWidth / 2;
-            const y = 0;
-            userView.position.set(x, y);
+            // 所有视图都放在中心位置，通过布局更新来调整
+            userView.position.set(0, 0);
             
             // 初始化视图，传入 playerIndex
             userView.init(index);
@@ -38,6 +35,149 @@ class TetrisGameView extends PIXI.Container {
             // 添加到容器
             this.addChild(userView);
             this.userViews.push(userView);
+        }
+    }
+
+    initArrows() {
+        const screenWidth = this.game.pixi.screen.width;
+        const arrowSize = 60;
+        
+        // 左箭头
+        const leftArrowTexture = this.game.textures['tetris/arrow.png'];
+        if (leftArrowTexture) {
+            this.leftArrow = new PIXI.Sprite(leftArrowTexture);
+            this.leftArrow.anchor.set(0.5, 0.5);
+            this.leftArrow.position.set(-screenWidth / 2 + arrowSize, 0);
+            this.leftArrow.scale.x = -1; // 翻转箭头方向
+            this.leftArrow.interactive = true;
+            this.leftArrow.buttonMode = true;
+            this.leftArrow.on('pointerdown', () => {
+                this.switchView(-1);
+            });
+            this.addChild(this.leftArrow);
+        }
+
+        // 右箭头
+        const rightArrowTexture = this.game.textures['tetris/arrow.png'];
+        if (rightArrowTexture) {
+            this.rightArrow = new PIXI.Sprite(rightArrowTexture);
+            this.rightArrow.anchor.set(0.5, 0.5);
+            this.rightArrow.position.set(screenWidth / 2 - arrowSize, 0);
+            this.rightArrow.interactive = true;
+            this.rightArrow.buttonMode = true;
+            this.rightArrow.on('pointerdown', () => {
+                this.switchView(1);
+            });
+            this.addChild(this.rightArrow);
+        }
+
+        this.updateArrowsVisibility();
+    }
+
+    switchView(direction) {
+        const newCenterIndex = this.centerIndex + direction;
+        if (newCenterIndex >= 0 && newCenterIndex < this.userViews.length) {
+            this.centerIndex = newCenterIndex;
+            this.updateViewsLayout(true);
+            this.updateArrowsVisibility();
+        }
+    }
+
+    updateViewsLayout(animate = false) {
+        const screenWidth = this.game.pixi.screen.width;
+        const edgeOffset = screenWidth * 0.425; // 边缘视图的偏移量
+        const animationDuration = animate ? 300 : 0; // 动画时长
+
+        for (let i = 0; i < this.userViews.length; i++) {
+            const view = this.userViews[i];
+            const diff = i - this.centerIndex;
+
+            if (diff === 0) {
+                // 中间视图：正常显示，全宽
+                // 使用背景图片区分可操作和不可操作，透明度统一为1.0
+                const targetX = 0;
+                const targetY = 0;
+                const targetAlpha = 1.0;
+                const targetScale = 1.0;
+                
+                if (animate) {
+                    // 使用缓动动画
+                    const startX = view.position.x;
+                    const startY = view.position.y;
+                    const startAlpha = view.alpha;
+                    const startScale = view.scale.x;
+                    
+                    const tweenObj = {
+                        x: startX,
+                        y: startY,
+                        alpha: startAlpha,
+                        scale: startScale
+                    };
+                    
+                    new TWEEN.Tween(tweenObj)
+                        .to({ x: targetX, y: targetY, alpha: targetAlpha, scale: targetScale }, animationDuration)
+                        .easing(TWEEN.Easing.Quadratic.Out)
+                        .onUpdate(() => {
+                            view.position.set(tweenObj.x, tweenObj.y);
+                            view.alpha = tweenObj.alpha;
+                            view.scale.set(tweenObj.scale);
+                        })
+                        .start();
+                } else {
+                    view.position.set(targetX, targetY);
+                    view.alpha = targetAlpha;
+                    view.scale.set(targetScale);
+                }
+                
+                // 移到最上层
+                this.setChildIndex(view, this.children.length - 1);
+            } else {
+                // 边缘视图：灰暗显示，缩小
+                // 根据是否可操作设置透明度：可操作0.5，不可操作0.2
+                const side = diff > 0 ? 1 : -1; // 1=右侧, -1=左侧
+                const targetX = side * edgeOffset;
+                const targetY = 0;
+                const targetAlpha = view.isControllable ? 0.5 : 0.2; // 边缘视图更暗
+                const targetScale = 0.5; // 缩小
+                
+                if (animate) {
+                    // 使用缓动动画
+                    const startX = view.position.x;
+                    const startY = view.position.y;
+                    const startAlpha = view.alpha;
+                    const startScale = view.scale.x;
+                    
+                    const tweenObj = {
+                        x: startX,
+                        y: startY,
+                        alpha: startAlpha,
+                        scale: startScale
+                    };
+                    
+                    new TWEEN.Tween(tweenObj)
+                        .to({ x: targetX, y: targetY, alpha: targetAlpha, scale: targetScale }, animationDuration)
+                        .easing(TWEEN.Easing.Quadratic.Out)
+                        .onUpdate(() => {
+                            view.position.set(tweenObj.x, tweenObj.y);
+                            view.alpha = tweenObj.alpha;
+                            view.scale.set(tweenObj.scale);
+                        })
+                        .start();
+                } else {
+                    view.position.set(targetX, targetY);
+                    view.alpha = targetAlpha;
+                    view.scale.set(targetScale);
+                }
+            }
+        }
+    }
+
+    updateArrowsVisibility() {
+        if (this.leftArrow) {
+            this.leftArrow.visible = this.centerIndex > 0;
+        }
+        if (this.rightArrow) {
+            this.rightArrow.visible = this.centerIndex < this.userViews.length - 1;
         }
     }
 
@@ -50,6 +190,14 @@ class TetrisGameView extends PIXI.Container {
             }
         }
         this.userViews = [];
+        
+        // 移除箭头
+        if (this.leftArrow && this.leftArrow.parent) {
+            this.leftArrow.parent.removeChild(this.leftArrow);
+        }
+        if (this.rightArrow && this.rightArrow.parent) {
+            this.rightArrow.parent.removeChild(this.rightArrow);
+        }
         
         // 从父容器移除
         if (this.parent) {

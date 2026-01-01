@@ -9,3 +9,9 @@ export const NetEventId = {
     StartGame: 1,
     SyncRobots: 2,
 };
+
+export const GameStartMode = {
+    Single: 'Single', //单人游戏
+    RobotMatch: 'RobotMatch', //机器人对战
+    PlayerMatch: 'PlayerMatch', //玩家对战
+}

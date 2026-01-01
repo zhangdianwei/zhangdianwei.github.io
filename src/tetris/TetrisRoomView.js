@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import TetrisButton from './TetrisButton.js';
-import { TetrisEvents, NetEventId } from './data/TetrisEvents.js';
+import { TetrisEvents, GameStartMode } from './data/TetrisEvents.js';
 
 const TEXT_STYLE = new PIXI.TextStyle({
     fontFamily: 'Comic Sans MS, Marker Felt, Chalkduster, cursive',
@@ -136,15 +136,7 @@ export default class TetrisRoomView extends PIXI.Container {
             return;
         }
 
-        this.game.fillRobotPlayers();
-
-        // 将时间戳转换为字符串，避免 LeanCloud Play SDK 序列化大数字时的 Int32 溢出问题
-        const now = Date.now();
-        const startOption = {
-            shapeGeneratorSeed: String(1000),
-            startTime: String(now),
-        };
-        this.game.net.sendEvent(NetEventId.StartGame, startOption);
+        this.game.startGame(GameStartMode.PlayerMatch);
     }
 
 

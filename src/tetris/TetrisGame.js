@@ -5,7 +5,7 @@ import TetrisGameView from './TetrisGameView.js';
 import TetrisStartView from './TetrisStartView.js';
 import TetrisRoomView from './TetrisRoomView.js';
 import TetrisNet from './TetrisNet.js';
-import { TetrisEvents, NetEventId } from './data/TetrisEvents.js';
+import { TetrisEvents, NetEventId, GameStartMode } from './data/TetrisEvents.js';
 import TetrisPlayer from './TetrisPlayer.js';
 import TetrisGameStartOption from './data/TetrisGameStartOption.js';
 
@@ -59,7 +59,7 @@ class TetrisGame {
         this._notifyPlayerChanged();
     }
 
-    fillRobotPlayers() {
+    createRobotPlayers(count) {
         const robots = [];
         const robotCount = 2 - this.players.length;
         if (robotCount <= 0) return;
@@ -70,7 +70,38 @@ class TetrisGame {
             };
             robots.push(robot);
         }
-        this.net.sendEvent(NetEventId.SyncRobots, { robots });
+        return robots;
+    }
+
+    startGame(mode) {
+        var totalPlayerCount = 2;
+        if(mode === GameStartMode.Single) {
+            this.players.push(new TetrisPlayer({
+                userId: this.userId,
+                isMaster: true,
+                isRobot: false
+            }));
+            this.GameStartOption.initBySingle(GameStartMode.Single);
+            this.replaceView("TetrisGameView");
+        } else if(mode === GameStartMode.RobotMatch) {
+            this.players.push(new TetrisPlayer({
+                userId: this.userId,
+                isMaster: true,
+                isRobot: false
+            }));
+            var robots = this.createRobotPlayers(totalPlayerCount-1);
+            this.players.push(...robots);
+            this.GameStartOption.initBySingle(GameStartMode.RobotMatch);
+            this.replaceView("TetrisGameView");
+        } else if(mode === GameStartMode.PlayerMatch) {
+            var robots = this.createRobotPlayers(totalPlayerCount-this.players.length);
+            this.net.sendEvent(NetEventId.SyncRobots, { robots });
+            var option = {
+                shapeGeneratorSeed: Date.now()+"",
+                startTime: Date.now()+"",
+            };
+            this.net.sendEvent(NetEventId.StartGame, option);
+        }
     }
 
     findPlayer(userId) {

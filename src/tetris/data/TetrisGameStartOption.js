@@ -1,6 +1,8 @@
+import { GameStartMode } from './TetrisEvents.js';
+
 export default class TetrisGameStartOption {
     constructor() {
-        this.singleMode = true;
+        this.startMode = GameStartMode.Single;
 
         this.startTime = Date.now();
         this.shapeGeneratorSeed = Date.now();
@@ -20,24 +22,20 @@ export default class TetrisGameStartOption {
         this.shapeGeneratorSeed = value;
     }
 
-    get SingleMode() {
-        return this.singleMode;
-    }
-    set SingleMode(value) {
-        this.singleMode = value;
+    get StartMode() {
+        return this.startMode;
     }
 
     // 从对象数据初始化字段
-    initBySingle() {
+    initBySingle(startMode) {
+        this.startMode = startMode;
         this.ShapeGeneratorSeed = Date.now();
         this.StartTime = Date.now();
-        this.SingleMode = true;
     }
 
     initByMulti(data) {
-        // 将字符串时间戳转换回数字
-        this.ShapeGeneratorSeed = data.shapeGeneratorSeed ? Number(data.shapeGeneratorSeed) : Date.now();
-        this.StartTime = data.startTime ? Number(data.startTime) : Date.now();
-        this.SingleMode = false;
+        this.startMode = GameStartMode.PlayerMatch;
+        this.ShapeGeneratorSeed = Number(data.shapeGeneratorSeed);
+        this.StartTime = Number(data.startTime);
     }
 }

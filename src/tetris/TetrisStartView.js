@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
-import * as TWEEN from '@tweenjs/tween.js';
 import TetrisButton from './TetrisButton.js';
+import { GameStartMode } from './data/TetrisEvents.js';
 import { NetState } from './TetrisNet.js';
 
 export default class TetrisStartView extends PIXI.Container {
@@ -14,18 +14,23 @@ export default class TetrisStartView extends PIXI.Container {
         
         // Single Player 按钮 - 单人游戏
         this.singlePlayerButton = new TetrisButton(this.game, 'Single Player', () => {
-            const option = this.game.GameStartOption;
-            option.initBySingle();
-            this.game.replaceView("TetrisGameView");
+            this.game.startGame(GameStartMode.Single);
         });
         this.singlePlayerButton.position.set(0, 30);
         this.addChild(this.singlePlayerButton);
 
-        // Match Player 按钮 - 匹配玩家（多人游戏）
+        // Robot Match 按钮 - 对战机器人
+        this.robotMatchButton = new TetrisButton(this.game, 'Robot Match', () => {
+            this.game.startGame(GameStartMode.RobotMatch);
+        });
+        this.robotMatchButton.position.set(0, 90);
+        this.addChild(this.robotMatchButton);
+
+        // Match Player 按钮 - 多人匹配（玩家对战）
         this.matchPlayerButton = new TetrisButton(this.game, 'Match Player', () => {
             this.joinMatch();
         });
-        this.matchPlayerButton.position.set(0, 90);
+        this.matchPlayerButton.position.set(0, 150);
         this.addChild(this.matchPlayerButton);
 
         this.clickMatchCount = 0;

@@ -59,9 +59,8 @@ class TetrisGame {
         this._notifyPlayerChanged();
     }
 
-    createRobotPlayers(count) {
+    createRobotPlayers(robotCount) {
         const robots = [];
-        const robotCount = 2 - this.players.length;
         if (robotCount <= 0) return;
         for (let i = 0; i < robotCount; i++) {
             const robot = {
@@ -89,7 +88,7 @@ class TetrisGame {
                 isMaster: true,
                 isRobot: false
             }));
-            var robots = this.createRobotPlayers(totalPlayerCount-1);
+            var robots = this.createRobotPlayers(totalPlayerCount-this.players.length);
             this.players.push(...robots);
             this.GameStartOption.initBySingle(GameStartMode.RobotMatch);
             this.replaceView("TetrisGameView");

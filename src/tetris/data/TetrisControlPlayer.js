@@ -92,7 +92,9 @@ export default class TetrisControlPlayer {
     onKeyDown(e) {
         const key = e.key.toLowerCase();
         
-        if (key === 'f') {
+        if (e.key === ' ' || e.key === 'Space') {
+            this.dropPaused = !this.dropPaused;
+        } else if (key === 'f') {
             this.switchNextShapeInfo();
             this.doAction(GameAction.SwitchShape);
         } else if (key === 'w' || e.key === 'ArrowUp') {

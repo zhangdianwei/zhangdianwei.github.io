@@ -12,26 +12,17 @@ export default class TetrisStartView extends PIXI.Container {
     init() {
         this.initTitle();
         
-        // Single Player 按钮 - 单人游戏
-        this.singlePlayerButton = new TetrisButton(this.game, 'Single Player', () => {
+        this.singlePlayerButton = new TetrisButton(this.game, '单人游戏', () => {
             this.game.startGame(GameStartMode.Single);
         });
         this.singlePlayerButton.position.set(0, 30);
         this.addChild(this.singlePlayerButton);
 
-        // Robot Match 按钮 - 对战机器人
-        this.robotMatchButton = new TetrisButton(this.game, 'Robot Match', () => {
-            this.game.startGame(GameStartMode.RobotMatch);
-        });
-        this.robotMatchButton.position.set(0, 90);
-        this.addChild(this.robotMatchButton);
-
-        // Match Player 按钮 - 多人匹配（玩家对战）
-        this.matchPlayerButton = new TetrisButton(this.game, 'Match Player', () => {
+        this.multiPlayerButton = new TetrisButton(this.game, '多人游戏', () => {
             this.joinMatch();
         });
-        this.matchPlayerButton.position.set(0, 150);
-        this.addChild(this.matchPlayerButton);
+        this.multiPlayerButton.position.set(0, 90);
+        this.addChild(this.multiPlayerButton);
 
         this.clickMatchCount = 0;
 

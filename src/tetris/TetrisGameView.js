@@ -49,8 +49,7 @@ class TetrisGameView extends PIXI.Container {
             this.leftArrow.anchor.set(0.5, 0.5);
             this.leftArrow.position.set(-screenWidth / 2 + arrowSize, 0);
             this.leftArrow.scale.x = -1; // 翻转箭头方向
-            this.leftArrow.interactive = true;
-            this.leftArrow.buttonMode = true;
+            this.leftArrow.eventMode = 'static';
             this.leftArrow.on('pointerdown', () => {
                 this.switchView(-1);
             });
@@ -63,8 +62,7 @@ class TetrisGameView extends PIXI.Container {
             this.rightArrow = new PIXI.Sprite(rightArrowTexture);
             this.rightArrow.anchor.set(0.5, 0.5);
             this.rightArrow.position.set(screenWidth / 2 - arrowSize, 0);
-            this.rightArrow.interactive = true;
-            this.rightArrow.buttonMode = true;
+            this.rightArrow.eventMode = 'static';
             this.rightArrow.on('pointerdown', () => {
                 this.switchView(1);
             });
@@ -133,11 +131,10 @@ class TetrisGameView extends PIXI.Container {
                 this.setChildIndex(view, this.children.length - 1);
             } else {
                 // 边缘视图：灰暗显示，缩小
-                // 根据是否可操作设置透明度：可操作0.5，不可操作0.2
                 const side = diff > 0 ? 1 : -1; // 1=右侧, -1=左侧
                 const targetX = side * edgeOffset;
                 const targetY = 0;
-                const targetAlpha = view.isControllable ? 0.5 : 0.2; // 边缘视图更暗
+                const targetAlpha = 0.3; // 边缘视图统一透明度
                 const targetScale = 0.5; // 缩小
                 
                 if (animate) {

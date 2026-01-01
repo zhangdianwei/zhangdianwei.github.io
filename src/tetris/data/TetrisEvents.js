@@ -8,10 +8,20 @@ export const TetrisEvents = {
 export const NetEventId = {
     StartGame: 1,
     SyncRobots: 2,
+    PlayerAction: 3, // 玩家操作同步
 };
 
 export const GameStartMode = {
     Single: 'Single', //单人游戏
     RobotMatch: 'RobotMatch', //机器人对战
     PlayerMatch: 'PlayerMatch', //玩家对战
+}
+
+export const GameAction = {
+    MoveLeft: 'MoveLeft',
+    MoveRight: 'MoveRight',
+    Rotate: 'Rotate',
+    Drop: 'Drop',
+    AutoDrop: 'AutoDrop',
+    SwitchShape: 'SwitchShape',
 }

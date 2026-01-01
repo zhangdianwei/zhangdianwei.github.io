@@ -2,8 +2,11 @@ import * as PIXI from 'pixi.js';
 import * as TWEEN from '@tweenjs/tween.js';
 import TetrisTile from './TetrisTile.js';
 import * as TetrisShape from './TetrisShape.js';
-import RandGenerator from './data/RandGenerator.js';
 import TetrisButton from './TetrisButton.js';
+import TetrisControlPlayer from './data/TetrisControlPlayer.js';
+import TetrisControlRobot from './data/TetrisControlRobot.js';
+import TetrisControlFromNet from './data/TetrisControlFromNet.js';
+import { GameAction } from './data/TetrisEvents.js';
 
 export default class TetrisGameUserView extends PIXI.Container {
     
@@ -15,10 +18,12 @@ export default class TetrisGameUserView extends PIXI.Container {
     init(playerIndex){
         this.playerIndex = playerIndex;
         
-        // 记录是否是当前玩家
+        // 记录是否是当前玩家（本人）
         const player = this.game.players[this.playerIndex];
-        this.isControllable = player && player.userId === this.game.userId;
+        this.player = player; // 保存玩家引用
+        this._isSelf = player && player.userId === this.game.userId;
         
+        this.initControllers();
         this.initBgCenter();
         this.initGameLogic();
         this.initNextShapePreview();
@@ -26,26 +31,30 @@ export default class TetrisGameUserView extends PIXI.Container {
         this.initUserInfoDisplay();
         this.updateHandler = this.update.bind(this);
         this.game.pixi.ticker.add(this.updateHandler, this);
-        
-        // 只有当前玩家才响应键盘输入
-        if (this.isControllable) {
-            this.initKeyboard();
+    }
+
+    initControllers() {
+        const player = this.player;
+        if (!player) return;
+
+        if (player.isRobot) {
+            this.controller = new TetrisControlRobot(this.game);
+            this.controller.init(this, player);
+        } else if (this._isSelf) {
+            this.controller = new TetrisControlPlayer(this.game);
+            this.controller.init(this, player);
+        } else {
+            this.controller = new TetrisControlFromNet(this.game);
+            this.controller.init(this, player);
         }
     }
 
     initGameLogic() {
+        // 游戏规则配置（常量）
         this.rowCount = 20;
         this.colCount = 10;
         this.tileSize = 25;
         this.extraTopRowCount = 6;
-        this.speedLevel = 1;
-        this.dropSpeedTimer = 0;
-        this.dropPaused = false;
-        this.isDead = false;
-
-        // 游戏统计信息
-        this.score = 0;
-        this.linesCleared = 0;
 
         this.tiles = [];
         for (let r = 0; r < this.rowCount + this.extraTopRowCount; r++) {
@@ -60,10 +69,6 @@ export default class TetrisGameUserView extends PIXI.Container {
         this.particlePoolSize = 100; // 缓存池大小
         this.initParticlePool();
 
-        // 初始化随机数生成器和形状队列
-        this.shapeGenerator = new RandGenerator(this.game.GameStartOption.ShapeGeneratorSeed);
-        this.nextShapInfos = [];
-        this.initShapeQueue();
 
         // debug
         // for (let r = 0; r < 17; r++) {
@@ -80,84 +85,7 @@ export default class TetrisGameUserView extends PIXI.Container {
         // this.checkTotalDrop();
     }
 
-    dropSpeed() {
-        return 500 - (this.speedLevel - 1) * (500 - 100) / (10 - 1);
-    }
 
-    get moveAnimationDuration() {
-        return this.dropSpeed() / 3;
-    }
-
-    initShapeQueue() {
-        this.nextShapInfos = [];
-        this.getNextShapeInfo();
-    }
-
-    getNextShapeInfo() {
-        // 从队列头部取出一个形状信息对象
-        const shapeInfo = this.nextShapInfos.shift();
-        
-        // 如果队列数量不足2个，补足到2个
-        const shapeTypes = Object.values(TetrisShape.TetrisShapeType);
-        while (this.nextShapInfos.length < 2) {
-            let newShapeIndex = this.shapeGenerator.nextInt(TetrisShape.TetrisShapeCount);
-            // newShapeIndex = 0;
-            const newShapeType = shapeTypes[newShapeIndex];
-            const newColorIndex = newShapeIndex; // shapeType 的索引直接作为 colorIndex
-            this.nextShapInfos.push({shapeType: newShapeType, colorIndex: newColorIndex});
-        }
-        
-        // 更新下一个形状预览
-        this.updateNextShapePreview();
-        
-        return shapeInfo;
-    }
-
-    switchNextShapeInfo() {
-        // 切换 nextShapInfos[0] 和 nextShapInfos[1]
-        if (this.nextShapInfos.length >= 2) {
-            const temp = this.nextShapInfos[0];
-            this.nextShapInfos[0] = this.nextShapInfos[1];
-            this.nextShapInfos[1] = temp;
-            // 更新预览显示
-            this.updateNextShapePreview();
-        }
-    }
-
-    initKeyboard() {
-        this.onKeyDown = (e) => {
-            if (this.isDead) return;
-
-            const key = e.key.toLowerCase();
-            if (key === ' ') {
-                e.preventDefault();
-                this.dropPaused = !this.dropPaused;
-                return;
-            }
-            
-            if (key === 'f') {
-                this.switchNextShapeInfo();
-                return;
-            }
-            
-            if (!this.dropInfo) return;
-            
-            if (key === 'w' || e.key === 'ArrowUp') {
-                this.handleRotate();
-            } else if (key === 's' || e.key === 'ArrowDown') {
-                this.handleDrop();
-            } else if (key === 'a' || e.key === 'ArrowLeft') {
-                this.handleMoveLeft();
-            } else if (key === 'd' || e.key === 'ArrowRight') {
-                this.handleMoveRight();
-            }
-            else if (key === 'q') {
-                this.playBreakAnim();
-            }
-        };
-        
-        window.addEventListener('keydown', this.onKeyDown);
-    }
 
     handleRotate() {
         if (!this.dropInfo) return;
@@ -167,6 +95,69 @@ export default class TetrisGameUserView extends PIXI.Container {
         const nextRotation = rotationOrder[(currentIndex + 1) % 4];
         
         this.tryRotate(this.dropInfo.rotation, nextRotation);
+    }
+
+    doGameAction(actionData) {
+        if (this.controller.isDead) return false;
+        
+        const { GameAction: action, ...actionParams } = actionData;
+        
+        if (action === GameAction.Rotate && !actionParams.fromRotation && this.dropInfo) {
+            const rotationOrder = [0, 'R', 2, 'L'];
+            const currentIndex = rotationOrder.indexOf(this.dropInfo.rotation);
+            const nextRotation = rotationOrder[(currentIndex + 1) % 4];
+            actionData.fromRotation = this.dropInfo.rotation;
+            actionData.toRotation = nextRotation;
+        }
+        
+        switch (action) {
+            case GameAction.MoveLeft:
+                if (!this.dropInfo) return false;
+                if (this.canMoveLeft()) {
+                    this.handleMoveLeft();
+                    return true;
+                }
+                return false;
+                
+            case GameAction.MoveRight:
+                if (!this.dropInfo) return false;
+                if (this.canMoveRight()) {
+                    this.handleMoveRight();
+                    return true;
+                }
+                return false;
+                
+            case GameAction.Rotate:
+                if (!this.dropInfo) return false;
+                if (actionData.fromRotation !== undefined && actionData.toRotation !== undefined) {
+                    return this.tryRotate(actionData.fromRotation, actionData.toRotation);
+                } else {
+                    this.handleRotate();
+                    return true;
+                }
+                
+            case GameAction.Drop:
+                if (!this.dropInfo) return false;
+                this.handleDrop();
+                return true;
+                
+            case GameAction.AutoDrop:
+                if (this.isAtBottom(this.dropInfo)) {
+                    this.removeDropingShape();
+                } else if (this.dropInfo) {
+                    this.doDrop();
+                } else {
+                    this.createNewShape();
+                }
+                return true;
+                
+            case GameAction.SwitchShape:
+                this.controller.switchNextShapeInfo();
+                return true;
+                
+            default:
+                return false;
+        }
     }
 
     tryRotate(fromRotation, toRotation) {
@@ -270,7 +261,7 @@ export default class TetrisGameUserView extends PIXI.Container {
             this.dropInfo.rcs[i] = newRC;
             
             const targetPos = this.getPosByRC(newRC.r, newRC.c);
-            tile.animateToPosition(targetPos, this.moveAnimationDuration);
+            tile.animateToPosition(targetPos, this.controller.moveAnimationDuration);
         }
         this.dropInfo.rotation = newRotation;
         this.updateDropIndicator();
@@ -300,10 +291,9 @@ export default class TetrisGameUserView extends PIXI.Container {
                 this.dropInfo.rcs[i].r = targetR;
                 
                 const targetPos = this.getPosByRC(targetR, this.dropInfo.rcs[i].c);
-                tile.animateToPosition(targetPos, this.moveAnimationDuration);
+                tile.animateToPosition(targetPos, this.controller.moveAnimationDuration);
             }
             this.updateDropIndicator();
-            this.dropSpeedTimer = 0;
         } else if (minDistance > 0) {
             for (let i = 0; i < this.dropInfo.rcs.length; i++) {
                 const newRC = landingRCs[i];
@@ -312,11 +302,10 @@ export default class TetrisGameUserView extends PIXI.Container {
                 this.dropInfo.rcs[i] = newRC;
                 
                 const targetPos = this.getPosByRC(newRC.r, newRC.c);
-                tile.animateToPosition(targetPos, this.moveAnimationDuration);
+                tile.animateToPosition(targetPos, this.controller.moveAnimationDuration);
             }
 
             this.updateDropIndicator();
-            this.dropSpeedTimer = 0;
         }
     }
 
@@ -354,25 +343,8 @@ export default class TetrisGameUserView extends PIXI.Container {
 
     update() {
         const deltaMS = this.game.pixi.ticker.deltaMS;
-
-        if (!this.dropPaused){
-            this.dropSpeedTimer += deltaMS;
-            if (this.dropSpeedTimer >= this.dropSpeed()) {
-                this.dropSpeedTimer = 0;
-                this.checkTotalDrop();
-            }
-        }
-    }
-
-    checkTotalDrop() {
-        if (this.isAtBottom(this.dropInfo)) {
-            this.removeDropingShape();
-        }
-        else if (this.dropInfo) {
-            this.doDrop();
-        }
-        else {
-            this.createNewShape();
+        if (this.controller && this.controller.update) {
+            this.controller.update(deltaMS);
         }
     }
 
@@ -403,7 +375,7 @@ export default class TetrisGameUserView extends PIXI.Container {
         
         this.checkBreakLine(affectedRows);
 
-        if (!this.isDead && this.checkDead(affectedRows)) {
+        if (!this.controller.isDead && this.checkDead(affectedRows)) {
             this.onDead();
         }
     }
@@ -431,7 +403,9 @@ export default class TetrisGameUserView extends PIXI.Container {
         }
         
         // 暂停下落
-        this.dropPaused = true;
+        if (this.controller) {
+            this.controller.dropPaused = true;
+        }
         
         // 对每个满行的 tile 播放破碎动画
         for (let i = 0; i < fullRows.length; i++) {
@@ -454,13 +428,13 @@ export default class TetrisGameUserView extends PIXI.Container {
 
     removeFullRows(fullRows) {
         const lineCount = fullRows.length;
-        const oldLinesCleared = this.linesCleared;
-        this.linesCleared += lineCount;
+        const oldLinesCleared = this.controller.linesCleared;
+        this.controller.linesCleared += lineCount;
         
         const oldLevel = Math.floor(oldLinesCleared / 10);
-        const newLevel = Math.floor(this.linesCleared / 10);
-        if (newLevel > oldLevel && this.speedLevel < 10) {
-            this.speedLevel = Math.min(this.speedLevel + (newLevel - oldLevel), 10);
+        const newLevel = Math.floor(this.controller.linesCleared / 10);
+        if (newLevel > oldLevel && this.controller.speedLevel < 10) {
+            this.controller.speedLevel = Math.min(this.controller.speedLevel + (newLevel - oldLevel), 10);
         }
         
         let points = 1000;
@@ -473,7 +447,7 @@ export default class TetrisGameUserView extends PIXI.Container {
         } else if (lineCount === 4) {
             points = 800;
         }
-        this.score += points;
+        this.controller.score += points;
         
         this.updateInfoDisplay();
         
@@ -526,14 +500,16 @@ export default class TetrisGameUserView extends PIXI.Container {
                     
                     // 更新视觉位置（一次性动画到最终位置）
                     const pos = this.getPosByRC(finalRow, c);
-                    tile.animateToPosition(pos, this.moveAnimationDuration);
+                    tile.animateToPosition(pos, this.controller.moveAnimationDuration);
                 }
             }
         }
         
         setTimeout(() => {
-            this.dropPaused = false;
-        }, this.moveAnimationDuration);
+            if (this.controller) {
+                this.controller.dropPaused = false;
+            }
+        }, this.controller.moveAnimationDuration);
     }
 
     doDrop() {
@@ -549,14 +525,14 @@ export default class TetrisGameUserView extends PIXI.Container {
             rc.c += diffRC.c;
             
             const targetPos = this.getPosByRC(rc.r, rc.c);
-            tile.animateToPosition(targetPos, this.moveAnimationDuration);
+            tile.animateToPosition(targetPos, this.controller.moveAnimationDuration);
         }
         this.updateDropIndicator();
     }
 
     createNewShape() {
         this.dropInfo = {};
-        const shapeInfo = this.getNextShapeInfo();
+        const shapeInfo = this.controller.getNextShapeInfo();
         this.dropInfo.shapeType = shapeInfo.shapeType;
         this.dropInfo.rotation = 0;
         this.dropInfo.rcs = [];
@@ -594,7 +570,7 @@ export default class TetrisGameUserView extends PIXI.Container {
         }
         
         if (!this.isValidPosition(testRcs)) {
-            if (!this.isDead) {
+            if (!this.controller.isDead) {
                 this.onDead();
             }
             return;
@@ -650,8 +626,10 @@ export default class TetrisGameUserView extends PIXI.Container {
     }
 
     onDead() {
-        this.isDead = true;
-        this.dropPaused = true;
+        this.controller.isDead = true;
+        if (this.controller) {
+            this.controller.dropPaused = true;
+        }
         setTimeout(() => {
             this.playDeadAppearAnim();
         }, 500);
@@ -920,8 +898,8 @@ export default class TetrisGameUserView extends PIXI.Container {
     }
     
     initBgCenter() {
-        // 根据是否可操作选择不同的背景图片
-        const textureKey = this.isControllable 
+        // 根据是否是本人选择不同的背景图片
+        const textureKey = this._isSelf 
             ? 'tetris/bg_center_self.png' 
             : 'tetris/bg_center_other.png';
         const bgCenterUpTexture = this.game.textures[textureKey];
@@ -963,9 +941,9 @@ export default class TetrisGameUserView extends PIXI.Container {
         });
 
         this.infoDisplayConfigs = [
-            {title: 'Speed:', getValue: () => this.speedLevel, valueLabel: null},
-            {title: 'Lines:', getValue: () => this.linesCleared, valueLabel: null},
-            {title: 'Score:', getValue: () => this.score, valueLabel: null},
+            {title: 'Speed:', getValue: () => this.controller.speedLevel, valueLabel: null},
+            {title: 'Lines:', getValue: () => this.controller.linesCleared, valueLabel: null},
+            {title: 'Score:', getValue: () => this.controller.score, valueLabel: null},
         ]
         
         this.infoDisplayConfigs.forEach((config, index) => {
@@ -1117,7 +1095,7 @@ export default class TetrisGameUserView extends PIXI.Container {
             this.nextShapePreviewTiles[i] = [];
         }
         
-        if (this.nextShapInfos.length < 2) {
+        if (!this.controller || !this.controller.nextShapInfos || this.controller.nextShapInfos.length < 2) {
             return;
         }
         
@@ -1131,13 +1109,13 @@ export default class TetrisGameUserView extends PIXI.Container {
         // 左侧部分：显示 nextShapInfos[0] (不透明)
         const leftX = bgLeft + bgWidth * 0.25; // 左侧 1/4 位置（左侧部分的中心）
         const leftY = bgY;
-        const shapeInfo0 = this.nextShapInfos[0];
+        const shapeInfo0 = this.controller.nextShapInfos[0];
         this.renderShapePreview(shapeInfo0, leftX, leftY, previewTileSize, 1.0, 0);
         
         // 右侧部分：显示 nextShapInfos[1] (半透明)
         const rightX = bgLeft + bgWidth * 0.75; // 右侧 3/4 位置（右侧部分的中心）
         const rightY = bgY;
-        const shapeInfo1 = this.nextShapInfos[1];
+        const shapeInfo1 = this.controller.nextShapInfos[1];
         this.renderShapePreview(shapeInfo1, rightX, rightY, previewTileSize, 0.5, 1);
     }
 
@@ -1261,6 +1239,12 @@ export default class TetrisGameUserView extends PIXI.Container {
     }
 
     safeRemoveSelf(){
+        // 清理控制器
+        if (this.controller) {
+            this.controller.safeRemoveSelf();
+            this.controller = null;
+        }
+
         // 停止所有 tile 的移动动画
         if (this.dropInfo && this.dropInfo.tiles) {
             this.dropInfo.tiles.forEach(tile => {
@@ -1281,8 +1265,7 @@ export default class TetrisGameUserView extends PIXI.Container {
                 }
             }
         }
-        
-        window.removeEventListener('keydown', this.onKeyDown);
+
         this.game.pixi.ticker.remove(this.updateHandler);
         this.parent.removeChild(this);
     }

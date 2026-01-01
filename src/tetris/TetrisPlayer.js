@@ -5,6 +5,7 @@ export default class TetrisPlayer {
         this.isMaster = options.isMaster || false;
         this.isRobot = options.isRobot || false;
         this.customProperties = options.customProperties || {};
+        this.frames = []; // 操作记录数组，每个元素为 {elapsed, ...操作细节}
     }
 
     static generateUserId(prefix) {

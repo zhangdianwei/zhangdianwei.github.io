@@ -186,6 +186,26 @@ export default class TetrisNet {
                     this.game.players.push(TetrisPlayer.fromJson(robotData));
                 }
             });
+        } else if (eventId === NetEventId.PlayerAction && eventData) {
+            // 处理玩家操作同步
+            const userId = eventData.userId;
+            const player = this.game.players.find(p => p.userId === userId);
+            if (player) {
+                // 找到对应的 userView
+                const gameView = this.game.currentView;
+                if (gameView && gameView.userViews) {
+                    for (let i = 0; i < gameView.userViews.length; i++) {
+                        const userView = gameView.userViews[i];
+                        if (userView.player && userView.player.userId === userId) {
+                            // 找到对应的控制器并应用操作
+                            if (userView.controller && userView.controller.applyAction) {
+                                userView.controller.applyAction(eventData);
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
         }
     }
 

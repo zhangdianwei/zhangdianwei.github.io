@@ -89,6 +89,7 @@ class TetrisGame {
                 isRobot: false
             }));
             var robots = this.createRobotPlayers(totalPlayerCount-this.players.length);
+            robots = robots.map(r => new TetrisPlayer(r));
             this.players.push(...robots);
             this.GameStartOption.initBySingle(GameStartMode.RobotMatch);
             this.replaceView("TetrisGameView");

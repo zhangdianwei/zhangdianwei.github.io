@@ -6,7 +6,7 @@ import TetrisStartView from './TetrisStartView.js';
 import TetrisRoomView from './TetrisRoomView.js';
 import TetrisNet from './TetrisNet.js';
 import { TetrisEvents, NetEventId, GameStartMode } from './data/TetrisEvents.js';
-import TetrisPlayer from './TetrisPlayer.js';
+import TetrisPlayer from './data/TetrisPlayer.js';
 import TetrisGameStartOption from './data/TetrisGameStartOption.js';
 
 class TetrisGame {
@@ -61,7 +61,7 @@ class TetrisGame {
 
     createRobotPlayers(robotCount) {
         const robots = [];
-        if (robotCount <= 0) return;
+        if (robotCount <= 0) return [];
         for (let i = 0; i < robotCount; i++) {
             const robot = {
                 userId: TetrisPlayer.generateUserId('Robot'),
@@ -73,7 +73,7 @@ class TetrisGame {
     }
 
     startGame(mode) {
-        var totalPlayerCount = 2;
+        var totalPlayerCount = 1;
         if(mode === GameStartMode.Single) {
             this.players.push(new TetrisPlayer({
                 userId: this.userId,

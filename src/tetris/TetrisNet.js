@@ -1,5 +1,5 @@
 import { Client, Event, ReceiverGroup } from '@leancloud/play';
-import TetrisPlayer from './TetrisPlayer.js';
+import TetrisPlayer from './data/TetrisPlayer.js';
 import { NetEventId } from './data/TetrisEvents.js';
 
 // LeanCloud 配置 - 请到 https://console.leancloud.cn 注册并创建应用，然后填入以下信息

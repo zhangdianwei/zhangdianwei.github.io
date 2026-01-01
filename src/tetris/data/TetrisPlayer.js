@@ -9,9 +9,19 @@ export default class TetrisPlayer {
     }
 
     static generateUserId(prefix) {
+        const storageKey = 'tetris.userId';
+        const storedUserId = localStorage.getItem(storageKey);
+        
+        if (storedUserId) {
+            return storedUserId;
+        }
+        
         const random = Math.floor(Math.random() * 100).toString().padStart(2, '0');
         const time = (Date.now() % 100).toString().padStart(2, '0');
-        return `${prefix}${random}${time}`;
+        const userId = `${prefix}${random}${time}`;
+        
+        localStorage.setItem(storageKey, userId);
+        return userId;
     }
 
     static fromJson(json) {

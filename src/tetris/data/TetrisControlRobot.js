@@ -133,6 +133,9 @@ export default class TetrisControlRobot {
                 );
 
                 if (this.isGameOver(gridAfterCurrent)) {
+                    if (currentMoves.length <= 5) {
+                        console.log(`Robot: Move rejected (game over) - rotation: ${move.rotation}, col: ${move.col}, row: ${move.row}`);
+                    }
                     continue;
                 }
 
@@ -176,6 +179,59 @@ export default class TetrisControlRobot {
             console.log(`Robot: Best move selected - rotation: ${bestMove.rotation}, col: ${bestMove.col}, row: ${bestMove.row}, score: ${bestScore.toFixed(2)}`);
         } else {
             console.warn('Robot: No valid move found after evaluating all moves');
+            if (currentMoves.length > 0) {
+                const sampleMove = currentMoves[0];
+                const testGrid = this.simulatePlacePiece(
+                    this.getCurrentGrid(),
+                    currentShape,
+                    sampleMove.rotation,
+                    sampleMove.col,
+                    sampleMove.row
+                );
+                const isOver = this.isGameOver(testGrid);
+                console.warn(`Robot: Sample move - rotation: ${sampleMove.rotation}, col: ${sampleMove.col}, row: ${sampleMove.row}, isGameOver: ${isOver}`);
+                if (isOver) {
+                    const shapeDef = TetrisShape.TetrisShapeDef[currentShape];
+                    const shapeTiles = shapeDef.rotations[sampleMove.rotation];
+                    const relativePositions = [];
+                    for (let r = 0; r < shapeTiles.length; r++) {
+                        for (let c = 0; c < shapeTiles[r].length; c++) {
+                            if (shapeTiles[r][c] > 0) {
+                                relativePositions.push({r, c});
+                            }
+                        }
+                    }
+                    const minRowInShape = Math.min(...relativePositions.map(p => p.r));
+                    const placedRows = relativePositions.map(pos => sampleMove.row + (pos.r - minRowInShape));
+                    const minPlacedRow = Math.min(...placedRows);
+                    const maxPlacedRow = Math.max(...placedRows);
+                    console.warn(`Robot: Shape placed at rows ${minPlacedRow}-${maxPlacedRow}, extraTopRowCount=${this.userView.extraTopRowCount}`);
+                    
+                    const topRows = [];
+                    for (let r = 0; r < this.userView.extraTopRowCount; r++) {
+                        const row = testGrid[r] || [];
+                        const hasBlock = row.some(cell => cell > 0);
+                        if (hasBlock) {
+                            topRows.push(`Row ${r}: ${row.join('')}`);
+                        }
+                    }
+                    if (topRows.length > 0) {
+                        console.warn('Robot: Blocks in extraTopRowCount:', topRows.join(', '));
+                    }
+                }
+                const currentGrid = this.getCurrentGrid();
+                const currentIsOver = this.isGameOver(currentGrid);
+                console.warn(`Robot: Current grid isGameOver: ${currentIsOver}`);
+                console.warn(`Robot: Current grid top rows:`, 
+                    Array.from({length: this.userView.extraTopRowCount}, (_, r) => {
+                        const row = currentGrid[r] || [];
+                        return `Row ${r}: ${row.join('')}`;
+                    }).join(', '));
+                if (this.userView.dropInfo && this.userView.dropInfo.rcs) {
+                    const dropRcs = this.userView.dropInfo.rcs.map(rc => `(${rc.r},${rc.c})`).join(', ');
+                    console.warn(`Robot: Current dropInfo.rcs: ${dropRcs}`);
+                }
+            }
         }
 
         return bestMove;
@@ -229,7 +285,7 @@ export default class TetrisControlRobot {
         const minRowInShape = Math.min(...relativePositions.map(p => p.r));
         const maxRowInShape = Math.max(...relativePositions.map(p => p.r));
         
-        for (let topRow = this.userView.rowCount + this.userView.extraTopRowCount - 1; topRow >= 0; topRow--) {
+        for (let topRow = this.userView.rowCount + this.userView.extraTopRowCount - 1; topRow >= this.userView.extraTopRowCount; topRow--) {
             const bottomRow = topRow + (maxRowInShape - minRowInShape);
             
             if (bottomRow >= this.userView.rowCount + this.userView.extraTopRowCount) {
@@ -242,7 +298,7 @@ export default class TetrisControlRobot {
             }));
             
             if (this.isValidPositionForGrid(grid, testRcs)) {
-                if (topRow > 0) {
+                if (topRow > this.userView.extraTopRowCount) {
                     const testRcsBelow = relativePositions.map(pos => ({
                         r: topRow - 1 + (pos.r - minRowInShape),
                         c: col + pos.c
@@ -275,10 +331,15 @@ export default class TetrisControlRobot {
 
     getCurrentGrid() {
         const grid = [];
+        const currentDropRcs = this.userView.dropInfo ? 
+            new Set(this.userView.dropInfo.rcs.map(rc => `${rc.r},${rc.c}`)) : 
+            new Set();
+        
         for (let r = 0; r < this.userView.rowCount + this.userView.extraTopRowCount; r++) {
             grid[r] = [];
             for (let c = 0; c < this.userView.colCount; c++) {
-                grid[r][c] = this.userView.tiles[r] && this.userView.tiles[r][c] ? 1 : 0;
+                const isCurrentDrop = currentDropRcs.has(`${r},${c}`);
+                grid[r][c] = !isCurrentDrop && this.userView.tiles[r] && this.userView.tiles[r][c] ? 1 : 0;
             }
         }
         return grid;

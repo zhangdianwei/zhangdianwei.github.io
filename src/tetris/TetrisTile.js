@@ -7,9 +7,9 @@ export default class TetrisTile extends PIXI.Container {
         this.game = game;
     }
 
-    init(colorIndex) {
+    init(gameUserView, colorIndex) {
         this.colorIndex = colorIndex;
-        this.gameView = this.game.currentView;
+        this.gameUserView = gameUserView;
         let textureUrl = 'tetris/tile' + (colorIndex+1) + '.png';
         let texture = this.game.textures[textureUrl];
         this.image = new PIXI.Sprite(texture);
@@ -88,13 +88,13 @@ export default class TetrisTile extends PIXI.Container {
             const duration = animDuration * (0.7 + Math.random() * 0.6);
 
             // 从缓存池获取粒子
-            const sprite = this.gameView.getParticle(texture);
+            const sprite = this.gameUserView.getParticle(texture);
             sprite.x = startX;
             sprite.y = startY;
             sprite.alpha = 1;
             sprite.scale.set(startScale);
             sprite.rotation = Math.random() * Math.PI * 2; // 初始随机旋转
-            this.gameView.addChild(sprite);
+            this.gameUserView.addChild(sprite);
 
             // 创建动画对象
             const animObj = {
@@ -124,7 +124,7 @@ export default class TetrisTile extends PIXI.Container {
                 })
                 .onComplete(() => {
                     // 归还粒子到缓存池
-                    this.gameView.returnParticle(sprite);
+                    this.gameUserView.returnParticle(sprite);
                 })
                 .start();
         }

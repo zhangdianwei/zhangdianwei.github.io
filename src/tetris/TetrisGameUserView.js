@@ -12,8 +12,8 @@ export default class TetrisGameUserView extends PIXI.Container {
         this.game = game;
     }
 
-    init(){
-        this.initBg();
+    init(playerIndex){
+        this.playerIndex = playerIndex;
         this.initBgCenter();
         this.initGameLogic();
         this.initNextShapePreview();
@@ -21,7 +21,12 @@ export default class TetrisGameUserView extends PIXI.Container {
         this.initUserInfoDisplay();
         this.updateHandler = this.update.bind(this);
         this.game.pixi.ticker.add(this.updateHandler, this);
-        this.initKeyboard();
+        
+        // 只有当前玩家才响应键盘输入
+        const player = this.game.players[this.playerIndex];
+        if (player && player.userId === this.game.userId) {
+            this.initKeyboard();
+        }
     }
 
     initGameLogic() {
@@ -601,7 +606,7 @@ export default class TetrisGameUserView extends PIXI.Container {
                 let tileType = shapeTiles[r][c];
                 if (tileType > 0) {
                     let tile = new TetrisTile(this.game);
-                    tile.init(colorIndex);
+                    tile.init(this, colorIndex);
                     this.addChild(tile);
                     let pos = this.getPosByRC(row + r, col + c);
                     tile.position.set(pos.x, pos.y);
@@ -985,11 +990,11 @@ export default class TetrisGameUserView extends PIXI.Container {
             align: 'left'
         });
 
-        // 获取当前玩家信息
-        const myPlayer = this.game.getMyPlayer();
-        const userId = this.game.userId;
-        const isMaster = myPlayer ? myPlayer.isMaster : false;
-        const isRobot = myPlayer ? myPlayer.isRobot : false;
+        // 根据 playerIndex 获取对应的玩家信息
+        const player = this.game.players[this.playerIndex];
+        if (!player) return;
+        
+        const userId = player.userId;
 
         // 显示用户ID
         const userIdLabel = new PIXI.Text('User:', textStyle);
@@ -1003,15 +1008,6 @@ export default class TetrisGameUserView extends PIXI.Container {
         userIdValue.x = 55;
         userIdValue.y = 14;
         this.userInfoDisplayContainer.addChild(userIdValue);
-
-        // 如果是机器人，显示机器人标识
-        if (isRobot) {
-            const robotLabel = new PIXI.Text('🤖 Robot', textStyle);
-            robotLabel.anchor.set(0, 0);
-            robotLabel.x = 64;
-            robotLabel.y = 62;
-            this.userInfoDisplayContainer.addChild(robotLabel);
-        }
     }
 
     animRollNum(valueObj, targetNum) {

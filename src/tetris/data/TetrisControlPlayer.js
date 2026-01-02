@@ -1,15 +1,17 @@
-import { NetEventId, GameAction, GameStartMode } from './TetrisEvents.js';
+import { NetEventId, GameAction, GameStartMode, BuffType } from './TetrisEvents.js';
 import Tetris7BagGenerator from './Tetris7BagGenerator.js';
-import * as TetrisShape from '../TetrisShape.js';
+import RandGenerator from './RandGenerator.js';
 
 export default class TetrisControlPlayer {
     constructor(game) {
         this.game = game;
         this.dropSpeedTimer = 0;
-        this.dropPaused = false;
+        this.dropPaused = 0;
         
         // 游戏状态
         this.isDead = false;
+        this.dropDiff = 500;
+        this.tempDropDiff = 0;
         
         // 游戏统计信息
         this.score = 0;
@@ -18,6 +20,11 @@ export default class TetrisControlPlayer {
         // 形状生成器
         this.shapeGenerator = null;
         this.nextShapInfos = [];
+        
+        // Buff系统
+        this.buffRand = new RandGenerator(Date.now());
+        this.currentBuff = null;
+        this.buffProgress = 0;
     }
 
     init(userView, player) {
@@ -32,6 +39,9 @@ export default class TetrisControlPlayer {
         
         this.updateHandler = this.update.bind(this);
         this.game.pixi.ticker.add(this.updateHandler, this);
+        
+        this.initSwipeControls();
+        this.generateRandomBuff();
     }
 
     initShapeQueue() {
@@ -70,22 +80,80 @@ export default class TetrisControlPlayer {
         }
     }
 
-    dropDiff() {
-        return Math.max(100, 500 - this.linesCleared * 100);
+    getDropDiff() {
+        return this.dropDiff + this.tempDropDiff;
+    }
+    addTempDropDiff(diff) {
+        this.tempDropDiff += diff;
     }
 
-    get moveAnimationDuration() {
-        return this.dropDiff() / 3;
+    setDropPaused(paused) {
+        if (paused) {
+            this.dropPaused++;
+        } else {
+            this.dropPaused = Math.max(0, this.dropPaused - 1);
+        }
     }
+
+    generateRandomBuff() {
+        const buffTypes = Object.values(BuffType);
+        const randomIndex = this.buffRand.nextInt(buffTypes.length);
+        this.currentBuff = buffTypes[randomIndex];
+        this.buffProgress = 0;
+        
+        if (this.userView && this.userView.updateBuffDisplay) {
+            this.userView.updateBuffDisplay();
+        }
+    }
+
+    addBuffProgress(count) {
+        if (!this.currentBuff) return;
+        
+        this.buffProgress = Math.min(this.buffProgress + count, this.currentBuff.maxCount);
+        
+        if (this.userView && this.userView.updateBuffDisplay) {
+            this.userView.updateBuffDisplay();
+        }
+        
+        if (this.buffProgress >= this.currentBuff.maxCount) {
+            this.applyBuff();
+        }
+    }
+
+    applyBuff() {
+        if (!this.currentBuff) return;
+        
+        const buffType = this.currentBuff.name;
+        this.doAction(GameAction.ApplyBuff, { buffType });
+        
+        this.currentBuff = null;
+        this.buffProgress = 0;
+        
+        if (this.userView && this.userView.updateBuffDisplay) {
+            this.userView.updateBuffDisplay();
+        }
+    }
+
 
     update() {
-        if (this.dropPaused) return;
+        if (this.dropPaused > 0) return;
+        
+        if (!this.currentBuff) {
+            this.generateRandomBuff();
+        }
         
         const deltaMS = this.game.pixi.ticker.deltaMS;
         this.dropSpeedTimer += deltaMS;
-        if (this.dropSpeedTimer >= this.dropDiff()) {
+        if (this.dropSpeedTimer >= this.getDropDiff()) {
             this.dropSpeedTimer = 0;
-            this.doAction(GameAction.AutoDrop);
+            
+            if (!this.userView.dropInfo) {
+                this.doAction(GameAction.CreateNewShape);
+            } else if (this.userView.isAtBottom(this.userView.dropInfo)) {
+                this.doAction(GameAction.RemoveDropShape);
+            } else {
+                this.doAction(GameAction.AutoDrop);
+            }
         }
     }
 
@@ -93,7 +161,7 @@ export default class TetrisControlPlayer {
         const key = e.key.toLowerCase();
         
         if (e.key === ' ' || e.key === 'Space') {
-            this.dropPaused = !this.dropPaused;
+            this.setDropPaused(this.dropPaused === 0);
         } else if (key === 'f') {
             this.switchNextShapeInfo();
             this.doAction(GameAction.SwitchShape);
@@ -108,17 +176,17 @@ export default class TetrisControlPlayer {
         }
     }
 
-    doAction(action) {
+    doAction(action, extraData = {}) {
         const elapsed = Date.now() - this.game.GameStartOption.StartTime;
         const actionData = {
-            GameAction: action,
-            elapsed
+            type: action,
+            elapsed,
+            ...extraData
         };
         
         this.userView.doGameAction(actionData);
         
         const frame = {
-            type: actionData.GameAction,
             ...actionData
         };
         this.player.frames.push(frame);
@@ -127,17 +195,87 @@ export default class TetrisControlPlayer {
         if (this.game.GameStartOption.StartMode !== GameStartMode.Single) {
             const eventData = {
                 userId: this.player.userId,
-                type: actionData.GameAction,
                 ...actionData
             };
             this.game.net.sendEvent(NetEventId.PlayerAction, eventData);
         }
     }
 
+    initSwipeControls() {
+        if (!this.userView) return;
+
+        this.swipeStartPos = null;
+        this.minSwipeDistance = 30;
+
+        this.swipeStartHandler = this.onSwipeStart.bind(this);
+        this.swipeMoveHandler = this.onSwipeMove.bind(this);
+        this.swipeEndHandler = this.onSwipeEnd.bind(this);
+
+        this.userView.eventMode = 'static';
+        this.userView.on('pointerdown', this.swipeStartHandler);
+        this.userView.on('pointermove', this.swipeMoveHandler);
+        this.userView.on('pointerup', this.swipeEndHandler);
+        this.userView.on('pointerupoutside', this.swipeEndHandler);
+    }
+
+    onSwipeStart(e) {
+        const globalPos = e.global;
+        this.swipeStartPos = { x: globalPos.x, y: globalPos.y };
+    }
+
+    onSwipeMove(e) {
+        if (!this.swipeStartPos) return;
+        e.preventDefault();
+    }
+
+    onSwipeEnd(e) {
+        if (!this.swipeStartPos) return;
+
+        const globalPos = e.global;
+        const dx = globalPos.x - this.swipeStartPos.x;
+        const dy = globalPos.y - this.swipeStartPos.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < this.minSwipeDistance) {
+            this.swipeStartPos = null;
+            return;
+        }
+
+        const absDx = Math.abs(dx);
+        const absDy = Math.abs(dy);
+
+        if (absDx > absDy) {
+            if (dx > 0) {
+                this.doAction(GameAction.MoveRight);
+            } else {
+                this.doAction(GameAction.MoveLeft);
+            }
+        } else {
+            if (dy > 0) {
+                this.doAction(GameAction.Drop);
+            } else {
+                this.doAction(GameAction.Rotate);
+            }
+        }
+
+        this.swipeStartPos = null;
+    }
+
     safeRemoveSelf() {
         window.removeEventListener('keydown', this.onKeyDownHandler);
         if (this.updateHandler) {
             this.game.pixi.ticker.remove(this.updateHandler);
+        }
+        
+        if (this.userView && this.swipeStartHandler) {
+            this.userView.off('pointerdown', this.swipeStartHandler);
+        }
+        if (this.userView && this.swipeMoveHandler) {
+            this.userView.off('pointermove', this.swipeMoveHandler);
+        }
+        if (this.userView && this.swipeEndHandler) {
+            this.userView.off('pointerup', this.swipeEndHandler);
+            this.userView.off('pointerupoutside', this.swipeEndHandler);
         }
     }
 }

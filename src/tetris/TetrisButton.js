@@ -43,10 +43,10 @@ export default class TetrisButton extends PIXI.Container {
         this.on('pointerupoutside', this.onButtonUp.bind(this));
         this.on('pointertap', this.onButtonClick.bind(this));
         
-        this.on('touchstart', this.onButtonDown.bind(this));
-        this.on('touchend', this.onButtonUp.bind(this));
-        this.on('touchendoutside', this.onButtonUp.bind(this));
-        this.on('tap', this.onButtonClick.bind(this));
+        // this.on('touchstart', this.onButtonDown.bind(this));
+        // this.on('touchend', this.onButtonUp.bind(this));
+        // this.on('touchendoutside', this.onButtonUp.bind(this));
+        // this.on('tap', this.onButtonClick.bind(this));
     }
     
     setEnabled(enabled) {

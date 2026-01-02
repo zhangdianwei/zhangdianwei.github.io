@@ -26,6 +26,8 @@ export default class Tetris7BagGenerator {
             const j = this.rng.nextInt(i + 1);
             [this.bag[i], this.bag[j]] = [this.bag[j], this.bag[i]];
         }
+
+        // this.bag = [TetrisShape.TetrisShapeType.O, TetrisShape.TetrisShapeType.O, TetrisShape.TetrisShapeType.O, TetrisShape.TetrisShapeType.O, TetrisShape.TetrisShapeType.O, TetrisShape.TetrisShapeType.O, TetrisShape.TetrisShapeType.O];
     }
 
     /**

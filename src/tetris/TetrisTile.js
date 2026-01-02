@@ -17,39 +17,101 @@ export default class TetrisTile extends PIXI.Container {
         this.addChild(this.image);
     }
 
-    get MoveTween() {return this.moveTween;}
-    set MoveTween(tween) {this.moveTween = tween;}
+    stopAllTween() {
+        if (this.moveTween) {
+            this.moveTween.stop();
+            this.moveTween = null;
+        }
+        if (this.scaleTween) {
+            this.scaleTween.stop();
+            this.scaleTween = null;
+        }
+    }
 
-    animateToPosition(targetPos, moveAnimationDuration) {
-        // 如果 tile 已经有正在进行的移动动画，先停止它
-        if (this.MoveTween) {
-            this.MoveTween.stop();
-            this.MoveTween = null;
+    animateToTarget(target, duration, onComplete = null) {
+        // 停止所有正在进行的动画
+        this.stopAllTween();
+        
+        if (!target) {
+            if (onComplete) onComplete();
+            return;
         }
         
-        // 记录起始位置
-        const startX = this.position.x;
-        const startY = this.position.y;
+        const hasPos = target.pos !== undefined;
+        const hasScale = target.scale !== undefined;
         
-        // 创建动画对象
-        const animObj = { x: startX, y: startY };
+        let completedAnimations = 0;
+        const totalAnimations = (hasPos ? 1 : 0) + (hasScale ? 1 : 0);
         
-        // 创建 TWEEN 动画
-        const tween = new TWEEN.Tween(animObj)
-            .to(targetPos, moveAnimationDuration)
-            .easing(TWEEN.Easing.Quadratic.Out)
-            .onUpdate(() => {
-                this.position.x = animObj.x;
-                this.position.y = animObj.y;
-            })
-            .onComplete(() => {
-                // 清除 tile 的 moveTween 引用
-                this.MoveTween = null;
-            })
-            .start();
+        if (totalAnimations === 0) {
+            if (onComplete) onComplete();
+            return;
+        }
         
-        // 将 tween 保存到 tile 上
-        this.MoveTween = tween;
+        const checkAllComplete = () => {
+            completedAnimations++;
+            if (completedAnimations >= totalAnimations && onComplete) {
+                onComplete();
+            }
+        };
+        
+        // 创建位置动画
+        if (hasPos) {
+            const startX = this.position.x;
+            const startY = this.position.y;
+            const animObj = { x: startX, y: startY };
+            
+            const tween = new TWEEN.Tween(animObj)
+                .to(target.pos, duration)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .onUpdate(() => {
+                    this.position.x = animObj.x;
+                    this.position.y = animObj.y;
+                })
+                .onComplete(() => {
+                    this.moveTween = null;
+                    checkAllComplete();
+                })
+                .start();
+            
+            this.moveTween = tween;
+        }
+        
+        // 创建缩放动画
+        if (hasScale) {
+            const startScaleX = this.scale.x || 1;
+            const startScaleY = this.scale.y !== undefined ? this.scale.y : startScaleX;
+            const scaleObj = { x: startScaleX, y: startScaleY };
+            
+            // 如果 scale 是数字，同时应用到 x 和 y
+            let targetScaleX, targetScaleY;
+            if (typeof target.scale === 'number') {
+                targetScaleX = target.scale;
+                targetScaleY = target.scale;
+            } else {
+                targetScaleX = target.scale.x !== undefined ? target.scale.x : startScaleX;
+                targetScaleY = target.scale.y !== undefined ? target.scale.y : targetScaleX;
+            }
+            
+            const scaleTween = new TWEEN.Tween(scaleObj)
+                .to({ x: targetScaleX, y: targetScaleY }, duration)
+                .easing(TWEEN.Easing.Quadratic.In)
+                .onUpdate(() => {
+                    this.scale.set(scaleObj.x, scaleObj.y);
+                })
+                .onComplete(() => {
+                    this.scaleTween = null;
+                    checkAllComplete();
+                })
+                .start();
+            
+            this.scaleTween = scaleTween;
+        }
+    }
+    
+    animateToPosition(targetPos, moveAnimationDuration) {
+        // 保持向后兼容
+        this.animateToTarget({ pos: targetPos }, moveAnimationDuration);
     }
 
     playBreakAnim() {

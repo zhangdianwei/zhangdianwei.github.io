@@ -16,7 +16,7 @@ export default class TetrisControlFromNet {
     init(userView, player) {
         this.userView = userView;
         this.player = player;
-        this.dropPaused = false;
+        this.dropPaused = 0;
         this.currentTime = 0;
         this.processedFrameIndex = 0;
         
@@ -61,7 +61,7 @@ export default class TetrisControlFromNet {
     }
 
     update() {
-        if (this.dropPaused || this.isDead) return;
+        if (this.dropPaused > 0 || this.isDead) return;
         
         if (this.player.frames.length === 0) {
             return;
@@ -76,7 +76,6 @@ export default class TetrisControlFromNet {
             
             if (frame.elapsed <= elapsed) {
                 const actionData = {
-                    GameAction: frame.GameAction || frame.type,
                     ...frame
                 };
                 this.userView.doGameAction(actionData);
@@ -86,19 +85,27 @@ export default class TetrisControlFromNet {
                 break;
             }
         }
+        
+        if (!this.isDead && this.userView.checkDead([])) {
+            this.userView.onDead();
+        }
     }
 
-    dropDiff() {
-        return Math.max(100, 500 - this.linesCleared * 100);
+    getDropDiff() {
+        return 500;
     }
 
-    get moveAnimationDuration() {
-        return this.dropDiff() / 3;
+    setDropPaused(paused) {
+        if (paused) {
+            this.dropPaused++;
+        } else {
+            this.dropPaused = Math.max(0, this.dropPaused - 1);
+        }
     }
+
 
     applyAction(actionData) {
         const frame = {
-            type: actionData.GameAction,
             ...actionData
         };
         this.player.frames.push(frame);

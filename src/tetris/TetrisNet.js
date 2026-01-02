@@ -1,6 +1,6 @@
 import { Client, Event, ReceiverGroup } from '@leancloud/play';
 import TetrisPlayer from './data/TetrisPlayer.js';
-import { NetEventId } from './data/TetrisEvents.js';
+import { NetEventId, getEventName } from './data/TetrisEvents.js';
 
 // LeanCloud 配置 - 请到 https://console.leancloud.cn 注册并创建应用，然后填入以下信息
 const APP_ID = 'tQwiRbYg8otBOPgaCK273AnT-gzGzoHsz';
@@ -175,7 +175,7 @@ export default class TetrisNet {
     // 处理自定义事件
     handleCustomEvent(event) {
         const { eventId, eventData, senderId } = event;
-        console.log('收到自定义事件:', eventId, eventData, senderId);
+        console.log('收到自定义事件:', getEventName(eventId), eventData, senderId);
         
         if (eventId === NetEventId.StartGame) {
             this.game.GameStartOption.initByMulti(eventData);

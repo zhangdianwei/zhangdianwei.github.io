@@ -1,7 +1,7 @@
 <script setup>
-import { ref, computed } from "vue"
+import { ref, computed, watch } from "vue"
 import AppItem from './AppItem.vue'
-import { Row, Col, Card, Divider, Button } from 'view-ui-plus'
+import { Row, Col, Card, Divider, Button, Message } from 'view-ui-plus'
 import TankGame from '../tank2/TankGame.vue'
 import EasyLink from '../easy_link/EasyLink.vue'
 import TrigoCalc from "../comp/TrigoCalc.vue"
@@ -18,6 +18,14 @@ import GameMatch from "../match/GameMatch.vue"
 import ImagePacker from "../comp/ImagePacker.vue"
 import TetrisMain from "../tetris/TetrisMain.vue"
 
+function isMobile() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+function getCurrentPlatform() {
+  return isMobile() ? 'mobile' : 'desktop';
+}
+
 const categoryRoutes = [
   {
     name: "我的游戏",
@@ -28,7 +36,7 @@ const categoryRoutes = [
       { id: "BallGame", title: "抓住狗屎运", comp: BallGame, img: "preview/BallGame.png" },
       { id: "GameMatch", title: "GameMatch", comp: GameMatch, img: "preview/GameMatch.png" },
       { id: "Game2048", title: "Game2048", comp: Game2048, img: "preview/Game2048.png" },
-      { id: "TankGame", title: "坦克大战", comp: TankGame, img: "preview/TankMain.png" },
+      { id: "TankGame", title: "坦克大战", comp: TankGame, img: "preview/TankMain.png", platforms: ["desktop"] },
       { id: "TetrisMain", title: "俄罗斯方块", comp: TetrisMain, img: "preview/tetris.png" },
     ]
   },
@@ -84,11 +92,54 @@ const allRoutes = [
 const curRouteData = computed(() => {
   return allRoutes.find((item) => item.id === curPath.value);
 });
+
+watch(curRouteData, (route) => {
+  if (route && !isPlatformSupported(route)) {
+    const currentPlatform = getCurrentPlatform();
+    const platformNames = {
+      mobile: '移动端',
+      desktop: '桌面端'
+    };
+    const supportedNames = route.platforms?.map(p => platformNames[p] || p).join('、') || '未知';
+    Message.warning({
+      content: `该游戏不支持${platformNames[currentPlatform]}，仅支持：${supportedNames}`,
+      duration: 3
+    });
+    window.location.hash = '';
+  }
+}, { immediate: true });
 const curView = computed(() => {
   return curRouteData.value?.comp;
 });
 
+function isPlatformSupported(routeData) {
+  if (!routeData.platforms) return true;
+  const currentPlatform = getCurrentPlatform();
+  return routeData.platforms.includes(currentPlatform);
+}
+
+function getPlatformIcons(platforms) {
+  if (!platforms) return null;
+  return {
+    mobile: platforms.includes('mobile'),
+    desktop: platforms.includes('desktop')
+  };
+}
+
 function onClickItem(routeData) {
+  if (!isPlatformSupported(routeData)) {
+    const currentPlatform = getCurrentPlatform();
+    const platformNames = {
+      mobile: '移动端',
+      desktop: '桌面端'
+    };
+    const supportedNames = routeData.platforms?.map(p => platformNames[p] || p).join('、') || '未知';
+    Message.warning({
+      content: `该游戏不支持${platformNames[currentPlatform]}，仅支持：${supportedNames}`,
+      duration: 3
+    });
+    return;
+  }
   window.location.hash = routeData.id;
 }
 
@@ -106,27 +157,34 @@ function onClickItem(routeData) {
   </Suspense>
 
   <!-- 首页内容 -->
-  <div v-else style="padding: 24px;">
-    <div v-for="cat in categoryRoutes" :key="cat.name" style="margin-top: 32px;">
-      <h2 style="margin-bottom: 16px;">{{ cat.name }}</h2>
+  <div v-else class="home-container">
+    <div v-for="cat in categoryRoutes" :key="cat.name" class="category-section">
+      <h2 class="category-title">{{ cat.name }}</h2>
       <Row :gutter="16">
         <Col v-for="routeData in cat.children" :key="routeData.id" :span="4" :xs="12" :sm="8" :md="6" :lg="4" :xl="4">
-        <template v-if="routeData.img">
-          <Card :bordered="false"
-            style="margin-bottom: 24px; cursor: pointer; min-height: 220px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box;"
-            @click.native="onClickItem(routeData)">
-            <div style="text-align:center; width: 100%;">
-              <div style="font-size: 18px; font-weight: 500; margin-bottom: 8px;">{{ routeData.title }}</div>
-              <img v-if="routeData.img" :src="routeData.img" alt=""
-                style="width: 100%; height: auto; object-fit: contain; margin-bottom: 0; border: 2px solid #e5e6eb; border-radius: 16px; box-sizing: border-box; background: #fafbfc;" />
-            </div>
-          </Card>
-        </template>
-        <template v-else>
-          <Button long @click="onClickItem(routeData)" style="margin-bottom: 24px; font-size: 16px; min-height: 60px;">
-            {{ routeData.title }}
-          </Button>
-        </template>
+          <template v-if="routeData.img">
+            <Card :bordered="false" class="game-card" @click.native="onClickItem(routeData)">
+              <div class="game-card-content">
+                <div class="game-title">
+                  <span>{{ routeData.title }}</span>
+                  <span v-if="routeData.platforms" class="platform-icons">
+                    <span v-if="routeData.platforms.includes('mobile')" title="支持移动端">📱</span>
+                    <span v-if="routeData.platforms.includes('desktop')" title="支持桌面端">💻</span>
+                  </span>
+                </div>
+                <img :src="routeData.img" alt="" class="game-image" />
+              </div>
+            </Card>
+          </template>
+          <template v-else>
+            <Button long @click="onClickItem(routeData)" class="game-button">
+              <span>{{ routeData.title }}</span>
+              <span v-if="routeData.platforms" class="platform-icons">
+                <span v-if="routeData.platforms.includes('mobile')" title="支持移动端">📱</span>
+                <span v-if="routeData.platforms.includes('desktop')" title="支持桌面端">💻</span>
+              </span>
+            </Button>
+          </template>
         </Col>
       </Row>
     </div>
@@ -145,4 +203,69 @@ function onClickItem(routeData) {
   align-items: center;
   justify-content: center;
 }
+.home-container {
+  padding: 24px;
+}
+
+.category-section {
+  margin-top: 32px;
+}
+
+.category-title {
+  margin-bottom: 16px;
+}
+
+.game-card {
+  margin-bottom: 24px;
+  cursor: pointer;
+  min-height: 220px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.game-card-content {
+  text-align: center;
+  width: 100%;
+}
+
+.game-title {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.game-image {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  margin-bottom: 0;
+  border: 2px solid #e5e6eb;
+  border-radius: 16px;
+  box-sizing: border-box;
+  background: #fafbfc;
+}
+
+.game-button {
+  margin-bottom: 24px;
+  font-size: 16px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.platform-icons {
+  display: flex;
+  gap: 4px;
+}
 </style>
+

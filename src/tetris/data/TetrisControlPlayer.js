@@ -1,6 +1,7 @@
 import { NetEventId, GameAction, GameStartMode, BuffType } from './TetrisEvents.js';
 import Tetris7BagGenerator from './Tetris7BagGenerator.js';
 import RandGenerator from './RandGenerator.js';
+import * as PIXI from 'pixi.js';
 
 export default class TetrisControlPlayer {
     constructor(game) {
@@ -212,6 +213,7 @@ export default class TetrisControlPlayer {
         this.swipeEndHandler = this.onSwipeEnd.bind(this);
 
         this.userView.eventMode = 'static';
+        this.userView.hitArea = new PIXI.Rectangle(-this.game.pixi.screen.width / 2, -this.game.pixi.screen.height / 2, this.game.pixi.screen.width, this.game.pixi.screen.height);
         this.userView.on('pointerdown', this.swipeStartHandler);
         this.userView.on('pointermove', this.swipeMoveHandler);
         this.userView.on('pointerup', this.swipeEndHandler);

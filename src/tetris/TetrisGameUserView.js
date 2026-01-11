@@ -256,7 +256,7 @@ export default class TetrisGameUserView extends PIXI.Container {
             for (let c = 0; c < this.colCount; c++) {
                 if (c !== randomCol) {
                     const tile = new TetrisTile(this.game);
-                    tile.init(this, 7);
+                    tile.init(this, 1);
                     this.addChild(tile);
                     const pos = this.getPosByRC(0, c);
                     tile.position.set(pos.x, pos.y);

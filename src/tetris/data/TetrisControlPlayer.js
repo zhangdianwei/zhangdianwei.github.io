@@ -1,6 +1,5 @@
 import { NetEventId, GameAction, GameStartMode, BuffType } from './TetrisEvents.js';
 import Tetris7BagGenerator from './Tetris7BagGenerator.js';
-import RandGenerator from './RandGenerator.js';
 import * as PIXI from 'pixi.js';
 
 export default class TetrisControlPlayer {
@@ -23,7 +22,7 @@ export default class TetrisControlPlayer {
         this.nextShapInfos = [];
         
         // Buff系统
-        this.buffRand = new RandGenerator(Date.now());
+        this.buffPool = [];
         this.currentBuff = null;
         this.buffProgress = 0;
     }
@@ -98,7 +97,21 @@ export default class TetrisControlPlayer {
 
     generateRandomBuff() {
         const buffTypes = Object.values(BuffType);
-        const randomIndex = this.buffRand.nextInt(buffTypes.length);
+        
+        // 如果数组为空，生成新的数组并打乱
+        if (this.buffPool.length === 0) {
+            // 生成 [0, 1, 2, ..., buffTypes.length-1] 的数组
+            this.buffPool = Array.from({ length: buffTypes.length }, (_, i) => i);
+            
+            // Fisher-Yates 洗牌算法
+            for (let i = this.buffPool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [this.buffPool[i], this.buffPool[j]] = [this.buffPool[j], this.buffPool[i]];
+            }
+        }
+        
+        // 从数组头部取出一个索引
+        const randomIndex = this.buffPool.shift();
         this.currentBuff = buffTypes[randomIndex];
         this.buffProgress = 0;
         

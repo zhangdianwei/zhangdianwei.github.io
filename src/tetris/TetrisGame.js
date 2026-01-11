@@ -8,6 +8,7 @@ import TetrisNet from './TetrisNet.js';
 import { TetrisEvents, NetEventId, GameStartMode } from './data/TetrisEvents.js';
 import TetrisPlayer from './data/TetrisPlayer.js';
 import TetrisGameStartOption from './data/TetrisGameStartOption.js';
+import RandGenerator from './data/RandGenerator.js';
 
 class TetrisGame {
 
@@ -97,7 +98,7 @@ class TetrisGame {
             var robots = this.createRobotPlayers(totalPlayerCount-this.players.length);
             this.net.sendEvent(NetEventId.SyncRobots, { robots });
             var option = {
-                shapeGeneratorSeed: Date.now()+"",
+                shapeGeneratorSeed: RandGenerator.randInt(0, 1000)+"",
                 startTime: Date.now()+"",
             };
             this.net.sendEvent(NetEventId.StartGame, option);

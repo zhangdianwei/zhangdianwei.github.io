@@ -3,12 +3,9 @@ import * as PIXI from 'pixi.js';
 import * as TWEEN from '@tweenjs/tween.js';
 import TetrisGameView from './TetrisGameView.js';
 import TetrisStartView from './TetrisStartView.js';
-import TetrisRoomView from './TetrisRoomView.js';
-import TetrisNet from './TetrisNet.js';
-import { TetrisEvents, NetEventId, GameStartMode } from './data/TetrisEvents.js';
+import { TetrisEvents, GameStartMode } from './data/TetrisEvents.js';
 import TetrisPlayer from './data/TetrisPlayer.js';
 import TetrisGameStartOption from './data/TetrisGameStartOption.js';
-import RandGenerator from './data/RandGenerator.js';
 
 class TetrisGame {
 
@@ -39,15 +36,11 @@ class TetrisGame {
         this.eventListeners = {};
         this.players = [];
 
-        this.net = new TetrisNet(this);
-        this.net.init();
-
         this.gameStartOption = new TetrisGameStartOption();
 
         this.viewCreators = {
             "TetrisStartView": TetrisStartView,
             "TetrisGameView": TetrisGameView,
-            "TetrisRoomView": TetrisRoomView,
         }
 
         this.pixi.ticker.add(this.update, this);
@@ -55,54 +48,16 @@ class TetrisGame {
         this.replaceView("TetrisStartView");
     }
 
-    syncFromLean(leanPlayers) {
-        this.players = leanPlayers.map(p => new TetrisPlayer(p));
-        this._notifyPlayerChanged();
-    }
-
-    createRobotPlayers(robotCount) {
-        const robots = [];
-        if (robotCount <= 0) return [];
-        for (let i = 0; i < robotCount; i++) {
-            const robot = {
-                userId: TetrisPlayer.generateUserId('Robot'),
-                isRobot: true
-            };
-            robots.push(robot);
-        }
-        return robots;
-    }
-
     startGame(mode) {
-        var totalPlayerCount = 1;
-        if(mode === GameStartMode.Single) {
-            this.players.push(new TetrisPlayer({
+        this.players = [
+            new TetrisPlayer({
                 userId: this.userId,
                 isMaster: true,
                 isRobot: false
-            }));
-            this.GameStartOption.initBySingle(GameStartMode.Single);
-            this.replaceView("TetrisGameView");
-        } else if(mode === GameStartMode.RobotMatch) {
-            this.players.push(new TetrisPlayer({
-                userId: this.userId,
-                isMaster: true,
-                isRobot: false
-            }));
-            var robots = this.createRobotPlayers(totalPlayerCount-this.players.length);
-            robots = robots.map(r => new TetrisPlayer(r));
-            this.players.push(...robots);
-            this.GameStartOption.initBySingle(GameStartMode.RobotMatch);
-            this.replaceView("TetrisGameView");
-        } else if(mode === GameStartMode.PlayerMatch) {
-            var robots = this.createRobotPlayers(totalPlayerCount-this.players.length);
-            this.net.sendEvent(NetEventId.SyncRobots, { robots });
-            var option = {
-                shapeGeneratorSeed: RandGenerator.randInt(0, 1000)+"",
-                startTime: Date.now()+"",
-            };
-            this.net.sendEvent(NetEventId.StartGame, option);
-        }
+            })
+        ];
+        this.GameStartOption.initBySingle(mode || GameStartMode.Marathon);
+        this.replaceView("TetrisGameView");
     }
 
     findPlayer(userId) {

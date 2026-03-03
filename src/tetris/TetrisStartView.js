@@ -1,7 +1,6 @@
 import * as PIXI from 'pixi.js';
 import TetrisButton from './TetrisButton.js';
 import { GameStartMode } from './data/TetrisEvents.js';
-import { NetState } from './TetrisNet.js';
 
 export default class TetrisStartView extends PIXI.Container {
     constructor(game) {
@@ -12,48 +11,15 @@ export default class TetrisStartView extends PIXI.Container {
     init() {
         this.initTitle();
         
-        this.singlePlayerButton = new TetrisButton(this.game, '单人游戏', () => {
-            this.game.startGame(GameStartMode.Single);
+        this.marathonButton = new TetrisButton(this.game, '经典模式', () => {
+            this.game.startGame(GameStartMode.Marathon);
         });
-        this.singlePlayerButton.position.set(0, 30);
-        this.addChild(this.singlePlayerButton);
-
-        this.multiPlayerButton = new TetrisButton(this.game, '多人游戏', () => {
-            this.joinMatch();
-        });
-        this.multiPlayerButton.position.set(0, 90);
-        this.addChild(this.multiPlayerButton);
-
-        this.clickMatchCount = 0;
+        this.marathonButton.position.set(0, 70);
+        this.addChild(this.marathonButton);
 
         this.animationTime = 0;
         this.tagUpdate = this.update.bind(this);
         this.game.pixi.ticker.add(this.tagUpdate, this);
-    }
-
-    async joinMatch() {
-        // if (this.game.net.state === NetState.IN_ROOM) {
-        //     this.game.replaceView("TetrisRoomView");
-        //     return;
-        // }
-
-        this.clickMatchCount++;
-
-        if (this.game.net.state === NetState.IDLE) {
-            this.game.net.connect();
-        } else if (this.game.net.state === NetState.CONNECTED) {
-            this.game.net.joinRoom();
-        }
-
-        if (this.clickMatchCount >= 2) {
-            if (this.game.net.state === NetState.CONNECTING) {
-                this.game.Toast('正在连接服务器...');
-            } else if (this.game.net.state === NetState.CONNECTED) {
-                this.game.Toast('已连接，正在加入房间...');
-            } else if (this.game.net.state === NetState.JOINING) {
-                this.game.Toast('正在加入房间...');
-            }
-        }
     }
 
     initTitle() {

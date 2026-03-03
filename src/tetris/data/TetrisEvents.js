@@ -4,25 +4,8 @@ export const TetrisEvents = {
     PlayerChanged: 'playerChanged',
 };
 
-// 网络自定义事件 ID 枚举
-export const NetEventId = {
-    StartGame: 1,
-    SyncRobots: 2,
-    PlayerAction: 3, // 玩家操作同步
-};
-export const getEventName = (eventId) => {
-    for (const key in NetEventId) {
-        if (NetEventId[key] === eventId) {
-            return key;
-        }
-    }
-    return `Unknown(${eventId})`;
-}
-
 export const GameStartMode = {
-    Single: 'Single', //单人游戏
-    RobotMatch: 'RobotMatch', //机器人对战
-    PlayerMatch: 'PlayerMatch', //玩家对战
+    Marathon: 'Marathon', // 经典模式
 }
 
 export const GameAction = {

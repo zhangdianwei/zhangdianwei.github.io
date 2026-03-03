@@ -2,7 +2,7 @@ import { GameStartMode } from './TetrisEvents.js';
 
 export default class TetrisGameStartOption {
     constructor() {
-        this.startMode = GameStartMode.Single;
+        this.startMode = GameStartMode.Marathon;
 
         this.startTime = Date.now();
         this.shapeGeneratorSeed = Date.now();
@@ -31,11 +31,5 @@ export default class TetrisGameStartOption {
         this.startMode = startMode;
         this.ShapeGeneratorSeed = Date.now();
         this.StartTime = Date.now();
-    }
-
-    initByMulti(data) {
-        this.startMode = GameStartMode.PlayerMatch;
-        this.ShapeGeneratorSeed = Number(data.shapeGeneratorSeed);
-        this.StartTime = Number(data.startTime);
     }
 }

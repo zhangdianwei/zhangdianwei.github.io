@@ -4,7 +4,6 @@ import TetrisTile from './TetrisTile.js';
 import * as TetrisShape from './TetrisShape.js';
 import TetrisButton from './TetrisButton.js';
 import TetrisControlPlayer from './data/TetrisControlPlayer.js';
-import TetrisControlFromNet from './data/TetrisControlFromNet.js';
 import { GameAction, BuffType } from './data/TetrisEvents.js';
 
 export default class TetrisGameUserView extends PIXI.Container {
@@ -16,6 +15,8 @@ export default class TetrisGameUserView extends PIXI.Container {
 
     init(playerIndex){
         this.playerIndex = playerIndex;
+        this.hasEnded = false;
+        this.finishReason = '';
         
         // 记录是否是当前玩家（本人）
         const player = this.game.players[this.playerIndex];
@@ -34,14 +35,8 @@ export default class TetrisGameUserView extends PIXI.Container {
     initControllers() {
         const player = this.player;
         if (!player) return;
-
-        if (this._isSelf) {
-            this.controller = new TetrisControlPlayer(this.game);
-            this.controller.init(this, player);
-        } else {
-            this.controller = new TetrisControlFromNet(this.game);
-            this.controller.init(this, player);
-        }
+        this.controller = new TetrisControlPlayer(this.game);
+        this.controller.init(this, player);
     }
 
     initGameLogic() {
@@ -396,6 +391,8 @@ export default class TetrisGameUserView extends PIXI.Container {
             minDistance = Math.min(minDistance, distance);
         }
         
+        const dropDistance = Math.max(0, minDistance);
+
         if (minDistance > 200) {
             for (let i = 0; i < this.dropInfo.rcs.length; i++) {
                 const currentR = this.dropInfo.rcs[i].r;
@@ -425,6 +422,9 @@ export default class TetrisGameUserView extends PIXI.Container {
 
         if (minDistance > 1) {
             this.controller.dropSpeedTimer = 100;
+            const hardDropScore = dropDistance * 2 * this.controller.getLevel();
+            this.controller.score += hardDropScore;
+            this.updateInfoDisplay();
         }
     }
 
@@ -511,13 +511,33 @@ export default class TetrisGameUserView extends PIXI.Container {
     }
 
     onDead() {
-        this.controller.isDead = true;
-        if (this.controller && this.controller.setDropPaused) {
-            this.controller.setDropPaused(true);
+        this.endGame('游戏结束', '方块触顶');
+    }
+
+    endGame(title, reason) {
+        if (this.hasEnded) return;
+        this.hasEnded = true;
+        this.finishReason = reason || '';
+
+        if (this.controller) {
+            this.controller.isDead = true;
+            if (this.controller.setDropPaused) {
+                this.controller.setDropPaused(true);
+            }
         }
-        setTimeout(() => {
-            this.playDeadAppearAnim();
-        }, 500);
+
+        const rawElapsed = Date.now() - this.game.GameStartOption.StartTime;
+
+        const result = {
+            title,
+            reason: this.finishReason,
+            score: this.controller ? this.controller.score : 0,
+            lines: this.controller ? this.controller.linesCleared : 0,
+            level: this.controller ? this.controller.getLevel() : 1,
+            elapsed: rawElapsed
+        };
+
+        this.showResultPanel(result);
     }
 
     checkBreakFullLines(affectedRows) {
@@ -539,6 +559,9 @@ export default class TetrisGameUserView extends PIXI.Container {
         
         if (fullRows.length > 0) {
             this.doBreakLines(fullRows, true);
+        } else if (this.controller) {
+            this.controller.comboCount = -1;
+            this.updateInfoDisplay();
         }
     }
     
@@ -606,21 +629,31 @@ export default class TetrisGameUserView extends PIXI.Container {
         
         setTimeout(() => {
             if (countScore) {
-                // 更新分数和行数
                 const lineCount = fullRows.length;
                 this.controller.linesCleared += lineCount;
-                
-                let points = 1000;
-                if (lineCount === 1) {
-                    points = 100;
-                } else if (lineCount === 2) {
-                    points = 200;
-                } else if (lineCount === 3) {
-                    points = 600;
-                } else if (lineCount === 4) {
-                    points = 800;
+                this.controller.comboCount += 1;
+
+                const level = this.controller.getLevel();
+                const lineScoreMap = { 1: 100, 2: 300, 3: 500, 4: 800 };
+                const baseScore = (lineScoreMap[lineCount] || 0) * level;
+
+                const isTetris = lineCount === 4;
+                let b2bBonus = 0;
+                if (isTetris) {
+                    if (this.controller.backToBackCount > 0) {
+                        b2bBonus = Math.floor(baseScore * 0.5);
+                    }
+                    this.controller.backToBackCount += 1;
+                } else {
+                    this.controller.backToBackCount = 0;
                 }
-                this.controller.score += points;
+
+                let comboBonus = 0;
+                if (this.controller.comboCount > 0) {
+                    comboBonus = this.controller.comboCount * 50 * level;
+                }
+
+                this.controller.score += baseScore + b2bBonus + comboBonus;
                 this.updateInfoDisplay();
             }
 
@@ -871,25 +904,20 @@ export default class TetrisGameUserView extends PIXI.Container {
     }
 
 
-    playDeadAppearAnim() {
-        // 使用当前背景的纹理（可能是 self 或 other）
+    showResultPanel(result) {
         const bgCenterUpTexture = this.bgCenterUp ? this.bgCenterUp.texture : this.game.textures['tetris/bg_center_up.png'];
-        const circleTexture = this.game.textures['tetris/circle.png'];
-        if (!circleTexture || !bgCenterUpTexture) {
-            return;
-        }
+        if (!bgCenterUpTexture) return;
 
         this.deadMaskGraphics = new PIXI.Graphics();
-        this.deadMaskGraphics.beginFill(0x000000, 0.5);
-        const cornerRadius = 10;
-        this.deadMaskGraphics.drawRoundedRect(-bgCenterUpTexture.width / 2, -bgCenterUpTexture.height / 2, bgCenterUpTexture.width, bgCenterUpTexture.height, cornerRadius);
+        this.deadMaskGraphics.beginFill(0x000000, 0.55);
+        this.deadMaskGraphics.drawRoundedRect(-bgCenterUpTexture.width / 2, -bgCenterUpTexture.height / 2, bgCenterUpTexture.width, bgCenterUpTexture.height, 10);
         this.deadMaskGraphics.endFill();
         this.deadMaskGraphics.position.set(0, 0);
         this.deadMaskGraphics.alpha = 0;
         this.addChild(this.deadMaskGraphics);
 
-        const maskAlphaTween = new TWEEN.Tween({ alpha: 0 })
-            .to({ alpha: 1 }, 250)
+        new TWEEN.Tween({ alpha: 0 })
+            .to({ alpha: 1 }, 220)
             .onUpdate((obj) => {
                 this.deadMaskGraphics.alpha = obj.alpha;
             })
@@ -897,54 +925,90 @@ export default class TetrisGameUserView extends PIXI.Container {
 
         this.deadContainer = new PIXI.Container();
         this.deadContainer.position.set(0, 0);
+        this.deadContainer.alpha = 0;
+        this.deadContainer.scale.set(0.95);
+        this.addChild(this.deadContainer);
 
-        const circleSprite = new PIXI.Sprite(circleTexture);
-        circleSprite.anchor.set(0.5, 0.5);
-        circleSprite.position.set(0, 0);
-        this.deadContainer.addChild(circleSprite);
+        const panel = new PIXI.Graphics();
+        panel.beginFill(0x111111, 0.85);
+        panel.drawRoundedRect(-155, -165, 310, 330, 14);
+        panel.endFill();
+        this.deadContainer.addChild(panel);
 
-        const textStyle = new PIXI.TextStyle({
-            fontFamily: 'Comic Sans MS, Marker Felt, Chalkduster, cursive',
-            fontSize: 64,
-            fill: 0xFFD700,
+        const titleStyle = new PIXI.TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 34,
+            fill: 0xFFD166,
             fontWeight: 'bold',
             align: 'center'
         });
+        const textStyle = new PIXI.TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 18,
+            fill: 0xFFFFFF,
+            align: 'left'
+        });
 
-        const deadText = new PIXI.Text('DEAD', textStyle);
-        deadText.anchor.set(0.5, 0.5);
-        deadText.position.set(0, 0);
-        this.deadContainer.addChild(deadText);
+        const titleText = new PIXI.Text(result.title, titleStyle);
+        titleText.anchor.set(0.5, 0.5);
+        titleText.position.set(0, -120);
+        this.deadContainer.addChild(titleText);
 
-        const backButton = new TetrisButton(this.game, 'Return Main', () => {
+        const modeText = new PIXI.Text('模式：经典模式', textStyle);
+        modeText.anchor.set(0.5, 0.5);
+        modeText.position.set(0, -70);
+        this.deadContainer.addChild(modeText);
+
+        const reasonText = new PIXI.Text(`结束原因：${result.reason}`, textStyle);
+        reasonText.anchor.set(0.5, 0.5);
+        reasonText.position.set(0, -40);
+        this.deadContainer.addChild(reasonText);
+
+        const scoreText = new PIXI.Text(`得分：${result.score}`, textStyle);
+        scoreText.anchor.set(0.5, 0.5);
+        scoreText.position.set(0, 0);
+        this.deadContainer.addChild(scoreText);
+
+        const linesText = new PIXI.Text(`消行：${result.lines}`, textStyle);
+        linesText.anchor.set(0.5, 0.5);
+        linesText.position.set(0, 30);
+        this.deadContainer.addChild(linesText);
+
+        const levelText = new PIXI.Text(`等级：${result.level}`, textStyle);
+        levelText.anchor.set(0.5, 0.5);
+        levelText.position.set(0, 60);
+        this.deadContainer.addChild(levelText);
+
+        const timeText = new PIXI.Text(`耗时：${this.formatDuration(result.elapsed)}`, textStyle);
+        timeText.anchor.set(0.5, 0.5);
+        timeText.position.set(0, 90);
+        this.deadContainer.addChild(timeText);
+
+        const backButton = new TetrisButton(this.game, '返回主页', () => {
             this.game.replaceView("TetrisStartView");
         });
-        backButton.position.set(0, 150);
+        backButton.position.set(0, 130);
         this.deadContainer.addChild(backButton);
         backButton.setEnabled(false);
 
-        this.deadContainer.alpha = 0;
-        this.deadContainer.scale.set(0.1);
-
-        this.addChild(this.deadContainer);
-
-        const scaleTween = new TWEEN.Tween({ scale: 0.1 })
-            .to({ scale: 1.0 }, 800)
-            .easing(TWEEN.Easing.Elastic.Out)
+        new TWEEN.Tween({ scale: 0.95, alpha: 0 })
+            .to({ scale: 1.0, alpha: 1 }, 260)
+            .easing(TWEEN.Easing.Quadratic.Out)
             .onUpdate((obj) => {
                 this.deadContainer.scale.set(obj.scale);
+                this.deadContainer.alpha = obj.alpha;
             })
             .onComplete(() => {
                 backButton.setEnabled(true);
             })
             .start();
+    }
 
-        const alphaTween = new TWEEN.Tween({ alpha: 0 })
-            .to({ alpha: 1 }, 250)
-            .onUpdate((obj) => {
-                this.deadContainer.alpha = obj.alpha;
-            })
-            .start();
+    formatDuration(ms) {
+        const totalSec = Math.max(0, Math.floor(ms / 1000));
+        const minute = Math.floor(totalSec / 60);
+        const second = totalSec % 60;
+        return `${minute}:${second.toString().padStart(2, '0')}`;
     }
 
     restartGame() {
@@ -1171,7 +1235,7 @@ export default class TetrisGameUserView extends PIXI.Container {
         // 创建文本样式（黑色字体）
         const textStyle = new PIXI.TextStyle({
             fontFamily: 'Comic Sans MS, Marker Felt, Chalkduster, cursive',
-            fontSize: 16,
+            fontSize: 13,
             fill: 0x000000,
             align: 'left'
         });
@@ -1179,10 +1243,13 @@ export default class TetrisGameUserView extends PIXI.Container {
         this.infoDisplayConfigs = [
             {title: 'Lines:', getValue: () => this.controller.linesCleared, valueLabel: null},
             {title: 'Score:', getValue: () => this.controller.score, valueLabel: null},
+            {title: 'Level:', getValue: () => this.controller.getLevel(), valueLabel: null},
+            {title: 'Combo:', getValue: () => Math.max(0, this.controller.comboCount), valueLabel: null},
+            {title: 'B2B:', getValue: () => this.controller.backToBackCount, valueLabel: null},
         ]
         
         this.infoDisplayConfigs.forEach((config, index) => {
-            const y = 14 + index * 24;
+            const y = 8 + index * 15;
             
             const label = new PIXI.Text(config.title, textStyle);
             label.anchor.set(1, 0);

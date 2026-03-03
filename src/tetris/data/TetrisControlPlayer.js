@@ -1,4 +1,4 @@
-import { NetEventId, GameAction, GameStartMode, BuffType } from './TetrisEvents.js';
+import { GameAction, BuffType } from './TetrisEvents.js';
 import Tetris7BagGenerator from './Tetris7BagGenerator.js';
 import * as PIXI from 'pixi.js';
 
@@ -16,6 +16,8 @@ export default class TetrisControlPlayer {
         // 游戏统计信息
         this.score = 0;
         this.linesCleared = 0;
+        this.comboCount = -1;
+        this.backToBackCount = 0;
         
         // 形状生成器
         this.shapeGenerator = null;
@@ -81,7 +83,13 @@ export default class TetrisControlPlayer {
     }
 
     getDropDiff() {
-        return this.dropDiff + this.tempDropDiff;
+        const level = this.getLevel();
+        const baseDropDiff = Math.max(120, this.dropDiff - (level - 1) * 35);
+        return Math.max(80, baseDropDiff + this.tempDropDiff);
+    }
+
+    getLevel() {
+        return Math.min(15, Math.floor(this.linesCleared / 10) + 1);
     }
     addTempDropDiff(diff) {
         this.tempDropDiff += diff;
@@ -204,15 +212,6 @@ export default class TetrisControlPlayer {
             ...actionData
         };
         this.player.frames.push(frame);
-        
-        // 只有多人模式才发送事件
-        if (this.game.GameStartOption.StartMode !== GameStartMode.Single) {
-            const eventData = {
-                userId: this.player.userId,
-                ...actionData
-            };
-            this.game.net.sendEvent(NetEventId.PlayerAction, eventData);
-        }
     }
 
     initSwipeControls() {

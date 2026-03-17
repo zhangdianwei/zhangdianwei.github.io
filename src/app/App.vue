@@ -64,16 +64,10 @@ const categoryRoutes = [
     ]
   },
   {
-    name: "曲线展示",
-    children: [
-      { id: "CurveRope", title: "曲线绳子(Three)", comp: CurveRope },
-      { id: "CurveRopePixi", title: "曲线绳子(Pixi)", comp: CurveRopePixi },
-    ]
-  },
-  {
     name: "其他杂项",
     children: [
       { id: "ThreeHello", title: "ThreeHello", comp: ThreeHello },
+      { id: "CurveRopePixi", title: "曲线绳子(Pixi)", comp: CurveRopePixi },
     ]
   }
 ]

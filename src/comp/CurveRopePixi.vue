@@ -14,22 +14,20 @@ const state = reactive({
   ropeWidth: 36,
   uvMode: 'segment',
   uvRepeat: 4,
-  uvScrollSpeed: 0.18,
-  showControlPoints: true,
+  uvScrollSpeed: 0,
+  showCurve: true,
   showSamplePoints: true,
   showWireframe: true,
-  showNormals: false,
-  showTexture: true,
-  currentStep: 4
+  showTexture: true
 });
 
 const curveParams = reactive({
   sineAmplitude: 110,
   sineCycles: 2.2,
   sinePhase: 0,
-  parabolaA: 0.8,
-  parabolaB: -0.2,
-  parabolaC: -0.15,
+  parabolaA: -1.47,
+  parabolaB: 0,
+  parabolaC: 0.9,
   parabolaScale: 220,
   ellipseRadiusX: 300,
   ellipseRadiusY: 160,
@@ -62,19 +60,10 @@ let ropeMesh = null;
 let controlHandles = [];
 let draggingIndex = -1;
 let uvOffset = 0;
-let autoPlayTimer = null;
 let resizeObserver = null;
 let currentSamples = [];
 let currentStrip = null;
 let lastErrorComputeAt = 0;
-
-const curveDescription = computed(() => {
-  if (state.curveType === 'bezier') return '贝塞尔曲线：支持拖拽 4 个控制点。';
-  if (state.curveType === 'sine') return '正弦曲线：由振幅、周期与相位控制。';
-  if (state.curveType === 'parabola') return '抛物线：由 a、b、c 以及纵向缩放控制。';
-  if (state.curveType === 'ellipse') return '椭圆弧线：由半径与起止角定义。';
-  return '阿基米德螺旋线：半径随角度线性增加。';
-});
 
 const strategyDescription = computed(() => {
   if (state.samplingMode === 'uniform-param') {
@@ -85,8 +74,6 @@ const strategyDescription = computed(() => {
   }
   return '误差限制分段：按误差自适应细分，兼顾精度和点数。';
 });
-
-const stepLabel = computed(() => `步骤 ${state.currentStep} / 4`);
 
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
@@ -383,26 +370,27 @@ function drawCurveAndHelpers(samples, strip) {
   layers.normals.clear();
   layers.guides.clear();
 
-  const denseCount = 180;
-  layers.curve.lineStyle(2.5, 0x5cc8ff, 0.9);
-  const first = evalCurveAt(0);
-  layers.curve.moveTo(first.x, first.y);
-  for (let i = 1; i <= denseCount; i++) {
-    const p = evalCurveAt(i / denseCount);
-    layers.curve.lineTo(p.x, p.y);
-  }
-
-  if (state.currentStep >= 2 && state.showSamplePoints) {
-    for (let i = 0; i < samples.length; i++) {
-      layers.samples.beginFill(0xffffff, 0.95);
-      layers.samples.drawCircle(samples[i].x, samples[i].y, 3);
-      layers.samples.endFill();
+  if (state.showCurve) {
+    const denseCount = 180;
+    layers.curve.lineStyle(2.5, 0x5cc8ff, 0.9);
+    const first = evalCurveAt(0);
+    layers.curve.moveTo(first.x, first.y);
+    for (let i = 1; i <= denseCount; i++) {
+      const p = evalCurveAt(i / denseCount);
+      layers.curve.lineTo(p.x, p.y);
     }
   }
 
+  if (state.showSamplePoints) {
+    layers.samples.beginFill(0xffffff, 0.95);
+    for (let i = 0; i < samples.length; i++) {
+      layers.samples.drawCircle(samples[i].x, samples[i].y, 3);
+    }
+    layers.samples.endFill();
+  }
+
   if (!strip) return;
-  const drawMeshPart = state.currentStep >= 3;
-  if (drawMeshPart && state.showWireframe) {
+  if (state.showWireframe) {
     layers.wire.lineStyle(1.2, 0xffffff, 0.55);
     for (let i = 0; i < strip.leftPts.length; i++) {
       const l = strip.leftPts[i];
@@ -422,24 +410,6 @@ function drawCurveAndHelpers(samples, strip) {
       layers.wire.lineTo(r.x, r.y);
     }
   }
-
-  if (drawMeshPart && state.showNormals) {
-    layers.normals.lineStyle(1, 0x66ff66, 0.7);
-    const half = state.ropeWidth * 0.5;
-    for (let i = 0; i < samples.length; i++) {
-      const prev = samples[Math.max(0, i - 1)];
-      const next = samples[Math.min(samples.length - 1, i + 1)];
-      let tx = next.x - prev.x;
-      let ty = next.y - prev.y;
-      const len = Math.hypot(tx, ty) || 1;
-      tx /= len;
-      ty /= len;
-      const nx = -ty;
-      const ny = tx;
-      layers.normals.moveTo(samples[i].x, samples[i].y);
-      layers.normals.lineTo(samples[i].x + nx * half, samples[i].y + ny * half);
-    }
-  }
 }
 
 function clearControlHandles() {
@@ -453,7 +423,7 @@ function clearControlHandles() {
 
 function updateControlHandles() {
   if (!layers.controls || !layers.guides) return;
-  if (!state.showControlPoints || state.curveType !== 'bezier') {
+  if (state.curveType !== 'bezier') {
     layers.guides.clear();
     if (controlHandles.length > 0) clearControlHandles();
     return;
@@ -505,8 +475,9 @@ function rebuildMesh(samples) {
   }
   if (!currentStrip) return;
   const geometry = new PIXI.MeshGeometry(currentStrip.vertices, currentStrip.uvs, currentStrip.indices);
-  const material = new PIXI.MeshMaterial(ropeTexture, {
-    alpha: state.showTexture && state.currentStep >= 4 ? 1 : 0.32
+  const baseTexture = state.showTexture ? ropeTexture : PIXI.Texture.WHITE;
+  const material = new PIXI.MeshMaterial(baseTexture, {
+    alpha: 1
   });
   ropeMesh = new PIXI.Mesh(geometry, material);
   ropeMesh.roundPixels = true;
@@ -529,82 +500,6 @@ function renderAll(opts = {}) {
     runtime.approxError = estimateApproxError(samples);
     lastErrorComputeAt = now;
   }
-}
-
-function resetCurveParams(curveType) {
-  if (curveType === 'bezier') {
-    const cp = defaultControlPoints();
-    for (let i = 0; i < controlPoints.length; i++) {
-      controlPoints[i].x = cp[i].x;
-      controlPoints[i].y = cp[i].y;
-    }
-    return;
-  }
-  if (curveType === 'sine') {
-    curveParams.sineAmplitude = 110;
-    curveParams.sineCycles = 2.2;
-    curveParams.sinePhase = 0;
-    return;
-  }
-  if (curveType === 'parabola') {
-    curveParams.parabolaA = 0.8;
-    curveParams.parabolaB = -0.2;
-    curveParams.parabolaC = -0.15;
-    curveParams.parabolaScale = 220;
-    return;
-  }
-  if (curveType === 'ellipse') {
-    curveParams.ellipseRadiusX = 300;
-    curveParams.ellipseRadiusY = 160;
-    curveParams.ellipseStartDeg = -160;
-    curveParams.ellipseEndDeg = 40;
-    return;
-  }
-  curveParams.spiralA = 10;
-  curveParams.spiralTurns = 3.1;
-  curveParams.spiralStartDeg = -90;
-}
-
-function resetParams() {
-  state.curveType = 'bezier';
-  state.samplingMode = 'uniform-param';
-  state.uniformSegments = 24;
-  state.fixedStep = 20;
-  state.errorThreshold = 2.5;
-  state.ropeWidth = 36;
-  state.uvMode = 'segment';
-  state.uvRepeat = 4;
-  state.uvScrollSpeed = 0.18;
-  state.showControlPoints = true;
-  state.showSamplePoints = true;
-  state.showWireframe = true;
-  state.showNormals = false;
-  state.showTexture = true;
-  state.currentStep = 4;
-  resetCurveParams('bezier');
-  resetCurveParams('sine');
-  resetCurveParams('parabola');
-  resetCurveParams('ellipse');
-  resetCurveParams('spiral');
-  uvOffset = 0;
-  renderAll();
-}
-
-function playSteps() {
-  if (autoPlayTimer) {
-    clearInterval(autoPlayTimer);
-    autoPlayTimer = null;
-  }
-  state.currentStep = 1;
-  autoPlayTimer = setInterval(() => {
-    state.currentStep += 1;
-    if (state.currentStep > 4) {
-      clearInterval(autoPlayTimer);
-      autoPlayTimer = null;
-      state.currentStep = 4;
-    }
-    renderAll();
-  }, 900);
 }
 
 function bindPointerEvents() {
@@ -660,7 +555,7 @@ function initPixi() {
   app.ticker.add((delta) => {
     const fps = app.ticker.FPS || 0;
     runtime.fps = runtime.fps === 0 ? fps : runtime.fps * 0.88 + fps * 0.12;
-    if (state.currentStep >= 4 && state.showTexture && state.uvScrollSpeed > 0) {
+    if (state.showTexture && state.uvScrollSpeed > 0) {
       uvOffset += (state.uvScrollSpeed * delta) / 60;
       if (currentSamples.length > 1) rebuildMesh(currentSamples);
     }
@@ -684,12 +579,10 @@ watch(
     state.ropeWidth,
     state.uvMode,
     state.uvRepeat,
-    state.showControlPoints,
+    state.showCurve,
     state.showSamplePoints,
     state.showWireframe,
-    state.showNormals,
     state.showTexture,
-    state.currentStep,
     curveParams.sineAmplitude,
     curveParams.sineCycles,
     curveParams.sinePhase,
@@ -721,7 +614,6 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  if (autoPlayTimer) clearInterval(autoPlayTimer);
   if (resizeObserver) resizeObserver.disconnect();
   if (app) {
     app.destroy(true, { children: true, texture: false, baseTexture: false });
@@ -736,6 +628,7 @@ onBeforeUnmount(() => {
       <Card dis-hover>
         <template #title>曲线绳带 Demo（CPU）</template>
         <Form :label-width="90" size="small">
+          <Divider orientation="left">1. 选择曲线类型</Divider>
           <FormItem label="曲线类型">
             <Select v-model="state.curveType">
               <Option value="bezier">贝塞尔曲线</Option>
@@ -744,16 +637,6 @@ onBeforeUnmount(() => {
               <Option value="ellipse">椭圆弧线</Option>
               <Option value="spiral">阿基米德螺旋线</Option>
             </Select>
-          </FormItem>
-          <Alert show-icon>{{ curveDescription }}</Alert>
-          <Divider />
-          <FormItem label="分步视图">
-            <ButtonGroup>
-              <Button :type="state.currentStep === 1 ? 'primary' : 'default'" @click="state.currentStep = 1">1</Button>
-              <Button :type="state.currentStep === 2 ? 'primary' : 'default'" @click="state.currentStep = 2">2</Button>
-              <Button :type="state.currentStep === 3 ? 'primary' : 'default'" @click="state.currentStep = 3">3</Button>
-              <Button :type="state.currentStep === 4 ? 'primary' : 'default'" @click="state.currentStep = 4">4</Button>
-            </ButtonGroup>
           </FormItem>
 
           <FormItem v-if="state.curveType === 'sine'" label="振幅">
@@ -802,7 +685,7 @@ onBeforeUnmount(() => {
             <Slider v-model="curveParams.spiralStartDeg" :min="-360" :max="360" :step="1" show-input />
           </FormItem>
 
-          <Divider />
+          <Divider orientation="left">2. 采样策略</Divider>
           <FormItem label="采样策略">
             <Select v-model="state.samplingMode">
               <Option value="uniform-param">参数均匀分段</Option>
@@ -819,9 +702,13 @@ onBeforeUnmount(() => {
           <FormItem v-if="state.samplingMode === 'error-limit'" label="误差阈值">
             <Slider v-model="state.errorThreshold" :min="0.6" :max="8" :step="0.1" show-input />
           </FormItem>
+
+          <Divider orientation="left">3. 构造网格</Divider>
           <FormItem label="网格宽度">
             <Slider v-model="state.ropeWidth" :min="8" :max="90" :step="1" show-input />
           </FormItem>
+
+          <Divider orientation="left">4. UV模式</Divider>
           <FormItem label="UV模式">
             <Select v-model="state.uvMode">
               <Option value="segment">按段均匀</Option>
@@ -834,16 +721,13 @@ onBeforeUnmount(() => {
           <FormItem label="滚动速度">
             <Slider v-model="state.uvScrollSpeed" :min="0" :max="1.2" :step="0.02" show-input />
           </FormItem>
+
+          <Divider orientation="left">5. 视图显示</Divider>
           <FormItem label="显示项">
-            <Checkbox v-model="state.showControlPoints">控制点（仅贝塞尔）</Checkbox><br />
-            <Checkbox v-model="state.showSamplePoints">采样点</Checkbox><br />
+            <Checkbox v-model="state.showCurve">显示曲线</Checkbox><br />
+            <Checkbox v-model="state.showSamplePoints">控制细分点</Checkbox><br />
             <Checkbox v-model="state.showWireframe">网格线框</Checkbox><br />
-            <Checkbox v-model="state.showNormals">法线</Checkbox><br />
             <Checkbox v-model="state.showTexture">纹理显示</Checkbox>
-          </FormItem>
-          <FormItem>
-            <Button @click="resetParams">重置参数</Button>
-            <Button type="primary" style="margin-left: 8px;" @click="playSteps">一键演示</Button>
           </FormItem>
         </Form>
       </Card>
@@ -851,8 +735,8 @@ onBeforeUnmount(() => {
 
     <Col :xs="24" :sm="24" :md="16" :lg="17" :xl="18">
       <Card dis-hover>
-        <template #title>{{ stepLabel }}</template>
-        <div ref="canvasWrap" style="width: 100%; height: 640px;" />
+        <template #title>曲线预览</template>
+        <div ref="canvasWrap" style="width: 100%; height: 640px; background: #dff4ff;" />
       </Card>
       <Card dis-hover style="margin-top: 12px;">
         <Tag color="blue">采样点：{{ runtime.pointCount }}</Tag>

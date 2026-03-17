@@ -731,327 +731,136 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="curve-rope-demo">
-    <aside class="panel">
-      <h3>曲线绳带 Demo（CPU）</h3>
-      <div class="section no-border">
-        <div class="label">曲线类型</div>
-        <select v-model="state.curveType">
-          <option value="bezier">贝塞尔曲线</option>
-          <option value="sine">正弦曲线</option>
-          <option value="parabola">抛物线</option>
-          <option value="ellipse">椭圆弧线</option>
-          <option value="spiral">阿基米德螺旋线</option>
-        </select>
-        <p class="hint">{{ curveDescription }}</p>
-      </div>
+  <Row :gutter="16">
+    <Col :xs="24" :sm="24" :md="8" :lg="7" :xl="6">
+      <Card dis-hover>
+        <template #title>曲线绳带 Demo（CPU）</template>
+        <Form :label-width="90" size="small">
+          <FormItem label="曲线类型">
+            <Select v-model="state.curveType">
+              <Option value="bezier">贝塞尔曲线</Option>
+              <Option value="sine">正弦曲线</Option>
+              <Option value="parabola">抛物线</Option>
+              <Option value="ellipse">椭圆弧线</Option>
+              <Option value="spiral">阿基米德螺旋线</Option>
+            </Select>
+          </FormItem>
+          <Alert show-icon>{{ curveDescription }}</Alert>
+          <Divider />
+          <FormItem label="分步视图">
+            <ButtonGroup>
+              <Button :type="state.currentStep === 1 ? 'primary' : 'default'" @click="state.currentStep = 1">1</Button>
+              <Button :type="state.currentStep === 2 ? 'primary' : 'default'" @click="state.currentStep = 2">2</Button>
+              <Button :type="state.currentStep === 3 ? 'primary' : 'default'" @click="state.currentStep = 3">3</Button>
+              <Button :type="state.currentStep === 4 ? 'primary' : 'default'" @click="state.currentStep = 4">4</Button>
+            </ButtonGroup>
+          </FormItem>
 
-      <div v-if="state.curveType === 'sine'" class="section">
-        <div class="label">正弦参数</div>
-        <div class="row">
-          <label>振幅 {{ curveParams.sineAmplitude.toFixed(0) }}</label>
-          <input v-model.number="curveParams.sineAmplitude" type="range" min="20" max="220" step="1" />
-        </div>
-        <div class="row">
-          <label>周期数 {{ curveParams.sineCycles.toFixed(1) }}</label>
-          <input v-model.number="curveParams.sineCycles" type="range" min="0.5" max="6" step="0.1" />
-        </div>
-        <div class="row">
-          <label>相位 {{ curveParams.sinePhase.toFixed(0) }}°</label>
-          <input v-model.number="curveParams.sinePhase" type="range" min="-180" max="180" step="1" />
-        </div>
-      </div>
+          <FormItem v-if="state.curveType === 'sine'" label="振幅">
+            <Slider v-model="curveParams.sineAmplitude" :min="20" :max="220" :step="1" show-input />
+          </FormItem>
+          <FormItem v-if="state.curveType === 'sine'" label="周期数">
+            <Slider v-model="curveParams.sineCycles" :min="0.5" :max="6" :step="0.1" show-input />
+          </FormItem>
+          <FormItem v-if="state.curveType === 'sine'" label="相位">
+            <Slider v-model="curveParams.sinePhase" :min="-180" :max="180" :step="1" show-input />
+          </FormItem>
 
-      <div v-if="state.curveType === 'parabola'" class="section">
-        <div class="label">抛物线参数</div>
-        <div class="row">
-          <label>a {{ curveParams.parabolaA.toFixed(2) }}</label>
-          <input v-model.number="curveParams.parabolaA" type="range" min="-2.5" max="2.5" step="0.01" />
-        </div>
-        <div class="row">
-          <label>b {{ curveParams.parabolaB.toFixed(2) }}</label>
-          <input v-model.number="curveParams.parabolaB" type="range" min="-2.5" max="2.5" step="0.01" />
-        </div>
-        <div class="row">
-          <label>c {{ curveParams.parabolaC.toFixed(2) }}</label>
-          <input v-model.number="curveParams.parabolaC" type="range" min="-1.5" max="1.5" step="0.01" />
-        </div>
-        <div class="row">
-          <label>纵向缩放 {{ curveParams.parabolaScale.toFixed(0) }}</label>
-          <input v-model.number="curveParams.parabolaScale" type="range" min="60" max="380" step="1" />
-        </div>
-      </div>
+          <FormItem v-if="state.curveType === 'parabola'" label="a">
+            <Slider v-model="curveParams.parabolaA" :min="-2.5" :max="2.5" :step="0.01" show-input />
+          </FormItem>
+          <FormItem v-if="state.curveType === 'parabola'" label="b">
+            <Slider v-model="curveParams.parabolaB" :min="-2.5" :max="2.5" :step="0.01" show-input />
+          </FormItem>
+          <FormItem v-if="state.curveType === 'parabola'" label="c">
+            <Slider v-model="curveParams.parabolaC" :min="-1.5" :max="1.5" :step="0.01" show-input />
+          </FormItem>
+          <FormItem v-if="state.curveType === 'parabola'" label="纵向缩放">
+            <Slider v-model="curveParams.parabolaScale" :min="60" :max="380" :step="1" show-input />
+          </FormItem>
 
-      <div v-if="state.curveType === 'ellipse'" class="section">
-        <div class="label">椭圆参数</div>
-        <div class="row">
-          <label>半径X {{ curveParams.ellipseRadiusX.toFixed(0) }}</label>
-          <input v-model.number="curveParams.ellipseRadiusX" type="range" min="60" max="430" step="1" />
-        </div>
-        <div class="row">
-          <label>半径Y {{ curveParams.ellipseRadiusY.toFixed(0) }}</label>
-          <input v-model.number="curveParams.ellipseRadiusY" type="range" min="40" max="260" step="1" />
-        </div>
-        <div class="row">
-          <label>起始角 {{ curveParams.ellipseStartDeg.toFixed(0) }}°</label>
-          <input v-model.number="curveParams.ellipseStartDeg" type="range" min="-360" max="360" step="1" />
-        </div>
-        <div class="row">
-          <label>结束角 {{ curveParams.ellipseEndDeg.toFixed(0) }}°</label>
-          <input v-model.number="curveParams.ellipseEndDeg" type="range" min="-360" max="360" step="1" />
-        </div>
-      </div>
+          <FormItem v-if="state.curveType === 'ellipse'" label="半径X">
+            <Slider v-model="curveParams.ellipseRadiusX" :min="60" :max="430" :step="1" show-input />
+          </FormItem>
+          <FormItem v-if="state.curveType === 'ellipse'" label="半径Y">
+            <Slider v-model="curveParams.ellipseRadiusY" :min="40" :max="260" :step="1" show-input />
+          </FormItem>
+          <FormItem v-if="state.curveType === 'ellipse'" label="起始角">
+            <Slider v-model="curveParams.ellipseStartDeg" :min="-360" :max="360" :step="1" show-input />
+          </FormItem>
+          <FormItem v-if="state.curveType === 'ellipse'" label="结束角">
+            <Slider v-model="curveParams.ellipseEndDeg" :min="-360" :max="360" :step="1" show-input />
+          </FormItem>
 
-      <div v-if="state.curveType === 'spiral'" class="section">
-        <div class="label">螺旋参数</div>
-        <div class="row">
-          <label>a {{ curveParams.spiralA.toFixed(1) }}</label>
-          <input v-model.number="curveParams.spiralA" type="range" min="2" max="24" step="0.1" />
-        </div>
-        <div class="row">
-          <label>圈数 {{ curveParams.spiralTurns.toFixed(1) }}</label>
-          <input v-model.number="curveParams.spiralTurns" type="range" min="0.4" max="6" step="0.1" />
-        </div>
-        <div class="row">
-          <label>起始角 {{ curveParams.spiralStartDeg.toFixed(0) }}°</label>
-          <input v-model.number="curveParams.spiralStartDeg" type="range" min="-360" max="360" step="1" />
-        </div>
-      </div>
+          <FormItem v-if="state.curveType === 'spiral'" label="a">
+            <Slider v-model="curveParams.spiralA" :min="2" :max="24" :step="0.1" show-input />
+          </FormItem>
+          <FormItem v-if="state.curveType === 'spiral'" label="圈数">
+            <Slider v-model="curveParams.spiralTurns" :min="0.4" :max="6" :step="0.1" show-input />
+          </FormItem>
+          <FormItem v-if="state.curveType === 'spiral'" label="起始角">
+            <Slider v-model="curveParams.spiralStartDeg" :min="-360" :max="360" :step="1" show-input />
+          </FormItem>
 
-      <div class="section">
-        <div class="label">分步视图</div>
-        <div class="row-inline">
-          <button :class="{ active: state.currentStep === 1 }" @click="state.currentStep = 1">1 曲线</button>
-          <button :class="{ active: state.currentStep === 2 }" @click="state.currentStep = 2">2 采样</button>
-          <button :class="{ active: state.currentStep === 3 }" @click="state.currentStep = 3">3 网格</button>
-          <button :class="{ active: state.currentStep === 4 }" @click="state.currentStep = 4">4 UV</button>
-        </div>
-      </div>
+          <Divider />
+          <FormItem label="采样策略">
+            <Select v-model="state.samplingMode">
+              <Option value="uniform-param">参数均匀分段</Option>
+              <Option value="fixed-step">固定步长分段</Option>
+              <Option value="error-limit">误差限制分段</Option>
+            </Select>
+          </FormItem>
+          <FormItem v-if="state.samplingMode === 'uniform-param'" label="分段数">
+            <Slider v-model="state.uniformSegments" :min="6" :max="140" :step="1" show-input />
+          </FormItem>
+          <FormItem v-if="state.samplingMode === 'fixed-step'" label="步长">
+            <Slider v-model="state.fixedStep" :min="6" :max="80" :step="1" show-input />
+          </FormItem>
+          <FormItem v-if="state.samplingMode === 'error-limit'" label="误差阈值">
+            <Slider v-model="state.errorThreshold" :min="0.6" :max="8" :step="0.1" show-input />
+          </FormItem>
+          <FormItem label="网格宽度">
+            <Slider v-model="state.ropeWidth" :min="8" :max="90" :step="1" show-input />
+          </FormItem>
+          <FormItem label="UV模式">
+            <Select v-model="state.uvMode">
+              <Option value="segment">按段均匀</Option>
+              <Option value="arclength">按弧长</Option>
+            </Select>
+          </FormItem>
+          <FormItem label="重复次数">
+            <Slider v-model="state.uvRepeat" :min="1" :max="16" :step="0.5" show-input />
+          </FormItem>
+          <FormItem label="滚动速度">
+            <Slider v-model="state.uvScrollSpeed" :min="0" :max="1.2" :step="0.02" show-input />
+          </FormItem>
+          <FormItem label="显示项">
+            <Checkbox v-model="state.showControlPoints">控制点（仅贝塞尔）</Checkbox><br />
+            <Checkbox v-model="state.showSamplePoints">采样点</Checkbox><br />
+            <Checkbox v-model="state.showWireframe">网格线框</Checkbox><br />
+            <Checkbox v-model="state.showNormals">法线</Checkbox><br />
+            <Checkbox v-model="state.showTexture">纹理显示</Checkbox>
+          </FormItem>
+          <FormItem>
+            <Button @click="resetParams">重置参数</Button>
+            <Button type="primary" style="margin-left: 8px;" @click="playSteps">一键演示</Button>
+          </FormItem>
+        </Form>
+      </Card>
+    </Col>
 
-      <div class="section">
-        <div class="label">采样策略</div>
-        <select v-model="state.samplingMode">
-          <option value="uniform-param">参数均匀分段</option>
-          <option value="fixed-step">固定步长分段</option>
-          <option value="error-limit">误差限制分段</option>
-        </select>
-        <div v-if="state.samplingMode === 'uniform-param'" class="row">
-          <label>分段数 {{ state.uniformSegments }}</label>
-          <input v-model.number="state.uniformSegments" type="range" min="6" max="140" />
-        </div>
-        <div v-if="state.samplingMode === 'fixed-step'" class="row">
-          <label>步长 {{ state.fixedStep.toFixed(0) }}</label>
-          <input v-model.number="state.fixedStep" type="range" min="6" max="80" step="1" />
-        </div>
-        <div v-if="state.samplingMode === 'error-limit'" class="row">
-          <label>误差阈值 {{ state.errorThreshold.toFixed(1) }}</label>
-          <input v-model.number="state.errorThreshold" type="range" min="0.6" max="8" step="0.1" />
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="label">网格参数</div>
-        <div class="row">
-          <label>宽度 {{ state.ropeWidth.toFixed(0) }}</label>
-          <input v-model.number="state.ropeWidth" type="range" min="8" max="90" step="1" />
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="label">UV 参数</div>
-        <select v-model="state.uvMode">
-          <option value="segment">按段均匀</option>
-          <option value="arclength">按弧长</option>
-        </select>
-        <div class="row">
-          <label>重复次数 {{ state.uvRepeat.toFixed(1) }}</label>
-          <input v-model.number="state.uvRepeat" type="range" min="1" max="16" step="0.5" />
-        </div>
-        <div class="row">
-          <label>滚动速度 {{ state.uvScrollSpeed.toFixed(2) }}</label>
-          <input v-model.number="state.uvScrollSpeed" type="range" min="0" max="1.2" step="0.02" />
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="label">显示项</div>
-        <label class="checkbox"><input v-model="state.showControlPoints" type="checkbox" /> 控制点（仅贝塞尔）</label>
-        <label class="checkbox"><input v-model="state.showSamplePoints" type="checkbox" /> 采样点</label>
-        <label class="checkbox"><input v-model="state.showWireframe" type="checkbox" /> 网格线框</label>
-        <label class="checkbox"><input v-model="state.showNormals" type="checkbox" /> 法线</label>
-        <label class="checkbox"><input v-model="state.showTexture" type="checkbox" /> 纹理显示</label>
-      </div>
-
-      <div class="row-inline">
-        <button @click="resetParams">重置参数</button>
-        <button @click="playSteps">一键演示</button>
-      </div>
-    </aside>
-
-    <main class="stage-wrap">
-      <div ref="canvasWrap" class="stage-canvas" />
-      <div class="step-tag">{{ stepLabel }}</div>
-    </main>
-
-    <footer class="status">
-      <span>采样点：{{ runtime.pointCount }}</span>
-      <span>三角形：{{ runtime.triangleCount }}</span>
-      <span>估算误差：{{ runtime.approxError.toFixed(2) }} px</span>
-      <span>FPS：{{ runtime.fps.toFixed(1) }}</span>
-      <span class="desc">{{ strategyDescription }}</span>
-    </footer>
-  </div>
+    <Col :xs="24" :sm="24" :md="16" :lg="17" :xl="18">
+      <Card dis-hover>
+        <template #title>{{ stepLabel }}</template>
+        <div ref="canvasWrap" style="width: 100%; height: 640px;" />
+      </Card>
+      <Card dis-hover style="margin-top: 12px;">
+        <Tag color="blue">采样点：{{ runtime.pointCount }}</Tag>
+        <Tag color="green">三角形：{{ runtime.triangleCount }}</Tag>
+        <Tag color="orange">估算误差：{{ runtime.approxError.toFixed(2) }} px</Tag>
+        <Tag color="purple">FPS：{{ runtime.fps.toFixed(1) }}</Tag>
+        <p style="margin-top: 10px;">{{ strategyDescription }}</p>
+      </Card>
+    </Col>
+  </Row>
 </template>
-
-<style scoped>
-.curve-rope-demo {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  grid-template-rows: 1fr 48px;
-  gap: 10px;
-  width: 100%;
-  height: 100%;
-  min-height: 640px;
-  color: #e7ebf5;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-.panel {
-  grid-row: 1 / span 2;
-  background: #1b2130;
-  border: 1px solid #2f3a52;
-  border-radius: 10px;
-  padding: 12px;
-  overflow-y: auto;
-}
-
-.panel h3 {
-  margin: 0 0 10px;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.section {
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px dashed #3b4762;
-}
-
-.no-border {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
-}
-
-.label {
-  margin-bottom: 8px;
-  color: #f0cc82;
-  font-size: 13px;
-}
-
-.hint {
-  margin: 8px 0 0;
-  color: #a9b6d3;
-  font-size: 12px;
-  line-height: 1.35;
-}
-
-.row,
-.row-inline {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.row {
-  margin-top: 8px;
-  flex-direction: column;
-  align-items: stretch;
-}
-
-.row label {
-  font-size: 12px;
-}
-
-.row-inline {
-  margin-top: 10px;
-}
-
-button,
-select,
-input[type='range'] {
-  width: 100%;
-}
-
-button,
-select {
-  height: 30px;
-  border-radius: 6px;
-  border: 1px solid #425072;
-  background: #26304a;
-  color: #e7ebf5;
-}
-
-button {
-  cursor: pointer;
-}
-
-button.active {
-  border-color: #86b5ff;
-  background: #2b4574;
-}
-
-.checkbox {
-  display: block;
-  margin-top: 6px;
-  font-size: 13px;
-}
-
-.checkbox input {
-  margin-right: 6px;
-}
-
-.stage-wrap {
-  position: relative;
-  border: 1px solid #334260;
-  border-radius: 10px;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 24px 24px, rgba(255, 255, 255, 0.05) 2px, transparent 0) 0 0 / 48px 48px,
-    #131925;
-}
-
-.stage-canvas {
-  width: 100%;
-  height: 100%;
-  min-height: 520px;
-}
-
-.step-tag {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: rgba(12, 18, 30, 0.72);
-  border: 1px solid rgba(147, 182, 255, 0.45);
-  font-size: 12px;
-}
-
-.status {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  border-radius: 10px;
-  border: 1px solid #2f3a52;
-  background: #161e2d;
-  padding: 0 12px;
-  font-size: 12px;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.status .desc {
-  color: #a9b6d3;
-}
-</style>

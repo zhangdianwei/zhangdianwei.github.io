@@ -167,9 +167,7 @@ export default class TankEndUI extends PIXI.Container {
     onBackToStart() {
         console.log('回到开始界面');
         // 切换到开始界面
-        if (this.tankApp.logic && this.tankApp.logic.setUI) {
-            this.tankApp.logic.setUI('TankStartUI');
-        }
+        this.tankApp.setScreen('TankStartUI');
     }
     
     onRestart() {
@@ -178,9 +176,7 @@ export default class TankEndUI extends PIXI.Container {
         if (this.tankApp.playerData) {
             this.tankApp.playerData.resetOneLevelData(); // 重置关卡数据
         }
-        if (this.tankApp.logic && this.tankApp.logic.setUI) {
-            this.tankApp.logic.setUI('TankGameUI');
-        }
+        this.tankApp.setScreen('TankGameUI');
     }
     
     onNextLevel() {
@@ -190,9 +186,7 @@ export default class TankEndUI extends PIXI.Container {
             this.tankApp.playerData.levelId++;
             this.tankApp.playerData.resetOneLevelData(); // 重置关卡数据
         }
-        if (this.tankApp.logic && this.tankApp.logic.setUI) {
-            this.tankApp.logic.setUI('TankGameUI');
-        }
+        this.tankApp.setScreen('TankGameUI');
     }
     
     updateStats() {

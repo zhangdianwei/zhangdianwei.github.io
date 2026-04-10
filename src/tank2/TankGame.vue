@@ -9,7 +9,6 @@
 import { ref, onUnmounted } from 'vue';
 import PixiLoader from '../pixi/PixiLoader.vue';
 import { TankApp } from './TankApp.js';
-import { TankLogic } from './TankLogic.js';
 
 const gameContainer = ref(null);
 const textureUrls = ref([
@@ -40,14 +39,13 @@ const textureUrls = ref([
 ]);
 
 const tankApp = TankApp.instance;
-tankApp.logic = new TankLogic();
 
 const onTexturesLoaded = (textures) => {
     tankApp.textures = textures;
-    tankApp.logic.init(gameContainer.value);
+    tankApp.init(gameContainer.value);
 };
 
 onUnmounted(() => {
-    tankApp.logic.makeDead();
+    tankApp.makeDead();
 });
 </script> 

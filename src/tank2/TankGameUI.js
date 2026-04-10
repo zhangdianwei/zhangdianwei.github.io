@@ -8,6 +8,7 @@ import TankCompInput from './TankCompInput.js';
 import TankCompMap from './TankCompMap.js';
 import TankCompEnemySpawner from './TankCompEnemySpawner.js';
 import TankGameSide from './TankGameSide.js';
+import TankGameLogic from './TankGameLogic.js';
 
 export default class TankGameUI extends PIXI.Container {
     constructor() {
@@ -38,6 +39,7 @@ export default class TankGameUI extends PIXI.Container {
         };
         this.createRenderLayers();
         this.initComps();
+        this.logic = new TankGameLogic(this);
         this.on('removed', this.makeDead, this);
         this.startLevel();
         this.side.updateView();
@@ -93,34 +95,7 @@ export default class TankGameUI extends PIXI.Container {
     }
     
     update(deltaTime) {
-        if (this.tankApp.playerData.levelEndType != 0)
-            return;
-
-        this.updater.forEach(updater => {
-            updater.update(deltaTime);
-        });
-        
-        if (this.player) {
-            this.player.update(deltaTime);
-        }
-        
-        // 更新敌人
-        this.enemies.forEach(enemy => {
-            enemy.update(deltaTime);
-        });
-        
-        // 更新玩家子弹
-        this.playerBullets.forEach(bullet => {
-            bullet.update(deltaTime);
-        });
-        
-        // 更新敌人子弹
-        this.enemyBullets.forEach(bullet => {
-            bullet.update(deltaTime);
-        });
-        
-        // 检查碰撞
-        this.checkCollisions();
+        this.logic.update(deltaTime);
     }
     
     addBullet(bullet) {
@@ -247,238 +222,30 @@ export default class TankGameUI extends PIXI.Container {
         this.renderLayers.tank.addChild(this.home);
     }
     
-    // 检查所有碰撞
-    checkCollisions() {
-        const playerBullets = this.playerBullets.concat();
-        const enemyBullets = this.enemyBullets.concat();
-        const allBullets = [...playerBullets, ...enemyBullets];
-        const player = this.player;
-        const enemies = this.enemies;
-        
-        // 子弹与地图碰撞
-        for (let i = 0; i < allBullets.length; i++) {
-            const bullet = allBullets[i];
-            this.map.checkCollisionBullet(bullet);
-        }
-        
-        // 子弹与基地碰撞
-        if (this.home && !this.home.isDead) {
-            for (let i = 0; i < allBullets.length; i++) {
-                const bullet = allBullets[i];
-                if (this.home.checkCollision(bullet.x, bullet.y)) {
-                    this.home.takeDamage(bullet.power);
-                    bullet.makeDead();
-                }
-            }
-        }
-        
-        
-        // 玩家子弹与敌人碰撞
-        playerBullets.forEach(bullet => {
-            enemies.forEach(enemy => {
-                if (this.checkBulletTankCollision(bullet, enemy)) {
-                    enemy.takeDamage(bullet.power);
-                    bullet.makeDead();
-                }
-            });
-        });
-        
-        // 敌人子弹与玩家碰撞
-        enemyBullets.forEach(bullet => {
-            if (player && this.checkBulletTankCollision(bullet, player)) {
-                player.takeDamage(bullet.power);
-                bullet.makeDead();
-            }
-        });
-        
-        // 玩家子弹与敌人子弹碰撞
-        playerBullets.forEach(playerBullet => {
-            enemyBullets.forEach(enemyBullet => {
-                if (this.checkBulletBulletCollision(playerBullet, enemyBullet)) {
-                    playerBullet.makeDead();
-                    enemyBullet.makeDead();
-                }
-            });
-        });
-    }
-    
-    // 检查子弹与坦克的碰撞
-    checkBulletTankCollision(bullet, tank) {
-        if (!bullet || !tank || bullet.isDead || tank.isDead) return false;
-        
-        const bulletBounds = bullet.getBounds();
-        const tankBounds = tank.getBounds();
-        
-        // AABB碰撞检测
-        return bulletBounds.x < tankBounds.x + tankBounds.width &&
-               bulletBounds.x + bulletBounds.width > tankBounds.x &&
-               bulletBounds.y < tankBounds.y + tankBounds.height &&
-               bulletBounds.y + bulletBounds.height > tankBounds.y;
-    }
-    
-    // 检查子弹与子弹的碰撞
-    checkBulletBulletCollision(bullet1, bullet2) {
-        if (!bullet1 || !bullet2 || bullet1.isDead || bullet2.isDead) return false;
-        
-        const bullet1Bounds = bullet1.getBounds();
-        const bullet2Bounds = bullet2.getBounds();
-        
-        // AABB碰撞检测
-        return bullet1Bounds.x < bullet2Bounds.x + bullet2Bounds.width &&
-               bullet1Bounds.x + bullet1Bounds.width > bullet2Bounds.x &&
-               bullet1Bounds.y < bullet2Bounds.y + bullet2Bounds.height &&
-               bullet1Bounds.y + bullet1Bounds.height > bullet2Bounds.y;
-    }
-    
-    // 检查坦克与坦克的碰撞
-    checkTankTankCollision(tank1, tank2) {
-        if (!tank1 || !tank2 || tank1 === tank2) return false;
-        
-        const tank1Bounds = tank1.getBounds();
-        const tank2Bounds = tank2.getBounds();
-        
-        // AABB碰撞检测
-        return tank1Bounds.x < tank2Bounds.x + tank2Bounds.width &&
-               tank1Bounds.x + tank1Bounds.width > tank2Bounds.x &&
-               tank1Bounds.y < tank2Bounds.y + tank2Bounds.height &&
-               tank1Bounds.y + tank1Bounds.height > tank2Bounds.y;
-    }
-    
-    // 获取坦克的可移动距离，只考虑坦克碰撞
     getMovableDistance(bounds, direction, excludeTank = null) {
-        const centerX = bounds.x;
-        const centerY = bounds.y;
-        const width = bounds.width;
-        const height = bounds.height;
-        
-        // 获取所有坦克（排除指定的坦克）
-        const allTanks = [this.player, ...this.enemies].filter(t => t && t !== excludeTank);
-        
-        let minDistance = Infinity;
-        
-        // 遍历所有坦克，找到在指定方向上最近的碰撞距离
-        for (const tank of allTanks) {
-            const tankBounds = tank.getBounds();
-            const tankCenterX = tankBounds.x;
-            const tankCenterY = tankBounds.y;
-            const tankWidth = tankBounds.width;
-            const tankHeight = tankBounds.height;
-            
-            let distance = Infinity;
-            
-            // 根据方向计算距离
-            if (direction === 0) { // UP
-                // 检查上方是否有坦克
-                if (centerX - width/2 < tankCenterX + tankWidth/2 && 
-                    centerX + width/2 > tankCenterX - tankWidth/2) {
-                    // X轴有重叠，计算Y轴距离
-                    distance = centerY - height/2 - (tankCenterY + tankHeight/2);
-                }
-            } else if (direction === 1) { // RIGHT
-                // 检查右方是否有坦克
-                if (centerY - height/2 < tankCenterY + tankHeight/2 && 
-                    centerY + height/2 > tankCenterY - tankHeight/2) {
-                    // Y轴有重叠，计算X轴距离
-                    distance = tankCenterX - tankWidth/2 - (centerX + width/2);
-                }
-            } else if (direction === 2) { // DOWN
-                // 检查下方是否有坦克
-                if (centerX - width/2 < tankCenterX + tankWidth/2 && 
-                    centerX + width/2 > tankCenterX - tankWidth/2) {
-                    // X轴有重叠，计算Y轴距离
-                    distance = tankCenterY - tankHeight/2 - (centerY + height/2);
-                }
-            } else if (direction === 3) { // LEFT
-                // 检查左方是否有坦克
-                if (centerY - height/2 < tankCenterY + tankHeight/2 && 
-                    centerY + height/2 > tankCenterY - tankHeight/2) {
-                    // Y轴有重叠，计算X轴距离
-                    distance = centerX - width/2 - (tankCenterX + tankWidth/2);
-                }
-            }
-            
-            // 更新最小距离
-            if (distance < minDistance) {
-                minDistance = distance;
-            }
-        }
-        
-        // 如果没有找到碰撞，返回一个很大的值
-        if (minDistance === Infinity) {
-            return 1000;
-        }
-        
-        // 如果距离是负数（坦克重叠），允许移动
-        if (minDistance < 0) {
-            return 1000; // 返回一个很大的值，允许移动
-        }
-        
-        return minDistance;
+        return this.logic.getMovableDistance(bounds, direction, excludeTank);
     }
-    
-    // 检查位置是否在边界内
+
     isInBounds(x, y) {
-        return x >= 0 && x < MapWidth && y >= 0 && y < MapHeight;
+        return this.logic.isInBounds(x, y);
     }
-    
+
     onTankDeadFinish(tank) {
-        if(tank === this.player) {
-            this.removePlayer(tank);
-            this.checkCreatePlayer();
-        }
-        else {
-            this.removeEnemy(tank);
-            this.tankApp.playerData.addEnemyDestroyed(tank.tankType, 1);
-        }
-        this.side.updateView();
-        this.checkGameState();
+        this.logic.onTankDeadFinish(tank);
     }
 
     onHomeDeadFinish(home) {
-        this.home = null;
-        this.checkGameState();
+        this.logic.onHomeDeadFinish(home);
     }
 
     onBulletDeadFinish(bullet) {
-        this.removeBullet(bullet);
-    }
-
-    checkCreatePlayer() {
-        if(this.tankApp.playerData.playerLives > 0) {
-            this.tankApp.playerData.playerLives--;
-            this.createPlayer();
-        }
-    }
-
-    checkGameState(){
-        if (this.tankApp.playerData.levelEndType != 0) return;
-
-        do{
-            if (this.enemySpawner.isFinished()) {
-                this.tankApp.playerData.levelEndType = 1; // 胜利
-                break;
-            }
-    
-            if (!this.home) {
-                this.tankApp.playerData.levelEndType = 2; // 失败
-                break;
-            }
-    
-            if (!this.player && this.tankApp.playerData.playerLives == 0) {
-                this.tankApp.playerData.levelEndType = 2; // 失败
-                break;
-            }
-        }
-        while(0);
-
-        if (this.tankApp.playerData.levelEndType){
-            this.tankApp.ticker.tickOnce(()=>{
-                this.tankApp.logic.setUI('TankEndUI');
-            }, 1);
-        }
+        this.logic.onBulletDeadFinish(bullet);
     }
 
     makeDead(){
         this.input.makeDead();
+        if (this.logic && this.logic.makeDead) {
+            this.logic.makeDead();
+        }
     }
 }

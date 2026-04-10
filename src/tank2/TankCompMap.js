@@ -150,6 +150,7 @@ export default class TankCompMap {
         return true;
     }
 
+    // 只判断地形
     getMovableDistance(bounds, direction) {
         const centerX = bounds.x;
         const centerY = bounds.y;

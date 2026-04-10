@@ -1,3 +1,11 @@
+import * as PIXI from 'pixi.js';
+import { createPixi, initDom } from '../pixi/PixiHelper.js';
+import TankPlayerData from './TankPlayerData.js';
+import Ticker from './Ticker.js';
+import TankGameUI from './TankGameUI.js';
+import TankStartUI from './TankStartUI.js';
+import TankEndUI from './TankEndUI.js';
+
 export class TankApp {
     static _instance;
 
@@ -5,11 +13,8 @@ export class TankApp {
         this.pixi = null;
         this.textures = {};
 
-        // 全局时钟（在 TankLogic 中初始化）
         this.ticker = null;
-        
-        this.logic = null;
-        
+
         this.ui = null;
         this.uiContainer = null; //屏幕中心
 
@@ -23,21 +28,69 @@ export class TankApp {
         return TankApp._instance;
     }
 
-    setUI(ui) {
+    init(domElement) {
+        initDom(domElement, {
+            designWidth: 1920,
+            designHeight: 1080,
+            isFullScreen: false
+        });
+        this.pixi = createPixi(domElement);
+
+        this.uiContainer = new PIXI.Container();
+        this.pixi.stage.addChild(this.uiContainer);
+        this.uiContainer.position.set(this.pixi.screen.width / 2, this.pixi.screen.height / 2);
+        // this.uiContainer.alpha = 0.05;
+
+        this.ticker = new Ticker();
+        this.ticker.tick((dt) => this.update(dt), 0);
+
+        this.playerData = new TankPlayerData();
+        this.setScreen('TankStartUI');
+    }
+
+    setScreen(name) {
+        if (name === 'TankStartUI') {
+            this.mountUI(new TankStartUI());
+        } else if (name === 'TankGameUI') {
+            this.mountUI(new TankGameUI());
+        } else if (name === 'TankEndUI') {
+            this.mountUI(new TankEndUI());
+        }
+    }
+
+    mountUI(ui) {
         let oldUI = this.ui;
         if(oldUI){
             oldUI.removeFromParent();
-            // this.makeUIDisappear(oldUI, () => {
-            //     oldUI.removeFromParent();
-            // });
         }
         this.ui = ui;
         this.uiContainer.addChild(this.ui);
         if (oldUI){
             this.makeUIAppear(this.ui);
         }
+    }
 
-        // this.uiContainer.alpha = 0.1;
+    update(dt) {
+        if (this.ui && this.ui.update) {
+            this.ui.update(dt);
+        }
+    }
+
+    makeDead() {
+        if (this.ui && this.ui.makeDead) {
+            this.ui.makeDead();
+        }
+        this.ui = null;
+
+        if (this.ticker) {
+            this.ticker.stop();
+            this.ticker = null;
+        }
+        if (this.pixi) {
+            this.pixi.destroy(true);
+            this.pixi = null;
+        }
+        this.uiContainer = null;
     }
 
     get winW(){

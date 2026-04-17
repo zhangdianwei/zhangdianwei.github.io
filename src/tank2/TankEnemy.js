@@ -36,7 +36,7 @@ export default class TankEnemy extends TankBase {
     }
 
     update(deltaTime) {
-        this.checkAI(deltaTime);
+        // this.checkAI(deltaTime);
         super.update(deltaTime);
     }
 

@@ -40,10 +40,12 @@ export default class TankGameLogic {
         const player = this.gameUI.player;
         const enemies = this.gameUI.enemies;
 
+        // 子弹与地图碰撞
         for (let i = 0; i < allBullets.length; i++) {
             this.gameUI.map.checkCollisionBullet(allBullets[i]);
         }
 
+        // 子弹与基地碰撞
         if (this.gameUI.home && !this.gameUI.home.isDead) {
             for (let i = 0; i < allBullets.length; i++) {
                 const bullet = allBullets[i];
@@ -54,6 +56,7 @@ export default class TankGameLogic {
             }
         }
 
+        // 子弹与敌人碰撞
         playerBullets.forEach((bullet) => {
             enemies.forEach((enemy) => {
                 if (this.checkBulletTankCollision(bullet, enemy)) {
@@ -63,6 +66,7 @@ export default class TankGameLogic {
             });
         });
 
+        // 子弹与玩家碰撞
         enemyBullets.forEach((bullet) => {
             if (player && this.checkBulletTankCollision(bullet, player)) {
                 player.takeDamage(bullet.power);
@@ -70,6 +74,7 @@ export default class TankGameLogic {
             }
         });
 
+        // 子弹与子弹碰撞
         playerBullets.forEach((playerBullet) => {
             enemyBullets.forEach((enemyBullet) => {
                 if (this.checkBulletBulletCollision(playerBullet, enemyBullet)) {
@@ -85,10 +90,7 @@ export default class TankGameLogic {
 
         const bulletBounds = bullet.getBounds();
         const tankBounds = tank.getBounds();
-        return bulletBounds.x < tankBounds.x + tankBounds.width &&
-               bulletBounds.x + bulletBounds.width > tankBounds.x &&
-               bulletBounds.y < tankBounds.y + tankBounds.height &&
-               bulletBounds.y + bulletBounds.height > tankBounds.y;
+        return this.checkBoundsOverlap(bulletBounds, tankBounds);
     }
 
     checkBulletBulletCollision(bullet1, bullet2) {
@@ -96,71 +98,84 @@ export default class TankGameLogic {
 
         const bullet1Bounds = bullet1.getBounds();
         const bullet2Bounds = bullet2.getBounds();
-        return bullet1Bounds.x < bullet2Bounds.x + bullet2Bounds.width &&
-               bullet1Bounds.x + bullet1Bounds.width > bullet2Bounds.x &&
-               bullet1Bounds.y < bullet2Bounds.y + bullet2Bounds.height &&
-               bullet1Bounds.y + bullet1Bounds.height > bullet2Bounds.y;
+        return this.checkBoundsOverlap(bullet1Bounds, bullet2Bounds);
     }
 
-    checkTankTankCollision(tank1, tank2) {
-        if (!tank1 || !tank2 || tank1 === tank2) return false;
+    checkBoundsOverlap(bounds1, bounds2) {
+        const left1 = bounds1.x - bounds1.width / 2;
+        const right1 = bounds1.x + bounds1.width / 2;
+        const top1 = bounds1.y - bounds1.height / 2;
+        const bottom1 = bounds1.y + bounds1.height / 2;
 
-        const tank1Bounds = tank1.getBounds();
-        const tank2Bounds = tank2.getBounds();
-        return tank1Bounds.x < tank2Bounds.x + tank2Bounds.width &&
-               tank1Bounds.x + tank1Bounds.width > tank2Bounds.x &&
-               tank1Bounds.y < tank2Bounds.y + tank2Bounds.height &&
-               tank1Bounds.y + tank1Bounds.height > tank2Bounds.y;
+        const left2 = bounds2.x - bounds2.width / 2;
+        const right2 = bounds2.x + bounds2.width / 2;
+        const top2 = bounds2.y - bounds2.height / 2;
+        const bottom2 = bounds2.y + bounds2.height / 2;
+
+        return left1 < right2 &&
+               right1 > left2 &&
+               top1 < bottom2 &&
+               bottom1 > top2;
     }
 
     // 只判断坦克
     getMovableDistance(bounds, direction, excludeTank = null) {
-        const centerX = bounds.x;
-        const centerY = bounds.y;
-        const width = bounds.width;
-        const height = bounds.height;
         const allTanks = [this.gameUI.player, ...this.gameUI.enemies].filter((t) => t && t !== excludeTank);
+        const selfLeft = bounds.x - bounds.width / 2;
+        const selfRight = bounds.x + bounds.width / 2;
+        const selfTop = bounds.y - bounds.height / 2;
+        const selfBottom = bounds.y + bounds.height / 2;
 
         let minDistance = Infinity;
+
         for (const tank of allTanks) {
             const tankBounds = tank.getBounds();
-            const tankCenterX = tankBounds.x;
-            const tankCenterY = tankBounds.y;
-            const tankWidth = tankBounds.width;
-            const tankHeight = tankBounds.height;
+            const otherLeft = tankBounds.x - tankBounds.width / 2;
+            const otherRight = tankBounds.x + tankBounds.width / 2;
+            const otherTop = tankBounds.y - tankBounds.height / 2;
+            const otherBottom = tankBounds.y + tankBounds.height / 2;
+
+            const overlapX = selfLeft < otherRight && selfRight > otherLeft;
+            const overlapY = selfTop < otherBottom && selfBottom > otherTop;
+            if (overlapX && overlapY) {
+                return 0;
+            }
+
+            let crossAxisOverlap = false;
             let distance = Infinity;
 
             if (direction === 0) {
-                if (centerX - width / 2 < tankCenterX + tankWidth / 2 &&
-                    centerX + width / 2 > tankCenterX - tankWidth / 2) {
-                    distance = centerY - height / 2 - (tankCenterY + tankHeight / 2);
+                crossAxisOverlap = selfLeft < otherRight && selfRight > otherLeft;
+                if (crossAxisOverlap) {
+                    distance = selfTop - otherBottom;
                 }
             } else if (direction === 1) {
-                if (centerY - height / 2 < tankCenterY + tankHeight / 2 &&
-                    centerY + height / 2 > tankCenterY - tankHeight / 2) {
-                    distance = tankCenterX - tankWidth / 2 - (centerX + width / 2);
+                crossAxisOverlap = selfTop < otherBottom && selfBottom > otherTop;
+                if (crossAxisOverlap) {
+                    distance = otherLeft - selfRight;
                 }
             } else if (direction === 2) {
-                if (centerX - width / 2 < tankCenterX + tankWidth / 2 &&
-                    centerX + width / 2 > tankCenterX - tankWidth / 2) {
-                    distance = tankCenterY - tankHeight / 2 - (centerY + height / 2);
+                crossAxisOverlap = selfLeft < otherRight && selfRight > otherLeft;
+                if (crossAxisOverlap) {
+                    distance = otherTop - selfBottom;
                 }
             } else if (direction === 3) {
-                if (centerY - height / 2 < tankCenterY + tankHeight / 2 &&
-                    centerY + height / 2 > tankCenterY - tankHeight / 2) {
-                    distance = centerX - width / 2 - (tankCenterX + tankWidth / 2);
+                crossAxisOverlap = selfTop < otherBottom && selfBottom > otherTop;
+                if (crossAxisOverlap) {
+                    distance = selfLeft - otherRight;
                 }
             }
 
-            if (distance < minDistance) {
+            if (!crossAxisOverlap) continue;
+            if (distance >= 0 && distance < minDistance) {
                 minDistance = distance;
             }
         }
 
-        if (minDistance === Infinity || minDistance < 0) {
-            return 1000;
+        if (!Number.isFinite(minDistance)) {
+            return minDistance;
         }
-        return minDistance;
+        return Math.max(0, Math.floor(minDistance));
     }
 
     isInBounds(x, y) {

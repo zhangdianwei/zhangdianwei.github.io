@@ -24,7 +24,7 @@ export default class TankEnemy extends TankBase {
         super.onAppearFinish();
         this.checkAI(0);
         this.setMoving(true);
-        this.setShooting(true);
+        // this.setShooting(true);
     }
 
     resetShootTimer(mode = 'normal') {
@@ -36,7 +36,7 @@ export default class TankEnemy extends TankBase {
     }
 
     update(deltaTime) {
-        // this.checkAI(deltaTime);
+        this.checkAI(deltaTime);
         super.update(deltaTime);
     }
 
@@ -60,7 +60,7 @@ export default class TankEnemy extends TankBase {
         // 射击逻辑
         if (this.shootTimer <= 0) {
             this.resetShootTimer();
-            this.setShootOnce(true); // 直接射击
+            // this.setShootOnce(true); // 直接射击
         }
     }
 

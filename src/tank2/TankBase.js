@@ -85,6 +85,9 @@ export default class TankBase extends PIXI.Container {
     }
     
     setDirection(direction) {
+        if (this.direction !== direction) {
+            this.checkCorrectPath();
+        }
         this.direction = direction;
         this.tankSprites.forEach(sprite => sprite.rotation = direction * (Math.PI / 2));
     }
@@ -131,13 +134,11 @@ export default class TankBase extends PIXI.Container {
 
         if (this.isMoving) {
             let allowed = map.getMovableDistance(this.getBounds(), this.direction);
-            if (allowed <= 0) {
-                this.checkCorrectPath();
-                allowed = map.getMovableDistance(this.getBounds(), this.direction);
-            }
             let allowed2 = this.tankApp.ui.getMovableDistance(this.getBounds(), this.direction, this);
-            allowed = Math.min(allowed, allowed2);
-            let frameSpeed = this.speed * deltaTime;
+            const allowedMap = Number.isFinite(allowed) ? Math.max(0, Math.floor(allowed)) : allowed;
+            const allowedTank = Number.isFinite(allowed2) ? Math.max(0, Math.floor(allowed2)) : allowed2;
+            allowed = Math.min(allowedMap, allowedTank);
+            let frameSpeed = Math.floor(this.speed * deltaTime);
             let movable = Math.min(allowed, frameSpeed);
             
             if (movable > 0) {

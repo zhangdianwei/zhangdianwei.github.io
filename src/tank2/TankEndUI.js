@@ -205,7 +205,7 @@ export default class TankEndUI extends PIXI.Container {
         
         // 从levels.json获取关卡总数
         const totalLevels = allLevels.length;
-        return this.tankApp.playerData.levelId-1 >= totalLevels;
+        return this.tankApp.playerData.levelId >= totalLevels - 1;
     }
     
     updateTitleAndButton() {

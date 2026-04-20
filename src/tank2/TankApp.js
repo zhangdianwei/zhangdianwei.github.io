@@ -39,13 +39,13 @@ export class TankApp {
         this.uiContainer = new PIXI.Container();
         this.pixi.stage.addChild(this.uiContainer);
         this.uiContainer.position.set(this.pixi.screen.width / 2, this.pixi.screen.height / 2);
-        this.uiContainer.alpha = 0.1;
+        // this.uiContainer.alpha = 0.1;
 
         this.ticker = new Ticker();
         this.ticker.tick((dt) => this.update(dt), 0);
 
         this.playerData = new TankPlayerData();
-        this.setScreen('TankGameUI');
+        this.setScreen('TankStartUI');
     }
 
     setScreen(name) {

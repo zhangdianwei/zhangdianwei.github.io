@@ -3,11 +3,11 @@ import { Dir } from './TileType.js';
 
 const ENEMY_AI_CONFIG = {
     // 换向决策间隔（秒）：越小越频繁换方向
-    directionIntervalMin: 1.2,
-    directionIntervalMax: 1.8,
+    directionIntervalMin: 6,
+    directionIntervalMax: 10,
     // 射击决策间隔（秒）：到点后按概率判断是否开火
-    shootIntervalMin: 1.3,
-    shootIntervalMax: 2.2,
+    shootIntervalMin: 4,
+    shootIntervalMax: 8,
     // 与当前方向相反方向的权重惩罚（<1表示不爱掉头）
     reversePenalty: 0.5,
     // 维持当前方向的轻微加权（>1表示更容易保持方向）
@@ -15,7 +15,7 @@ const ENEMY_AI_CONFIG = {
     // 遇阻重选时，对“继续原方向”的额外惩罚
     blockedKeepDirectionPenalty: 0.3,
     // 常态开火概率
-    baseShootChance: 0.25,
+    baseShootChance: 0.5,
     // 前方同轴看到目标时的开火概率
     lineupShootChance: 0.65,
     // 方向基础权重（下方权重更高，营造压家感）

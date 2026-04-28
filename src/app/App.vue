@@ -54,6 +54,7 @@ const categoryRoutes = [
       { id: "d-puzzle", title: "拼图演示", comp: ShowVideo, link: 'video/puzzle.mp4' },
       { id: "d-ice", title: "冰块演示", comp: ShowVideo, link: 'video/ice.mp4' },
       { id: "d-door", title: "传送门", comp: ShowVideo, link: 'video/door.mp4' },
+      { id: "d-turret", title: "炮塔演示", comp: ShowVideo, link: 'video/turret.mp4' },
     ]
   },
   {

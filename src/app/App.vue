@@ -17,6 +17,7 @@ import SplitImage from "../comp/SplitImage.vue"
 import GameMatch from "../match/GameMatch.vue"
 import ImagePacker from "../comp/ImagePacker.vue"
 import TetrisMain from "../tetris/TetrisMain.vue"
+import NodeEditor from "../doodle/NodeEditor.vue"
 
 function isMobile() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -69,6 +70,7 @@ const categoryRoutes = [
     children: [
       { id: "ThreeHello", title: "ThreeHello", comp: ThreeHello },
       { id: "CurveRopePixi", title: "曲线绳子(Pixi)", comp: CurveRopePixi },
+      { id: "NodeEditor", title: "节点编辑器", comp: NodeEditor },
     ]
   }
 ]

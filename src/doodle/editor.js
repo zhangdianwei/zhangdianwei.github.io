@@ -1,7 +1,7 @@
 import { reactive } from "vue";
 import { Node, isNode } from "./Node.js";
 import { CompShape, vert } from "./CompShape.js";
-import { CompAnim } from "./CompAnim.js";
+import { CompAnim, Track } from "./CompAnim.js";
 import { vertsBounds, designBounds, subtreeBounds } from "./geom.js";
 import { saveNodeToJson } from "./serialize.js";
 import { adapt, relayout, syncPos } from "./adapt.js";
@@ -30,14 +30,14 @@ export function setDesignSize(w, h) { if (w) adapt.design.w = w; if (h) adapt.de
 export function setDevice(i) { adapt.deviceIndex = i; relayoutEditor(); }
 
 export function setPosType(t) {
-  for (const n of selectedNodesList()) {
+  for (const n of editableNodes()) {
     if (t === "percent" && n.posType !== "percent") { const b = n.parent?._box || adapt.rect; n.posPct = { x: n.x / b.w + 0.5, y: n.y / b.h + 0.5 }; }
     n.posType = t;
   }
   relayoutEditor();
 }
 export function setSizeType(t) {
-  for (const n of selectedNodesList()) {
+  for (const n of editableNodes()) {
     const b = n.parent?._box || adapt.rect, box = n._box || { w: 100, h: 100 };
     if (t === "fixed" && n.sizeType !== "fixed") n.size = { w: box.w, h: box.h };
     if (t === "percent" && n.sizeType !== "percent") n.sizePct = { x: box.w / b.w || 1, y: box.h / b.h || 1 };
@@ -46,14 +46,14 @@ export function setSizeType(t) {
   relayoutEditor();
 }
 export function setPos(axis, v) {
-  for (const n of selectedNodesList()) {
+  for (const n of editableNodes()) {
     if (n.posType === "percent") n.posPct[axis] = v;
     else n[axis] = v;
   }
   relayoutEditor();
 }
 export function setSize(axis, v) {
-  for (const n of selectedNodesList()) {
+  for (const n of editableNodes()) {
     if (n.sizeType === "fixed") n.size[axis === "x" ? "w" : "h"] = v;
     else if (n.sizeType === "percent") n.sizePct[axis] = v;
   }
@@ -86,7 +86,7 @@ export function clearSelection() { editor.selectedIds = []; editor.selectedVertI
 
 // —— 模式
 export function enterShape(id = editor.selectedIds[0]) {
-  if (!id) return;
+  if (!id || id === editor.root?.id) return;
   editor.mode = "shape"; editor.editingId = id; editor.selectedVertIds = []; editor.rev++;
 }
 export function exitShape() {
@@ -105,10 +105,24 @@ export function newNode(make, pos) {
   fitSize([n]);        // 初始尺寸 = 子树内容包围框(含 relayout)
   selectNodes([n.id]);
 }
-// 按内容包围框重置为固定尺寸
+// 把内容形心平移到节点原点(视觉不变):内容 -c,节点位置 +R·S·c 补偿
+// 使 localBounds(恒居中原点)与偏心图形吻合
+function centerContent(n, b) {
+  const cx = (b.minX + b.maxX) / 2, cy = (b.minY + b.maxY) / 2;
+  if (!cx && !cy) return;
+  for (const c of n._comps) if (c instanceof CompShape) { c.verts.forEach(v => { v.x -= cx; v.y -= cy; }); c.redraw(); }
+  for (const c of n.children) if (isNode(c)) { c.x -= cx; c.y -= cy; syncPos(c); }
+  const dx = cx * n.scale.x, dy = cy * n.scale.y, t = n.rotation;
+  n.x += dx * Math.cos(t) - dy * Math.sin(t);
+  n.y += dx * Math.sin(t) + dy * Math.cos(t);
+  syncPos(n);
+}
+// 按内容包围框重置为固定尺寸(并把内容居中到原点)
 export function fitSize(nodes = selectedNodesList()) {
   for (const n of nodes) {
+    if (n === editor.root) continue;
     const b = subtreeBounds(n) || { minX: -50, minY: -50, maxX: 50, maxY: 50 };
+    centerContent(n, b);
     n.sizeType = "fixed";
     n.size = { w: Math.round(b.maxX - b.minX), h: Math.round(b.maxY - b.minY) };
   }
@@ -127,7 +141,7 @@ export function removeComps(Cls) {
   relayoutEditor();
 }
 export function nudge(dx, dy) {
-  const nodes = editor.selectedIds.map(id => findNode(id)).filter(Boolean);
+  const nodes = editableNodes();
   for (const n of nodes) { n.x += dx; n.y += dy; syncPos(n); }
   if (nodes.length) editor.rev++;
 }
@@ -147,7 +161,7 @@ export function removeSelected() {
 
 // —— 缩放归一:把 scale 烘焙进顶点,使 scale=1 而形状不变
 export function normalizeScale() {
-  for (const n of editor.selectedIds.map(id => findNode(id)).filter(Boolean)) {
+  for (const n of editableNodes()) {
     const s = n?.getComp(CompShape);
     const sx = n.scale.x, sy = n.scale.y;
     if (s && (sx !== 1 || sy !== 1)) {
@@ -224,6 +238,8 @@ export function alignVerts(type) {
 export function selectedNodesList() {
   return editor.selectedIds.map(id => findNode(id)).filter(Boolean);
 }
+// 物件级操作的目标:排除 root(root 是适配/相机容器,变换由 relayout 托管)
+export const editableNodes = () => selectedNodesList().filter(n => n !== editor.root);
 export function selectedVertsList() {
   const s = selectedShape();
   return s ? s.verts.filter(v => editor.selectedVertIds.includes(v.id)) : [];
@@ -252,7 +268,7 @@ export function distributeVerts(axis) {
 
 // —— 重置变换
 export function resetTransform(field) {
-  for (const n of selectedNodesList()) {
+  for (const n of editableNodes()) {
     if (field === "pos") { n.x = 0; n.y = 0; syncPos(n); }
     else if (field === "rot") n.rotation = 0;
     else if (field === "scale") n.scale.set(1, 1);
@@ -285,7 +301,7 @@ export function moveNode(dragId, targetId, pos) {
 
 // —— node 位置排列
 export function arrangeNodes(kind) {
-  const ns = selectedNodesList();
+  const ns = editableNodes();
   if (ns.length < 3) return;
   const cx = ns.reduce((a, n) => a + n.x, 0) / ns.length;
   const cy = ns.reduce((a, n) => a + n.y, 0) / ns.length;
@@ -339,17 +355,81 @@ export function arrangeVerts(kind) {
 export const rootAnim = () => editor.root?.getComp(CompAnim);
 export function setPlaying(v) {
   editor.playing = v;
-  eachNode(n => { const a = n?.getComp(CompAnim); if (a) a.playing = v; });
+  eachNode(n => {
+    const a = n?.getComp(CompAnim); if (!a) return;
+    if (v && a.current && !a.current.loop && a.time >= a.current.duration) a.time = 0;   // 停在末尾再播 → 从头
+    a.playing = v;
+  });
   editor.rev++;
 }
 export function playClip(name) { const a = rootAnim(); if (!a) return; a.play(name); editor.time = 0; editor.rev++; }
 export function addClip() {
   const a = rootAnim(); if (!a) return;
   let i = 1, name; do { name = "clip_" + i++; } while (a.clips[name]);
-  a.addClip(name, [], true); a.play(name); editor.rev++;
+  a.addClip(name, [], false); a.play(name); editor.rev++;
 }
 export function removeClip(name) { const a = rootAnim(); if (!a) return; a.removeClip(name); a.play(a.firstClip()); editor.rev++; }
 export function setClipLoop(v) { const a = rootAnim(); if (a?.current) { a.current.loop = v; editor.rev++; } }
+export function renameClip(old, name) { const a = rootAnim(); if (!a) return; a.renameClip(old, (name || "").trim()); editor.rev++; }
+export function setClipDuration(frames) { const a = rootAnim(); if (a?.currentName) { a.setDuration(a.currentName, frames); editor.rev++; } }
+
+// —— 关键帧录制 / 编辑(时间以帧为单位)
+export function sceneMapNow() { const m = new Map(); eachNode(n => m.set(n.id, n)); return m; }
+export function rebindAnim() { rootAnim()?.bind(sceneMapNow()); }
+
+// 在当前帧记录 node 某属性(propPath 相对 root:transform/x、#id/transform/x)
+export function recordKeyframe(node, propPath, value) {
+  const a = rootAnim(); if (!a?.current) return;
+  const target = node === editor.root ? propPath : "#" + node.id + "/" + propPath;
+  const c = a.current;
+  let tr = c.tracks.find(t => t.target === target);
+  if (!tr) { tr = new Track(target, []); c.tracks.push(tr); tr.bind(editor.root, sceneMapNow()); }
+  const t = Math.round(editor.time);
+  const i = tr.keys.findIndex(k => k.t === t);
+  if (i >= 0) tr.keys[i].value = value;
+  else { tr.keys.push({ t, value }); tr.keys.sort((x, y) => x.t - y.t); }
+  if (t > c.duration) c.duration = t;
+}
+export function recordProps(node, entries) {
+  if (!node) return;
+  for (const [path, value] of entries) recordKeyframe(node, path, value);
+  editor.rev++;
+}
+// 当前帧该属性是否已有关键帧(Inspector 菱形实心/空心)
+export function keyframeAt(node, propPath) {
+  const a = rootAnim(); if (!a?.current || !node) return false;
+  const target = node === editor.root ? propPath : "#" + node.id + "/" + propPath;
+  const tr = a.current.tracks.find(t => t.target === target);
+  return !!tr && tr.keys.some(k => k.t === Math.round(editor.time));
+}
+export function moveKeyframe(track, key, frame) {
+  const a = rootAnim(); if (!a?.current) return;
+  key.t = Math.max(0, Math.min(a.current.duration, Math.round(frame)));
+  track.keys.sort((x, y) => x.t - y.t); editor.rev++;
+}
+export function setKeyframeEase(key, ease) { if (key) { key.ease = ease; editor.pixi?.seek(editor.time); editor.rev++; } }
+export function removeKeyframe(track, key) {
+  const a = rootAnim(); if (!a?.current) return;
+  track.keys = track.keys.filter(k => k !== key);
+  if (!track.keys.length) a.current.tracks = a.current.tracks.filter(t => t !== track);
+  editor.rev++;
+}
+// 应用动画预设:基于节点当前变换值生成 track,覆盖同属性旧轨道
+export function applyPreset(node, preset) {
+  const a = rootAnim(); if (!a?.current || !node) return;
+  const b = { x: node.x, y: node.y, sx: node.scale.x, sy: node.scale.y, rot: node.rotation, a: node.alpha || 1 };
+  const dur = a.current.duration;
+  for (const spec of preset.build(b)) {
+    const target = node === editor.root ? spec.path : "#" + node.id + "/" + spec.path;
+    a.current.tracks = a.current.tracks.filter(t => t.target !== target);
+    const tr = new Track(target, spec.keys.map(k => ({ t: Math.round(k.tf * dur), value: k.value, ease: k.ease })));
+    tr.bind(editor.root, sceneMapNow());
+    a.current.tracks.push(tr);
+  }
+  editor.pixi?.seek(0);
+  setPlaying(true);   // 从头自动播放一次预览
+  editor.rev++;
+}
 
 // —— 右键菜单构建
 export function buildMenu(pos, hits = []) {

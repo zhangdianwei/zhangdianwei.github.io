@@ -4,9 +4,12 @@ import { CompShape } from "../CompShape.js";
 import { CompText, CompProgress, CompButton } from "../ui.js";
 import { editor, touch, selectedNodesList, selectedVertsList, selectedShape, resetTransform, setPosType, setSizeType, setPos, setSize, addCompByKey, removeComps, fitSize } from "../editor.js";
 import { ADD_COMPS } from "../comps.js";
+import RecordBtn from "./RecordBtn.vue";
 
 const nodeMode = computed(() => { editor.rev; return editor.mode === "node"; });
+const isRoot = computed(() => { editor.rev; return selectedNodesList().some(n => n === editor.root); });
 const nodesLen = computed(() => { editor.rev; return selectedNodesList().length; });
+const mainNode = computed(() => { editor.rev; return selectedNodesList()[0] || null; });
 const shapesLen = computed(() => { editor.rev; return shapes().length; });
 const vertsLen = computed(() => { editor.rev; return selectedVertsList().length; });
 
@@ -51,6 +54,14 @@ const scaleX = multi(nodes, n => n.scale.x, (n, v) => n.scale.x = v);
 const scaleY = multi(nodes, n => n.scale.y, (n, v) => n.scale.y = v);
 const pivotX = multi(nodes, n => Math.round(n.pivot.x), (n, v) => n.pivot.x = v);
 const pivotY = multi(nodes, n => Math.round(n.pivot.y), (n, v) => n.pivot.y = v);
+const alpha = multi(nodes, n => Math.round(n.alpha * 100) / 100, (n, v) => n.alpha = v);
+// 记录按钮:一属性一轨道,read 返回分量数组(变换类)
+const RB = {
+  pos: { path: "transform/pos", read: n => [n.x, n.y] },
+  rot: { path: "transform/rotation", read: n => [n.rotation] },
+  scale: { path: "transform/scale", read: n => [n.scale.x, n.scale.y] },
+  alpha: { path: "transform/alpha", read: n => [n.alpha] },
+};
 
 // —— 样式
 const fillOn = first(shapes, s => s.fillEnabled, (s, v) => s.fillEnabled = v, dirtyShapes);
@@ -97,8 +108,11 @@ const openV = ref(["v"]);
 </script>
 
 <template>
+  <!-- root:适配/相机容器,无可编辑属性 -->
+  <div v-if="isRoot"></div>
+
   <!-- node 模式 -->
-  <div v-if="nodeMode && nodesLen">
+  <div v-else-if="nodeMode && nodesLen">
     <Collapse v-model="openN" simple>
       <Panel name="t">基础
         <template #content>
@@ -109,6 +123,7 @@ const openV = ref(["v"]);
             <InputNumber v-model="px" size="small" placeholder="—" :step="1" :precision="0" />
             <InputNumber v-model="py" size="small" placeholder="—" :step="1" :precision="0" />
             <Button size="small" icon="md-refresh" title="重置" @click="resetTransform('pos')" />
+            <RecordBtn :node="mainNode" :rb="RB.pos" />
           </div>
           <div class="row">
             <label>大小</label>
@@ -126,11 +141,18 @@ const openV = ref(["v"]);
             <label>缩放</label><span class="ty" />
             <InputNumber v-model="scaleX" size="small" :step="0.1" :precision="2" placeholder="—" /><InputNumber v-model="scaleY" size="small" :step="0.1" :precision="2" placeholder="—" />
             <Button size="small" icon="md-refresh" title="重置" @click="resetTransform('scale')" />
+            <RecordBtn :node="mainNode" :rb="RB.scale" />
           </div>
           <div class="row">
             <label>旋转</label><span class="ty" />
             <InputNumber v-model="rotDeg" size="small" placeholder="—" /><span class="fill" />
             <Button size="small" icon="md-refresh" title="重置" @click="resetTransform('rot')" />
+            <RecordBtn :node="mainNode" :rb="RB.rot" />
+          </div>
+          <div class="row">
+            <label>透明</label><span class="ty" />
+            <Slider v-model="alpha" :min="0" :max="1" :step="0.05" />
+            <RecordBtn :node="mainNode" :rb="RB.alpha" />
           </div>
         </template>
       </Panel>

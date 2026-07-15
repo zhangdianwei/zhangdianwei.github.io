@@ -7,15 +7,17 @@ import { buildScene } from "./scene.js";
 import { CompAnim } from "./CompAnim.js";
 import { adapt, relayout } from "./adapt.js";
 import MenuBar from "./panels/MenuBar.vue";
-import SceneTree from "./panels/SceneTree.vue";
 import Inspector from "./panels/Inspector.vue";
-import Timeline from "./panels/Timeline.vue";
+import AnimEditor from "./panels/AnimEditor.vue";
 import ContextMenu from "./panels/ContextMenu.vue";
 import VertRadius from "./panels/VertRadius.vue";
 
 const canvas = ref(null);
 const menu = ref(null);
-let app = null;
+const splitL = ref(0.12);   // 左空 / 其余
+const splitR = ref(0.78);   // 中列(舞台+时间轴) / Inspector
+const splitV = ref(0.66);   // 舞台 / 时间轴
+let app = null, ro = null;
 
 function onKey(e) {
   const t = e.target;
@@ -48,10 +50,17 @@ onMounted(() => {
   fit();
   app.renderer.on("resize", fit);
   window.addEventListener("keydown", onKey);
+  // pixi resizeTo 只感知 window;拖 Split 改变的是元素尺寸,需用 ResizeObserver 同步
+  ro = new ResizeObserver(() => {
+    const el = canvas.value; if (!app || !el || !el.clientWidth || !el.clientHeight) return;
+    app.renderer.resize(el.clientWidth, el.clientHeight);
+  });
+  ro.observe(canvas.value);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", onKey);
+  ro?.disconnect();
   editor.pixi?.dispose?.();
   app?.destroy(true, { children: true });
   editor.app = editor.root = editor.pixi = null;
@@ -62,11 +71,21 @@ onBeforeUnmount(() => {
   <div class="editor">
     <div class="bar top"><MenuBar /></div>
     <div class="body">
-      <div class="side left"><SceneTree /></div>
-      <div class="stage"><div ref="canvas" class="cv"></div></div>
-      <div class="side right"><Inspector /></div>
+      <Split v-model="splitL" mode="horizontal" min="5%" max="40%">
+        <template #left><div class="side left"></div></template>
+        <template #right>
+          <Split v-model="splitR" mode="horizontal" min="40%" max="92%">
+            <template #left>
+              <Split v-model="splitV" mode="vertical" min="30%" max="88%">
+                <template #top><div class="stage" @contextmenu.prevent><div ref="canvas" class="cv"></div></div></template>
+                <template #bottom><div class="animwrap"><AnimEditor /></div></template>
+              </Split>
+            </template>
+            <template #right><div class="side right"><Inspector /></div></template>
+          </Split>
+        </template>
+      </Split>
     </div>
-    <div class="bar bottom"><Timeline /></div>
     <VertRadius />
 
     <div v-if="menu" class="ctx-mask" @pointerdown="menu = null" @contextmenu.prevent="menu = null">
@@ -79,12 +98,11 @@ onBeforeUnmount(() => {
 .editor { display: flex; flex-direction: column; height: 100vh; background: #fff; }
 .bar { padding: 8px 12px; background: #f8f8f9; flex: none; }
 .bar.top { border-bottom: 1px solid #e8eaec; }
-.bar.bottom { border-top: 1px solid #e8eaec; }
-.body { flex: 1; min-height: 0; display: flex; }
-.side { flex: none; overflow: auto; background: #fff; }
-.side.left { width: 220px; border-right: 1px solid #e8eaec; padding: 8px; }
-.side.right { width: 288px; border-left: 1px solid #e8eaec; padding: 8px; }
-.stage { flex: 1; min-width: 0; background: linear-gradient(135deg, #eef1fb 0%, #d8f7ec 100%); }
+.body { flex: 1; min-height: 0; position: relative; }
+.side { height: 100%; overflow: auto; background: #fff; box-sizing: border-box; }
+.side.right { padding: 8px; }
+.stage { height: 100%; background: linear-gradient(135deg, #eef1fb 0%, #d8f7ec 100%); }
 .cv { width: 100%; height: 100%; }
+.animwrap { height: 100%; background: #fff; border-top: 1px solid #e8eaec; overflow: hidden; }
 .ctx-mask { position: fixed; inset: 0; z-index: 999; }
 </style>

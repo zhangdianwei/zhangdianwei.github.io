@@ -26,10 +26,10 @@ const REG = [
     save: a => ({
       current: a.currentName,
       clips: Object.fromEntries(Object.entries(a.clips).map(([name, c]) =>
-        [name, { loop: c.loop, tracks: c.tracks.map(t => ({ target: t.target, keys: t.keys.map(k => ({ t: k.t, value: k.value })) })) }])),
+        [name, { loop: c.loop, duration: c.duration, tracks: c.tracks.map(t => ({ target: t.target, keys: t.keys.map(k => ({ t: k.t, value: [...k.value], ease: k.ease })) })) }])),
     }),
     load: d => new CompAnim(Object.fromEntries(Object.entries(d.clips).map(([name, c]) =>
-      [name, { loop: c.loop, tracks: c.tracks.map(t => new Track(t.target, t.keys.map(k => ({ ...k })))) }]))),
+      [name, { loop: c.loop, duration: c.duration, tracks: c.tracks.map(t => new Track(t.target, t.keys.map(k => ({ t: k.t, value: [...k.value], ease: k.ease })))) }]))),
   },
   {
     type: "text", cls: CompText,

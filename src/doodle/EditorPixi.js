@@ -3,7 +3,7 @@ import { markRaw } from "vue";
 import { isNode } from "./Node.js";
 import { CompShape } from "./CompShape.js";
 import { CompAnim } from "./CompAnim.js";
-import { editor, selectNodes, toggleNode, clearSelection, enterShape, exitShape, setPlaying, findNode, insertVertex } from "./editor.js";
+import { editor, selectNodes, toggleNode, clearSelection, enterShape, exitShape, setPlaying, findNode, insertVertex, rebindAnim } from "./editor.js";
 import { pointInPoly, vertsBounds, worldBounds, rectsIntersect, normRect, pointToSegment, localBounds } from "./geom.js";
 import { loadNodeFromJson } from "./serialize.js";
 import { tick } from "./runtime.js";
@@ -11,6 +11,7 @@ import { adapt, relayout, syncPos } from "./adapt.js";
 
 const HANDLE = 6;
 const HIT = 9;
+const PICK = 14;   // 顶点命中半径(屏幕像素,恒定,不随视图缩放)
 
 export class EditorPixi {
   constructor(app, root) {
@@ -158,7 +159,7 @@ export class EditorPixi {
 
     if (editor.selectedIds.length === 1) {
       const node = findNode(editor.selectedIds[0]);
-      const h = node && this._hitGizmo(node, g);
+      const h = node && node !== this.root && this._hitGizmo(node, g);
       if (h) { this.drag = h; return; }
     }
 
@@ -176,11 +177,17 @@ export class EditorPixi {
     }
   }
 
+  _vertAt(node, s, g) {   // 屏幕像素阈值命中顶点,与视图缩放无关
+    return s.verts.find(v => {
+      const sp = node.toGlobal({ x: v.x, y: v.y });
+      return Math.hypot(sp.x - g.x, sp.y - g.y) <= PICK;
+    });
+  }
   _downShape(g, shift) {
     const node = findNode(editor.editingId), s = node?.getComp(CompShape);
     if (!s) return;
     const p = node.toLocal(g);
-    const hit = s.verts.find(v => Math.hypot(v.x - p.x, v.y - p.y) <= HANDLE + 3);
+    const hit = this._vertAt(node, s, g);
     if (hit) {
       if (shift) {
         const set = new Set(editor.selectedVertIds);
@@ -207,7 +214,7 @@ export class EditorPixi {
     const node = findNode(editor.editingId), s = node?.getComp(CompShape);
     if (!s) { this.hoverEdge = null; return; }
     const p = node.toLocal(g);
-    if (s.verts.some(v => Math.hypot(v.x - p.x, v.y - p.y) <= HANDLE + 3)) { this.hoverEdge = null; return; }
+    if (this._vertAt(node, s, g)) { this.hoverEdge = null; return; }
     const n = s.verts.length, segs = s.closed ? n : n - 1;
     let best = null;
     for (let i = 0; i < segs; i++) {
@@ -318,7 +325,7 @@ export class EditorPixi {
     let cur = "default";
     if (editor.selectedIds.length === 1) {
       const n = findNode(editor.selectedIds[0]);
-      const h = n && this._hitGizmo(n, g);
+      const h = n && n !== this.root && this._hitGizmo(n, g);
       if (h) cur = h.type === "anchor" ? "move" : h.type === "rotate" ? "grab" : (h.ci % 2 === 0 ? "nwse-resize" : "nesw-resize");
     }
     this.app.view.style.cursor = cur;
@@ -345,7 +352,10 @@ export class EditorPixi {
   _tick() {
     tick(this.app.ticker.deltaMS / 1000);
     const a = this.root?.getComp(CompAnim);
-    if (a) { editor.time = a.time; editor.duration = a.current?.duration || 0; }
+    if (a) {
+      editor.time = a.time; editor.duration = a.current?.duration || 0;
+      if (editor.playing && !a.playing) setPlaying(false);   // 动画播完自停 → 同步编辑器播放态
+    }
     this._overlay();
   }
 
@@ -408,7 +418,7 @@ export class EditorPixi {
     } else {
       const ids = editor.selectedIds;
       if (ids.length === 1) {
-        const n = findNode(ids[0]); if (n) this._drawGizmo(o, n);
+        const n = findNode(ids[0]); if (n && n !== this.root) this._drawGizmo(o, n);
       } else {
         for (const id of ids) { const n = findNode(id); if (n) this._box(o, this._worldBox(n)); }
       }
@@ -421,8 +431,11 @@ export class EditorPixi {
   }
 
   seek(t) {
-    const a = this.root?.getComp(CompAnim); if (!a) return;
-    const p = a.playing; a.playing = true; a.time = t; a.advance(0); a.playing = p;
+    const a = this.root?.getComp(CompAnim); if (!a?.current) return;
+    a.time = t;   // 直接采样,不走 advance 的循环取模(否则末帧会被弹回首帧)
+    const dirty = new Set();
+    for (const tr of a.current.tracks) { const s = tr.apply(t); if (s) dirty.add(s); }
+    for (const s of dirty) s.redraw();
     editor.time = t; editor.rev++;
   }
 
@@ -433,6 +446,7 @@ export class EditorPixi {
     this.root = root;
     editor.root = markRaw(root);
     clearSelection();
+    rebindAnim();
     setPlaying(editor.playing);
     relayout(root);
   }

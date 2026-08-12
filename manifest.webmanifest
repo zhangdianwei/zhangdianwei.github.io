@@ -1,0 +1,10 @@
+{
+  "name": "ZhangDW Projects",
+  "short_name": "ZhangDW",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "background_color": "#f3f7f5",
+  "theme_color": "#f3f7f5"
+}

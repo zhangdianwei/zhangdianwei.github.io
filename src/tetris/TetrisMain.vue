@@ -37,6 +37,7 @@ const onTexturesLoaded = (textures) => {
 };
 
 onUnmounted(() => {
+    game.destroy();
     window.game = null;
 });
-</script> 
+</script>

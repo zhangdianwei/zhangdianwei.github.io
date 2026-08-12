@@ -1,0 +1,88 @@
+:root {
+  --page-background: #f3f7f5;
+  --surface-color: #ffffff;
+  --surface-muted: #edf2ef;
+  --text-color: #21332b;
+  --text-muted: #66776f;
+  --text-subtle: #98a49e;
+  --border-color: #dfe6e2;
+  --accent-color: #17684f;
+  --radius: 6px;
+  --shadow: 0 10px 28px rgba(31, 55, 45, 0.09);
+  color: var(--text-color);
+  background: var(--page-background);
+  font-family: Inter, "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  background-color: #fbfcfa;
+  background-image:
+    linear-gradient(rgba(91, 137, 145, 0.075) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(91, 137, 145, 0.075) 1px, transparent 1px),
+    linear-gradient(rgba(91, 137, 145, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(91, 137, 145, 0.03) 1px, transparent 1px);
+  background-size: 96px 96px, 96px 96px, 24px 24px, 24px 24px;
+}
+
+.project-shell {
+  background-image: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.game-container {
+  width: 100%;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #edf2ef;
+}
+
+.page-loading {
+  min-height: 60vh;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 14px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.layout-fullscreen .page-loading {
+  min-height: 100dvh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

@@ -354,18 +354,18 @@ function onClickItem(catIndex, itemIndex) {
 </script>
 
 <template>
-    <Row>
-        <Col :span="4">
-        <Card v-for="cat, catIndex in Data">
+    <Row :gutter="16" class="shader-layout">
+        <Col :xs="24" :lg="5">
+        <Card v-for="cat, catIndex in Data" :key="cat.name" dis-hover class="shader-menu">
             <template #title>
                 <!-- <Icon type="md-desktop" /> -->
                 <h3>{{ cat.name }}</h3>
             </template>
-            <Button v-for="item, itemIndex in cat.children" @click="onClickItem(catIndex, itemIndex)">{{ item.name
+            <Button v-for="item, itemIndex in cat.children" :key="item.name" long @click="onClickItem(catIndex, itemIndex)">{{ item.name
                 }}</Button>
         </Card>
         </Col>
-        <Col :span="10">
+        <Col :xs="24" :lg="9">
         <div ref="tresCanvasParentRef" class="tresCanvasBorder">
             <TresCanvas clear-color="#FDF5E6">
                 <TresPerspectiveCamera :position="[0, 0, 5]"></TresPerspectiveCamera>
@@ -379,7 +379,7 @@ function onClickItem(catIndex, itemIndex) {
             </TresCanvas>
         </div>
         </Col>
-        <Col :span="10">
+        <Col :xs="24" :lg="10">
         <!-- <Checkbox v-model="showAxesHelper">是否显示坐标系</Checkbox> -->
         <Divider orientation="left">顶点着色器</Divider>
         <div ref="codeContainerV"></div>
@@ -391,9 +391,20 @@ function onClickItem(catIndex, itemIndex) {
 
 <style lang="css" scoped>
 .tresCanvasBorder {
-    border: 1px solid black;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
     width: 100%;
-    height: 100%;
-    /* aspect-ratio: 1; */
+    height: 500px;
+}
+
+.shader-menu { border-color: var(--border-color); }
+.shader-menu + .shader-menu { margin-top: 12px; }
+.shader-menu :deep(.ivu-btn) { margin-top: 8px; text-align: left; }
+
+@media (max-width: 991px) {
+    .shader-layout { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin: 0 !important; }
+    .shader-layout > :deep(.ivu-col) { width: 100%; min-width: 0; padding: 0 !important; }
+    .tresCanvasBorder { height: 420px; }
 }
 </style>

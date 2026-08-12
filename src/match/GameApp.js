@@ -67,7 +67,8 @@ class GameApp {
         this.initBounds();
 
         // 设置物理更新循环
-        this.pixi.ticker.add(this.updatePhysics.bind(this));
+        this.updatePhysicsHandler = this.updatePhysics.bind(this);
+        this.pixi.ticker.add(this.updatePhysicsHandler);
 
         // 初始化管理器
         this.renderManager = new RenderManager(this);
@@ -288,7 +289,7 @@ class GameApp {
     destroy() {
         // 清理物理同步
         if (this.pixi && this.pixi.ticker) {
-            this.pixi.ticker.remove(this.updatePhysics);
+            this.pixi.ticker.remove(this.updatePhysicsHandler);
         }
 
         // 销毁管理器

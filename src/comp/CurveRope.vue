@@ -1,6 +1,7 @@
 <script setup>
 
 import { OrbitControls } from '@tresjs/cientos'
+import { TresCanvas } from '@tresjs/core'
 import { reactive, ref, shallowRef, watch } from 'vue';
 import { Plane, Raycaster, LineSegments, WireframeGeometry, TextureLoader, ArrowHelper, Vector3, CanvasTexture, SpriteMaterial, Sprite, QuadraticBezierCurve, Points, Vector2, BufferGeometry, LineBasicMaterial, Line, Mesh, BufferAttribute, MeshBasicMaterial, PointsMaterial } from 'three';
 

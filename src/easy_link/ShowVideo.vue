@@ -1,28 +1,26 @@
-<template>
-    <!-- <video :src="props.link"></video> -->
-    <video :src="props.link" :style="iFrameStyle" controls autoplay loop></video>
-</template>
-
 <script setup>
-import { ref, onMounted } from 'vue';
+import { computed } from 'vue'
 
 const props = defineProps({
-    link: String,
-    width: Number,
-    height: Number,
+  src: { type: String, required: true },
+  width: Number,
+  height: Number,
 })
 
-const iFrameStyle = ref(null);
-onMounted(() => {
-    var width = props.width ? `${width}px` : `100%`;
-    var height = props.height ? `${height}px` : `100vh`;
-
-    iFrameStyle.value = {
-        width,
-        height,
-    }
-});
-
-
-
+const videoStyle = computed(() => ({
+  width: props.width ? `${props.width}px` : '100%',
+  height: props.height ? `${props.height}px` : '100dvh',
+}))
 </script>
+
+<template>
+  <video :src="props.src" :style="videoStyle" controls autoplay loop playsinline />
+</template>
+
+<style scoped>
+video {
+  display: block;
+  object-fit: contain;
+  background: #111;
+}
+</style>

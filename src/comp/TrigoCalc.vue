@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, nextTick, watch } from "vue";
+import { onMounted, ref, nextTick, watch } from "vue";
 
 const std_value = ref(0);
 const data_angle = ref(0);
@@ -98,23 +98,75 @@ onMounted(() => {
 </script>
 
 <template>
-    <Row justify="center">
-        <Col :xs="24" :sm="16" :md="10" :lg="8" :xl="6">
-        <div
-            style="margin-top:32px; padding:24px 12px; background:#fff; border-radius:12px; box-shadow:0 2px 8px #f0f1f2;">
-            <h1 style="text-align:center;">三角函数计算器</h1>
-            <Input type="number" v-model="data_angle" style="margin-bottom: 12px;"><template
-                #prepend>角度</template></Input>
-            <Input type="number" v-model="data_radian" style="margin-bottom: 12px;"><template
-                #prepend>弧度</template></Input>
-            <Input type="number" v-model="data_sin" style="margin-bottom: 12px;"><template
-                #prepend>正弦</template></Input>
-            <Input type="number" v-model="data_cos" style="margin-bottom: 12px;"><template
-                #prepend>余弦</template></Input>
-            <Input type="number" v-model="data_tan" style="margin-bottom: 12px;"><template
-                #prepend>正切</template></Input>
-            <Input type="number" v-model="data_cot"><template #prepend>余切</template></Input>
-        </div>
-        </Col>
-    </Row>
+    <div class="calculator-page">
+        <Card dis-hover class="calculator-card">
+            <div class="tool-heading">
+                <span class="tool-icon"><Icon type="md-calculator" size="21" /></span>
+                <div>
+                    <h2>三角函数换算</h2>
+                    <p>数值工具</p>
+                </div>
+            </div>
+            <div class="input-list">
+                <Input v-model="data_angle" type="number"><template #prepend>角度</template></Input>
+                <Input v-model="data_radian" type="number"><template #prepend>弧度</template></Input>
+                <Input v-model="data_sin" type="number"><template #prepend>正弦</template></Input>
+                <Input v-model="data_cos" type="number"><template #prepend>余弦</template></Input>
+                <Input v-model="data_tan" type="number"><template #prepend>正切</template></Input>
+                <Input v-model="data_cot" type="number"><template #prepend>余切</template></Input>
+            </div>
+        </Card>
+    </div>
 </template>
+
+<style scoped>
+.calculator-page {
+    display: flex;
+    justify-content: center;
+    padding: 36px 0;
+}
+
+.calculator-card {
+    width: min(440px, 100%);
+    border-color: var(--border-color);
+}
+
+.tool-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.tool-icon {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    flex: none;
+    border-radius: var(--radius);
+    background: var(--surface-muted);
+    color: var(--accent-color);
+}
+
+.tool-heading h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.tool-heading p {
+    margin: 3px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.input-list {
+    display: grid;
+    gap: 12px;
+}
+
+@media (max-width: 640px) {
+    .calculator-page { padding: 12px 0; }
+}
+</style>

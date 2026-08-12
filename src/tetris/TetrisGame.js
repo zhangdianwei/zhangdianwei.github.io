@@ -176,6 +176,18 @@ class TetrisGame {
             })
             .start();
     }
+
+    destroy() {
+        this.currentView?.safeRemoveSelf();
+        this.currentView = null;
+        this.pixi?.ticker.remove(this.update, this);
+        this.pixi?.destroy(true, { children: true });
+        this.pixi = null;
+        this.root = null;
+        this.uiRoot = null;
+        this.toastRoot = null;
+        this.eventListeners = {};
+    }
 }
 
 export default TetrisGame;

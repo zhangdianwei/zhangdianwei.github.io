@@ -6,6 +6,11 @@ export default class DragManager {
         this.isDragging = false;
         this.currentDragCell = null;
         this.dragCellQueue = [];
+        this.handlers = {
+            down: this.startDrag.bind(this),
+            move: this.updateDrag.bind(this),
+            up: this.endDrag.bind(this),
+        };
         this.initDragSystem();
     }
 
@@ -13,10 +18,10 @@ export default class DragManager {
         this.gameApp.cells.eventMode = 'static';
         this.gameApp.cells.hitArea = new PIXI.Rectangle(0, 0, this.gameApp.pixi.screen.width, this.gameApp.pixi.screen.height);
 
-        this.gameApp.cells.on('pointerdown', this.startDrag.bind(this));
-        this.gameApp.cells.on('pointermove', this.updateDrag.bind(this));
-        this.gameApp.cells.on('pointerup', this.endDrag.bind(this));
-        this.gameApp.cells.on('pointerupoutside', this.endDrag.bind(this));
+        this.gameApp.cells.on('pointerdown', this.handlers.down);
+        this.gameApp.cells.on('pointermove', this.handlers.move);
+        this.gameApp.cells.on('pointerup', this.handlers.up);
+        this.gameApp.cells.on('pointerupoutside', this.handlers.up);
     }
 
     startDrag(event) {
@@ -203,10 +208,10 @@ export default class DragManager {
     destroy() {
         // 清理事件监听器
         if (this.gameApp.cells) {
-            this.gameApp.cells.off('pointerdown', this.startDrag.bind(this));
-            this.gameApp.cells.off('pointermove', this.updateDrag.bind(this));
-            this.gameApp.cells.off('pointerup', this.endDrag.bind(this));
-            this.gameApp.cells.off('pointerupoutside', this.endDrag.bind(this));
+            this.gameApp.cells.off('pointerdown', this.handlers.down);
+            this.gameApp.cells.off('pointermove', this.handlers.move);
+            this.gameApp.cells.off('pointerup', this.handlers.up);
+            this.gameApp.cells.off('pointerupoutside', this.handlers.up);
         }
     }
-} 
+}

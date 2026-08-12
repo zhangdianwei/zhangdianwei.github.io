@@ -140,10 +140,6 @@ function visibleDiscards(index) {
   return game.players[index].discards.slice(-18)
 }
 
-function goHome() {
-  window.location.hash = ''
-}
-
 onMounted(game.startGame)
 watch(() => game.message.value, (value) => {
   const match = value.match(/(吃|碰|杠)牌/)
@@ -174,7 +170,6 @@ onBeforeUnmount(() => {
       </div>
       <span class="mahjong-status"><i></i>{{ statusText }}</span>
       <ButtonGroup class="mahjong-tools">
-        <Button icon="md-arrow-back" title="返回作品首页" aria-label="返回作品首页" @click="goHome" />
         <Button v-if="isDebug" icon="md-trophy" title="直接判定玩家胜利" aria-label="直接判定玩家胜利" :disabled="!game.isPlaying.value" @click="debugWin" />
         <Button icon="md-person" :type="autoPlay ? 'primary' : 'default'" :title="autoPlay ? '关闭自动代打' : '开启自动代打'" :aria-label="autoPlay ? '关闭自动代打' : '开启自动代打'" @click="autoPlay = !autoPlay" />
         <Button :icon="soundOn ? 'md-volume-up' : 'md-volume-off'" :type="soundOn ? 'primary' : 'default'" :title="soundOn ? '关闭音效' : '打开音效'" :aria-label="soundOn ? '关闭音效' : '打开音效'" @click="soundOn = !soundOn" />

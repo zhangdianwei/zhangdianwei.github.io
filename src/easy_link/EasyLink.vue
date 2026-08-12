@@ -1,27 +1,26 @@
-<template>
-    <iframe :src="props.link" :style="iFrameStyle"></iframe>
-</template>
-
 <script setup>
-import { ref, onMounted } from 'vue';
+import { computed } from 'vue'
 
 const props = defineProps({
-    link: String,
-    width: Number,
-    height: Number,
+  src: { type: String, required: true },
+  width: Number,
+  height: Number,
 })
 
-const iFrameStyle = ref(null);
-onMounted(() => {
-    var width = props.width ? `${width}px` : `100%`;
-    var height = props.height ? `${height}px` : `100vh`;
-
-    iFrameStyle.value = {
-        width,
-        height,
-    }
-});
-
-
-
+const frameStyle = computed(() => ({
+  width: props.width ? `${props.width}px` : '100%',
+  height: props.height ? `${props.height}px` : '100dvh',
+}))
 </script>
+
+<template>
+  <iframe :src="props.src" :style="frameStyle" :title="props.src" allowfullscreen />
+</template>
+
+<style scoped>
+iframe {
+  display: block;
+  border: 0;
+  background: #fff;
+}
+</style>

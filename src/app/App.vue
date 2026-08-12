@@ -18,6 +18,7 @@ import GameMatch from "../match/GameMatch.vue"
 import ImagePacker from "../comp/ImagePacker.vue"
 import TetrisMain from "../tetris/TetrisMain.vue"
 import NodeEditor from "../doodle/NodeEditor.vue"
+import MahjongGame from "../majiang/MahjongGame.vue"
 
 function isMobile() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -39,6 +40,7 @@ const categoryRoutes = [
       { id: "Game2048", title: "Game2048", comp: Game2048, img: "preview/Game2048.png" },
       { id: "TankGame", title: "坦克大战", comp: TankGame, img: "preview/TankMain.png", platforms: ["desktop"] },
       { id: "TetrisMain", title: "俄罗斯方块", comp: TetrisMain, img: "preview/tetris.png" },
+      { id: "MahjongGame", title: "青雀麻将", comp: MahjongGame, img: "preview/mahjong.png" },
     ]
   },
   {
@@ -265,4 +267,3 @@ function onClickItem(routeData) {
   gap: 4px;
 }
 </style>
-

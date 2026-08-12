@@ -1,258 +1,336 @@
-# 小游戏开发示例文档
+# 内置小游戏框架
 
-本文档描述本项目里小游戏的标准写法，照着做即可新增一个基于 PIXI 的小游戏。
+本目录用于重写项目内置小游戏。固定结构为：
 
-## 整体结构
-
-一个游戏由四层组成，职责单一：
-
-```
-XxxGame.vue   # 入口：只管 Vue 生命周期、加载资源、创建/销毁 App
-XxxApp.js     # 主控：单例，持有 pixi/ticker/textures/data，负责界面切换
-XxxData.js    # 数据：纯游戏数据(分数/关卡/玩家状态)，无渲染，挂在 app.data
-XxxUI.js      # 界面：一个 PIXI.Container 就是一个界面(开始/游戏/结算)
+```text
+Vue 入口 -> App -> DialogMgr -> Dialog -> 功能 Mgr
 ```
 
-数据流：`XxxGame.vue` 加载完纹理 → 调 `XxxApp.instance.init()` → App 用 `pushDialog` 挂第一个界面 → 界面之间通过 `pushDialog/popDialog/replaceDialog` 切换。
+金币骑士、田园扫雷、拼图游戏是内嵌网页，不使用本框架。
 
----
+## 所有权
 
-## 入口 XxxGame.vue
+- Vue 入口只创建和销毁 App。
+- App 持有 Pixi 运行环境、资源、公共数据、`dialogMgr` 和少量 App 级通用 Mgr。
+- `DialogMgr` 只管理 Dialog 栈和界面切换。
+- Dialog 是功能边界，负责创建和销毁当前界面需要的功能 Mgr。
+- 功能 Mgr 不能挂到 App，也不能比所属 Dialog 活得更久。
 
-只做三件事：预加载纹理、初始化 App、卸载时销毁 App。业务逻辑一律不写在这里。
+```text
+XxxApp
+├── audioMgr
+├── storageMgr
+├── visibilityMgr
+├── data
+└── dialogMgr
+    ├── StartDialog
+    ├── PlayDialog
+    │   ├── InputMgr
+    │   ├── RuleMgr
+    │   └── EnemyMgr
+    └── ResultDialog
+```
+
+`GameApp` 默认提供 `app.data` 普通对象。跨界面保留的分数、配置或进度放在其中，不创建 `DataMgr`。
+
+## 目录结构
+
+```text
+src/xxx/
+  XxxGame.vue
+  XxxApp.js
+  XxxData.js              可选
+  dialogs/
+    StartDialog.js
+    PlayDialog.js
+    ResultDialog.js
+  mgrs/
+    InputMgr.js            按需要创建
+    RuleMgr.js
+```
+
+功能简单时可以减少 Dialog 和 Mgr 文件，不创建空层级。
+
+## Vue 入口
 
 ```vue
-<template>
-    <div class="game-container">
-        <TextureLoader :textureUrls="textureUrls" @loaded="onTexturesLoaded" />
-        <canvas ref="gameContainer"></canvas>
-    </div>
-</template>
-
 <script setup>
-import { ref, onUnmounted } from 'vue';
-import TextureLoader from '../game-common/TextureLoader.vue';
-import { XxxApp } from './XxxApp.js';
+import { onBeforeUnmount, ref } from 'vue'
+import GameCanvas from '../game-common/GameCanvas.vue'
+import XxxApp from './XxxApp.js'
 
-const gameContainer = ref(null);
-const textureUrls = ref([
-    'xxx/player.png',
-    'xxx/enemy.png',
-]);
+const view = ref(null)
+const textureUrls = ['xxx/player.png']
+let game
 
-const app = XxxApp.instance;
+function start(textures) {
+  game?.destroy()
+  game = new XxxApp(textures)
+  game.init(view.value.canvas)
+}
 
-const onTexturesLoaded = (textures) => {
-    app.textures = textures;
-    app.init(gameContainer.value);
-};
-
-onUnmounted(() => {
-    app.makeDead();
-});
+onBeforeUnmount(() => game?.destroy())
 </script>
+
+<template>
+  <GameCanvas ref="view" :texture-urls="textureUrls" @ready="start" />
+</template>
 ```
 
-- 纹理路径相对 `public/`，例如 `'xxx/player.png'` 指向 `public/xxx/player.png`。
-- `canvas` 用 `ref` 拿到后传给 `app.init`。
+入口中不写界面切换、输入、规则或定时器。
 
----
+## App
 
-## 主控 XxxApp.js
-
-单例，是整个游戏的“全局对象”。持有 pixi、ticker、纹理、玩家数据，并负责界面切换。
+继承 `GameApp`，通常只需要设置画布参数和打开第一个 Dialog。
 
 ```javascript
-import * as PIXI from 'pixi.js';
-import { createGameApp } from '../game-common/createGameApp.js';
-import XxxData from './XxxData.js';
-import XxxStartUI from './XxxStartUI.js';
-import XxxGameUI from './XxxGameUI.js';
-import XxxEndUI from './XxxEndUI.js';
+import { GameApp, gameColors } from '../game-common/index.js'
+import StartDialog from './dialogs/StartDialog.js'
 
-export class XxxApp {
-    static _instance;
+export default class XxxApp extends GameApp {
+  constructor(textures) {
+    super(textures, {
+      shortSide: 640,
+      backgroundColor: gameColors.paper,
+    })
+    this.data.score = 0
+  }
 
-    constructor() {
-        this.pixi = null;
-        this.textures = {};
-        this.data = null;          // 游戏数据(XxxData)
-        this.dialogs = [];         // 界面栈，栈顶是当前界面
-        this.uiContainer = null;   // 界面容器，原点在屏幕中心
-    }
-
-    static get instance() {
-        if (!XxxApp._instance) {
-            XxxApp._instance = new XxxApp();
-        }
-        return XxxApp._instance;
-    }
-
-    init(domElement) {
-        // 屏幕适配 + 创建 PIXI 应用
-        this.pixi = createGameApp(domElement, 640);
-
-        // 界面容器放到屏幕中心，界面内部坐标以中心为原点
-        this.uiContainer = new PIXI.Container();
-        this.pixi.stage.addChild(this.uiContainer);
-        this.uiContainer.position.set(this.winW / 2, this.winH / 2);
-
-        // 主循环，转发给当前界面
-        this.pixi.ticker.add(this.update, this);
-
-        // 创建游戏数据
-        this.data = new XxxData();
-
-        // 挂第一个界面
-        this.pushDialog(new XxxStartUI());
-    }
-
-    get topDialog() {
-        return this.dialogs[this.dialogs.length - 1];
-    }
-
-    // 压栈：新界面盖在上面，旧界面隐藏
-    pushDialog(dialog) {
-        if (this.topDialog) this.topDialog.visible = false;
-        this.dialogs.push(dialog);
-        this.uiContainer.addChild(dialog);
-    }
-
-    // 弹栈：移除栈顶，回到上一个界面
-    popDialog() {
-        const dialog = this.dialogs.pop();
-        if (dialog) dialog.removeFromParent();
-        if (this.topDialog) this.topDialog.visible = true;
-    }
-
-    // 替换栈顶：弹掉当前再压入新界面
-    replaceDialog(dialog) {
-        this.popDialog();
-        this.pushDialog(dialog);
-    }
-
-    update(dt) {
-        if (this.topDialog && this.topDialog.update) this.topDialog.update(dt);
-    }
-
-    get winW() { return this.pixi.screen.width; }
-    get winH() { return this.pixi.screen.height; }
-
-    makeDead() {
-        if (this.pixi) {
-            this.pixi.destroy(true);
-            this.pixi = null;
-        }
-        this.dialogs = [];
-        this.data = null;
-        this.uiContainer = null;
-    }
+  start() {
+    this.dialogMgr.push(StartDialog)
+  }
 }
 ```
 
-要点：
+不要把 `inputMgr`、`ruleMgr`、`enemyMgr` 等功能对象放到 App。
 
-- **单例**：`XxxApp.instance` 全局唯一，`window.app = app` 方便调试(可选)。
-- **init 顺序固定**：先用 `createGameApp` 适配屏幕并创建 PIXI 应用，再建容器，最后挂界面。
-- **界面切换只走 `pushDialog/popDialog/replaceDialog`**：`push` 压栈盖新界面(旧的隐藏)、`pop` 回上一个、`replace` 替换栈顶(开始→游戏这种整屏切换用它)。
-- **`makeDead` 必须清干净**：`pixi.destroy(true)` 会连带销毁子节点，Vue 卸载时调用，避免内存泄漏。
+## App 级 Mgr
 
----
+同时满足以下条件才挂到 App：
 
-## 界面 XxxUI.js
+- 生命周期与整个 App 一致。
+- 会被多个 Dialog 共用。
+- 不包含具体玩法和界面状态。
+- 离开任意一个 Dialog 后仍然有意义。
 
-一个界面 = 一个继承 `PIXI.Container` 的类。
+框架只提供三个模板：
+
+| Mgr | 职责 |
+| --- | --- |
+| `AudioMgr` | 加载、播放、暂停和关闭音频 |
+| `StorageMgr` | 按游戏命名空间读写本地数据 |
+| `VisibilityMgr` | 页面进入后台时暂停，回到前台时恢复 |
 
 ```javascript
-import * as PIXI from 'pixi.js';
+import {
+  AudioMgr,
+  GameApp,
+  StorageMgr,
+  VisibilityMgr,
+} from '../game-common/index.js'
 
-export default class XxxStartUI extends PIXI.Container {
-    constructor() {
-        super();
-    }
-  	update() {
-      
-    }
+export default class XxxApp extends GameApp {
+  constructor(textures) {
+    super(textures)
+    this.audioMgr = this.use(new AudioMgr())
+    this.storageMgr = this.use(new StorageMgr('xxx'))
+    this.visibilityMgr = this.use(new VisibilityMgr())
+  }
 }
 ```
 
-要点：
-
-- 界面尺寸都基于 `app.winW / winH` 按比例算，天然适配不同屏幕。
-- 需要每帧更新的界面(如游戏界面)实现 `update(dt)`，`XxxApp.update` 会自动转发给栈顶界面。
-
----
-
-## 数据 XxxData.js
-
-纯数据类，存分数、关卡、玩家状态等，不碰渲染。由 App 在 `init` 时创建并持有(`app.data`)，各界面通过 `this.app.data` 读写。
+App 级 Mgr 使用 `init(app)`、`pause()`、`resume()`、`destroy()` 生命周期。`app.pause()` 和 `app.resume()` 用于手动暂停；不同暂停原因会分别保留，不会因为页面恢复可见而误取消手动暂停。
 
 ```javascript
-export default class XxxData {
-    constructor() {
-        this.reset();
-    }
+await this.audioMgr.loadAll({ click: 'audio/click.mp3' })
+this.audioMgr.play('click')
 
-    reset() {
-        this.score = 0;
-        this.level = 1;
-    }
+const best = this.storageMgr.get('best', 0)
+this.storageMgr.set('best', Math.max(best, score))
+```
+
+新增通用 Mgr 时直接使用普通类，只实现需要的生命周期：
+
+```javascript
+export default class XxxMgr {
+  init(app) {
+    this.app = app
+  }
+
+  destroy() {
+    this.app = null
+  }
 }
 ```
 
-- 数据和界面分离：界面切换、重开游戏时数据仍在，只需 `app.data.reset()`。
+资源仍由 `GameCanvas` 加载，跨界面数据仍放在 `app.data`。事件总线、输入、规则、关卡、物理、敌人、结算和 HUD 都不是 App 级 Mgr。
 
----
+## DialogMgr
 
-## 公共组件速查
-
-`src/game-common/` 下的公共组件，直接复用，不要重写：
-
-### 屏幕适配 + 创建应用（createGameApp.js）
+App 初始化时会自动创建 `dialogMgr`。只使用三个切换方法：
 
 ```javascript
-import { createGameApp } from '../game-common/createGameApp.js';
-
-this.pixi = createGameApp(domElement, 640);
+this.app.dialogMgr.push(PauseDialog)
+this.app.dialogMgr.pop()
+this.app.dialogMgr.replace(PlayDialog, { level: 1 })
 ```
 
-- `designNum` 是正方形基准分辨率：不管横屏竖屏，短边恒等于 `designNum`，长边按实际屏幕比例伸展，不裁剪、不留黑边。
-- 用 `this.pixi.screen.width / this.pixi.screen.height` 读实际逻辑宽高（即 `winW/winH`）。
-- 横竖屏的具体布局怎么摆，由各游戏自己判断 `winW/winH` 的比值（>1 横屏，<1 竖屏）决定，公共代码不做假设。
+- `push`：隐藏当前界面，打开新界面。
+- `pop`：销毁当前界面，显示上一界面。
+- `replace`：销毁当前界面并替换为新界面。
 
-### 纹理预加载（TextureLoader.vue）
+只有栈顶 Dialog 每帧更新。尺寸变化时，栈内 Dialog 都会收到 `onResize(screen)`。
 
-```vue
-<TextureLoader :textureUrls="['xxx/a.png', 'xxx/b.png']" @loaded="onTexturesLoaded" />
-```
+## Dialog
 
-- `@loaded` 回调收到 `{ url: PIXI.Texture }` 映射；`textureUrls` 传 `[]` 会立即触发 `loaded`。
-- 加载失败或超时(默认 15s)会显示错误信息和"重试"按钮，不会卡死。
-
----
-
-## 接入首页
-
-游戏做好后，在 `src/app/App.vue` 的 `categoryRoutes` 里加一项，即可出现在首页：
+Dialog 继承 `GameDialog`，通过生命周期方法组织界面。
 
 ```javascript
-import XxxGame from "../xxx/XxxGame.vue";
+import { GameDialog } from '../../game-common/index.js'
+import InputMgr from '../mgrs/InputMgr.js'
+import RuleMgr from '../mgrs/RuleMgr.js'
+import ResultDialog from './ResultDialog.js'
 
-// 在某个分类的 children 里：
-{ id: "XxxGame", title: "我的游戏", comp: XxxGame, img: "preview/XxxGame.png" },
-// 只支持桌面端时加：platforms: ["desktop"]
+export default class PlayDialog extends GameDialog {
+  onCreate(options) {
+    this.inputMgr = this.use(new InputMgr())
+    this.ruleMgr = this.use(new RuleMgr(options))
+  }
+
+  onUpdate(delta) {
+    this.ruleMgr.update(delta)
+  }
+
+  onResize(screen) {
+    this.position.set(screen.width / 2, screen.height / 2)
+  }
+
+  finish(result) {
+    this.app.dialogMgr.replace(ResultDialog, result)
+  }
+}
 ```
 
-- `img` 是首页封面，放在 `public/preview/` 下。
-- `id` 是路由 hash，点击后 URL 变成 `#XxxGame`。
+可用生命周期：
 
----
+```text
+onCreate -> onResize -> onShow
+onHide -> onDestroy
+onUpdate
+```
 
-## 新建游戏步骤清单
+Dialog 自身的事件和定时器放入 `this.cleanup`。通过 `this.use(manager)` 登记的功能 Mgr 会在 Dialog 销毁时按创建的反向顺序销毁。
 
-1. 新建目录 `src/xxx/`，把游戏资源放到 `public/xxx/`。
-2. 写 `XxxApp.js`：单例 + `init` + `pushDialog/popDialog/replaceDialog` + `makeDead`。
-3. 写 `XxxData.js`：纯数据 + `reset`，在 `XxxApp.init` 里 new 出来挂到 `app.data`。
-4. 写各界面 `XxxStartUI.js / XxxGameUI.js / XxxEndUI.js`(继承 `PIXI.Container`)。
-5. 写入口 `XxxGame.vue`：`TextureLoader` 加载纹理 → `app.init` → `onUnmounted` 里 `app.makeDead`。
-6. 在 `src/app/App.vue` 的 `categoryRoutes` 注册路由，放好封面图。
+## 输入、事件和数据
+
+简单输入直接写在需要它的 Dialog 中：
+
+```javascript
+onCreate() {
+  this.onKeyDown = (event) => this.move(event.key)
+  this.cleanup.event(window, 'keydown', this.onKeyDown)
+}
+```
+
+只有按键映射、组合输入、长按或手柄等逻辑明显复杂时，才创建当前 Dialog 持有的 `InputMgr`：
+
+```javascript
+this.inputMgr = this.use(new InputMgr())
+```
+
+浏览器事件和 Pixi 事件都登记到 `cleanup`，不创建 `EventMgr`：
+
+```javascript
+this.cleanup.event(window, 'pointerup', this.onPointerUp)
+this.cleanup.pixi(button, 'pointertap', this.onStart)
+```
+
+同一 Dialog 内的功能直接调用，界面切换时通过参数传递数据：
+
+```javascript
+this.ruleMgr.move(direction)
+this.app.dialogMgr.replace(ResultDialog, { score: this.app.data.score })
+```
+
+`app.data` 只保存运行数据，`StorageMgr` 只负责需要跨会话保留的数据。两者都不承载规则逻辑。
+
+## 功能 Mgr
+
+Mgr 是某个 Dialog 内相对独立的功能，`init` 和 `destroy` 负责创建与销毁；需要跟随界面启停时再实现 `show` 和 `hide`：
+
+```javascript
+export default class InputMgr {
+  init(dialog) {
+    this.dialog = dialog
+    this.onKeyDown = (event) => this.handleKey(event.key)
+    dialog.cleanup.event(window, 'keydown', this.onKeyDown)
+  }
+
+  handleKey(key) {}
+
+  show() {}
+
+  hide() {}
+
+  destroy() {
+    this.dialog = null
+  }
+}
+```
+
+`GameDialog` 会自动转发 `show`、`hide` 和 `destroy`。只有逻辑确实独立时才创建 Mgr，几行代码直接写在 Dialog 内。
+
+Mgr 之间通过 Dialog 协作：
+
+```javascript
+this.dialog.ruleMgr.moveLeft()
+```
+
+不要互相持有多个全局引用，不使用事件总线解决同一界面内的简单调用。
+
+## 清理
+
+Dialog 内使用：
+
+```javascript
+this.cleanup.event(window, 'keydown', this.onKeyDown)
+this.cleanup.pixi(button, 'pointertap', this.onStart)
+this.cleanup.interval(() => this.spawn(), 2000)
+this.cleanup.timeout(() => this.finish(), 500)
+this.cleanup.add(() => this.app.pixi.ticker.remove(this.tick, this))
+```
+
+所有权决定销毁位置：
+
+- App 创建的运行环境、App 级 Mgr 和 `DialogMgr` 由 App 销毁。
+- Dialog 创建的显示对象、事件和功能 Mgr 由 Dialog 销毁。
+- Mgr 创建的内部对象由 Mgr 销毁。
+
+`destroy()` 应允许重复调用。
+
+## 视觉约定
+
+复用 `gameTheme.js`：
+
+- 浅纸色背景、深色文字、一个主色和一个强调色。
+- 边框约 2px，圆角约 8px，错位阴影约 4px。
+- 标题、正文和 HUD 使用 `gameText.title/body/hud`。
+- 开始页只放标题、简短玩法说明和一个主按钮。
+- 游戏中只显示玩法需要的 HUD。
+- 结算页只放结果、关键数据和重开按钮。
+- 不使用大面积渐变、发光、长动画或无意义粒子。
+
+每个游戏可以替换主色和强调色，其余层级保持一致。
+
+## 完成检查
+
+- 结构遵循 `App -> DialogMgr -> Dialog -> 功能 Mgr`。
+- App 只挂载跨 Dialog 的通用 Mgr，没有挂载具体功能 Mgr。
+- 输入按复杂度放在 Dialog 或 Dialog 级 `InputMgr`，没有全局输入 Mgr。
+- 使用浏览器或 Pixi 事件，没有 `EventMgr` 或事件总线。
+- 运行数据放在 `app.data`，没有 `DataMgr`。
+- Dialog 销毁时，其功能 Mgr、事件和定时器全部停止。
+- Vue 入口没有业务逻辑。
+- 没有单例或挂到 `window` 的游戏实例。
+- 横竖屏变化后内容仍在画面内。
+- 开始、游戏、结算界面的文字和按钮层级一致。

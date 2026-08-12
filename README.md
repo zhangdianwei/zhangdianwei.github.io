@@ -21,7 +21,7 @@ npm run build
 src/
   app/          首页、项目清单和公共页面外壳
   assets/       全局基础样式
-  game-common/  游戏公共能力
+  game-common/  内置小游戏模板、公共运行能力和重写指南
   pixi/         PixiJS 公共能力
   其他目录       独立游戏、工具或实验
 public/

@@ -1,29 +1,66 @@
-import * as PIXI from 'pixi.js';
+import * as PIXI from 'pixi.js'
 
-function fitSize(designNum) {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    return w < h
-        ? { width: designNum, height: Math.round(designNum * h / w) }
-        : { width: Math.round(designNum * w / h), height: designNum };
+const viewportSize = (canvas) => {
+  const parent = canvas.parentElement
+  return {
+    width: Math.max(1, parent?.clientWidth || window.innerWidth),
+    height: Math.max(1, parent?.clientHeight || window.innerHeight),
+  }
 }
 
-export function createGameApp(canvasElement, designNum) {
-    const { width, height } = fitSize(designNum);
+const worldSize = (width, height, shortSide) => width <= height
+  ? { width: shortSide, height: Math.round(shortSide * height / width) }
+  : { width: Math.round(shortSide * width / height), height: shortSide }
 
-    const pixi = new PIXI.Application({
-        view: canvasElement,
-        width,
-        height,
-        resolution: window.devicePixelRatio || 1,
-        autoDensity: true,
-        antialias: true,
-        backgroundAlpha: 0,
-    });
+export function createGameApp(canvas, options = {}) {
+  const {
+    shortSide = 640,
+    backgroundColor = 0xf7faf8,
+    backgroundAlpha = 1,
+    antialias = true,
+  } = options
+  const size = viewportSize(canvas)
+  const world = worldSize(size.width, size.height, shortSide)
+  const app = new PIXI.Application({
+    view: canvas,
+    width: world.width,
+    height: world.height,
+    resolution: Math.min(window.devicePixelRatio || 1, 2),
+    autoDensity: true,
+    antialias,
+    backgroundColor,
+    backgroundAlpha,
+  })
+  const listeners = new Set()
+  let destroyed = false
 
-    const scale = Math.min(window.innerWidth / width, window.innerHeight / height);
-    canvasElement.style.transform = `scale(${scale})`;
-    canvasElement.style.transformOrigin = 'center';
+  const resize = () => {
+    if (destroyed) return
+    const nextSize = viewportSize(canvas)
+    const nextWorld = worldSize(nextSize.width, nextSize.height, shortSide)
+    app.renderer.resize(nextWorld.width, nextWorld.height)
+    canvas.style.width = `${nextSize.width}px`
+    canvas.style.height = `${nextSize.height}px`
+    listeners.forEach((listener) => listener(app.screen))
+  }
 
-    return pixi;
+  const observer = new ResizeObserver(resize)
+  if (canvas.parentElement) observer.observe(canvas.parentElement)
+  resize()
+
+  return {
+    app,
+    resize,
+    onResize(listener) {
+      listeners.add(listener)
+      return () => listeners.delete(listener)
+    },
+    destroy() {
+      if (destroyed) return
+      destroyed = true
+      observer.disconnect()
+      listeners.clear()
+      app.destroy(false, { children: true })
+    },
+  }
 }

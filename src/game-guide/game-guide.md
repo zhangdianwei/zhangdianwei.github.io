@@ -56,7 +56,7 @@ src/xxx/
 ```vue
 <script setup>
 import { onBeforeUnmount, ref } from 'vue'
-import GameCanvas from '../game-common/GameCanvas.vue'
+import GameCanvas from '../game-guide/GameCanvas.vue'
 import XxxApp from './XxxApp.js'
 
 const view = ref(null)
@@ -84,7 +84,7 @@ onBeforeUnmount(() => game?.destroy())
 继承 `GameApp`，通常只需要设置画布参数和打开第一个 Dialog。
 
 ```javascript
-import { GameApp, gameColors } from '../game-common/index.js'
+import { GameApp, gameColors } from '../game-guide/index.js'
 import StartDialog from './dialogs/StartDialog.js'
 
 export default class XxxApp extends GameApp {
@@ -127,7 +127,7 @@ import {
   GameApp,
   StorageMgr,
   VisibilityMgr,
-} from '../game-common/index.js'
+} from '../game-guide/index.js'
 
 export default class XxxApp extends GameApp {
   constructor(textures) {
@@ -186,7 +186,7 @@ this.app.dialogMgr.replace(PlayDialog, { level: 1 })
 Dialog 继承 `GameDialog`，通过生命周期方法组织界面。
 
 ```javascript
-import { GameDialog } from '../../game-common/index.js'
+import { GameDialog } from '../../game-guide/index.js'
 import InputMgr from '../mgrs/InputMgr.js'
 import RuleMgr from '../mgrs/RuleMgr.js'
 import ResultDialog from './ResultDialog.js'

@@ -4,7 +4,7 @@ import { Button, Progress } from 'view-ui-plus'
 import * as PIXI from 'pixi.js'
 
 const props = defineProps({
-  textureUrls: { type: Array, default: () => [] },
+  textures: { type: Object, default: () => ({}) },
   timeout: { type: Number, default: 15000 },
 })
 const emit = defineEmits(['loaded'])
@@ -26,24 +26,25 @@ async function load() {
   loading.value = true
   failedUrl.value = ''
   progress.value = 0
-  const textures = {}
+  const loaded = {}
+  const entries = Object.entries(props.textures)
 
   try {
-    for (const [index, url] of props.textureUrls.entries()) {
-      textures[url] = await loadOne(url)
+    for (const [index, [name, url]] of entries.entries()) {
+      loaded[name] = await loadOne(url)
       if (id !== loadId) return
-      progress.value = Math.round((index + 1) / props.textureUrls.length * 100)
+      progress.value = Math.round((index + 1) / entries.length * 100)
     }
     if (id !== loadId) return
     loading.value = false
-    emit('loaded', textures)
+    emit('loaded', loaded)
   } catch (url) {
     if (id === loadId) failedUrl.value = String(url)
   }
 }
 
 onMounted(load)
-watch(() => props.textureUrls, load)
+watch(() => props.textures, load)
 onBeforeUnmount(() => { loadId++ })
 </script>
 
@@ -67,14 +68,14 @@ onBeforeUnmount(() => { loadId++ })
   z-index: 10;
   display: grid;
   place-items: center;
-  background: rgba(247, 250, 248, 0.94);
+  background: var(--game-loading-background, transparent);
 }
 
 .loader-panel {
   width: min(240px, 70vw);
   display: grid;
   gap: 12px;
-  color: #65766e;
+  color: var(--game-loading-color, inherit);
   font-size: 13px;
   text-align: center;
 }

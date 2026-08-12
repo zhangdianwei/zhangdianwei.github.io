@@ -13,7 +13,7 @@ export const projectCategories = [
       { id: 'jigsaw', title: '拼图游戏', image: 'preview/jigsaw.png', component: lazy(() => import('../easy_link/EasyLink.vue')), props: { src: 'jigsaw/index.html' }, layout: 'fullscreen' },
       { id: 'BallGame', title: '抓住狗屎运', image: 'preview/BallGame.png', component: lazy(() => import('../comp/BallGame.vue')), layout: 'fullscreen' },
       { id: 'GameMatch', title: '色彩连线', image: 'preview/GameMatch.png', component: lazy(() => import('../match/GameMatch.vue')), layout: 'fullscreen' },
-      { id: 'Game2048', title: '2048 贪吃蛇', image: 'preview/Game2048.png', component: lazy(() => import('../game2048/Game2048.vue')), layout: 'fullscreen' },
+      { id: 'Game2048', title: '数字贪吃蛇', image: 'preview/Game2048.png', component: lazy(() => import('../game2048/Game2048.vue')), layout: 'fullscreen' },
       { id: 'TankGame', title: '坦克大战', image: 'preview/TankMain.png', component: lazy(() => import('../tank2/TankGame.vue')), layout: 'fullscreen', platforms: ['desktop'] },
       { id: 'TetrisMain', title: '俄罗斯方块', image: 'preview/tetris.png', component: lazy(() => import('../tetris/TetrisMain.vue')), layout: 'fullscreen' },
       { id: 'MahjongGame', title: '青雀麻将', image: 'preview/mahjong.png', component: lazy(() => import('../majiang/MahjongGame.vue')), layout: 'fullscreen' },
@@ -55,7 +55,6 @@ export const projectCategories = [
     projects: [
       { id: 'ThreeHello', title: 'Three.js 场景', icon: 'md-cube', component: lazy(() => import('../comp/ThreeHello.vue')), layout: 'fullscreen' },
       { id: 'CurveRopePixi', title: '曲线绳带', icon: 'md-git-commit', component: lazy(() => import('../comp/CurveRopePixi.vue')) },
-      { id: 'NodeEditor', title: '节点编辑器', icon: 'md-git-branch', component: lazy(() => import('../doodle/NodeEditor.vue')), layout: 'fullscreen', platforms: ['desktop'] },
     ],
   },
 ]

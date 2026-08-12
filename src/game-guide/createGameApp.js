@@ -15,8 +15,8 @@ const worldSize = (width, height, shortSide) => width <= height
 export function createGameApp(canvas, options = {}) {
   const {
     shortSide = 640,
-    backgroundColor = 0xf7faf8,
-    backgroundAlpha = 1,
+    backgroundColor = 0x000000,
+    backgroundAlpha = 0,
     antialias = true,
   } = options
   const size = viewportSize(canvas)

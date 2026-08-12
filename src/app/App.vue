@@ -17,10 +17,12 @@ function selectProject(project) {
     Message.warning(`该项目仅支持${project.platforms.map((platform) => platformNames[platform]).join('、')}`)
     return
   }
-  const root = document.documentElement
-  const request = root.requestFullscreen || root.webkitRequestFullscreen
-  if (!document.fullscreenElement && !document.webkitFullscreenElement && request) {
-    Promise.resolve(request.call(root, { navigationUI: 'hide' })).catch(() => {})
+  if (currentPlatform() === 'mobile') {
+    const root = document.documentElement
+    const request = root.requestFullscreen || root.webkitRequestFullscreen
+    if (!document.fullscreenElement && !document.webkitFullscreenElement && request) {
+      Promise.resolve(request.call(root, { navigationUI: 'hide' })).catch(() => {})
+    }
   }
   window.location.hash = project.id
 }

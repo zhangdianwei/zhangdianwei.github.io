@@ -82,14 +82,6 @@ export default class AudioMgr {
     if (this.master) this.master.gain.value = this.muted ? 0 : this.volume
   }
 
-  pause() {
-    void this.context?.suspend()
-  }
-
-  resume() {
-    void this.context?.resume()
-  }
-
   destroy() {
     this.stopAll()
     void this.context?.close()

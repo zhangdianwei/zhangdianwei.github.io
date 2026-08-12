@@ -12,7 +12,7 @@ export default class DialogMgr {
   }
 
   push(DialogClass, ...args) {
-    this.current?.hide()
+    this.current?.deactivate()
     const dialog = new DialogClass(this.app)
     this.stack.push(dialog)
     this.root.addChild(dialog)
@@ -27,7 +27,7 @@ export default class DialogMgr {
     dialog.hide()
     this.root.removeChild(dialog)
     dialog.destroy()
-    this.current?.show()
+    this.current?.activate()
     return dialog
   }
 
@@ -60,7 +60,7 @@ export default class DialogMgr {
 
   destroy() {
     this.clear()
-    this.root.destroy()
+    this.root.destroy({ children: true })
     this.root = null
     this.app = null
   }

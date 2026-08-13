@@ -33,6 +33,8 @@ export function createGameApp(canvas, options = {}) {
   })
   const listeners = new Set()
   let destroyed = false
+  let rafId = null
+  let settleTimer = null
 
   const resize = () => {
     if (destroyed) return
@@ -44,8 +46,33 @@ export function createGameApp(canvas, options = {}) {
     listeners.forEach((listener) => listener(app.screen))
   }
 
-  const observer = new ResizeObserver(resize)
+  const scheduleResize = () => {
+    if (destroyed || rafId) return
+    rafId = requestAnimationFrame(() => {
+      rafId = null
+      resize()
+    })
+  }
+
+  const scheduleSettleResize = () => {
+    if (destroyed) return
+    clearTimeout(settleTimer)
+    settleTimer = setTimeout(scheduleResize, 300)
+  }
+
+  const observer = new ResizeObserver(scheduleResize)
   if (canvas.parentElement) observer.observe(canvas.parentElement)
+
+  window.addEventListener('resize', scheduleResize)
+  window.addEventListener('orientationchange', scheduleSettleResize)
+  document.addEventListener('fullscreenchange', scheduleSettleResize)
+  document.addEventListener('webkitfullscreenchange', scheduleSettleResize)
+  const visualViewport = window.visualViewport
+  if (visualViewport) {
+    visualViewport.addEventListener('resize', scheduleResize)
+    visualViewport.addEventListener('scroll', scheduleResize)
+  }
+
   resize()
 
   return {
@@ -59,6 +86,16 @@ export function createGameApp(canvas, options = {}) {
       if (destroyed) return
       destroyed = true
       observer.disconnect()
+      if (rafId) cancelAnimationFrame(rafId)
+      clearTimeout(settleTimer)
+      window.removeEventListener('resize', scheduleResize)
+      window.removeEventListener('orientationchange', scheduleSettleResize)
+      document.removeEventListener('fullscreenchange', scheduleSettleResize)
+      document.removeEventListener('webkitfullscreenchange', scheduleSettleResize)
+      if (visualViewport) {
+        visualViewport.removeEventListener('resize', scheduleResize)
+        visualViewport.removeEventListener('scroll', scheduleResize)
+      }
       listeners.clear()
       app.destroy(false, { children: true })
     },

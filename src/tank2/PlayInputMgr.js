@@ -1,4 +1,17 @@
-const MoveKeys = ['ArrowUp', 'KeyW', 'ArrowRight', 'KeyD', 'ArrowDown', 'KeyS', 'ArrowLeft', 'KeyA']
+import { TouchGamepad } from '../game-guide/index.js'
+
+const CodeToDir = {
+    ArrowUp: 0, KeyW: 0,
+    ArrowRight: 1, KeyD: 1,
+    ArrowDown: 2, KeyS: 2,
+    ArrowLeft: 3, KeyA: 3,
+}
+
+const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0
+
+function codeToDir(code) {
+    return code.startsWith('Touch') ? Number(code.slice(5)) : CodeToDir[code]
+}
 
 export default class PlayInputMgr {
     init(dialog) {
@@ -7,28 +20,41 @@ export default class PlayInputMgr {
 
         dialog.event(window, 'keydown', (event) => this.keyDown(event.code))
         dialog.event(window, 'keyup', (event) => this.keyUp(event.code))
+
+        if (isTouchDevice()) {
+            this.gamepad = new TouchGamepad({
+                buttons: ['A'],
+                onDirDown: (dir) => this.addMoveKey(`Touch${dir}`),
+                onDirUp: (dir) => this.removeMoveKey(`Touch${dir}`),
+                onButtonDown: () => this.setShooting(true),
+                onButtonUp: () => this.setShooting(false),
+            })
+            dialog.addChild(this.gamepad)
+        }
     }
 
     keyDown(keyCode) {
-        const player = this.dialog.gameView.player
-        if (!player) return
+        if (!this.dialog.gameView.player) return
 
-        if (MoveKeys.includes(keyCode)) {
+        if (codeToDir(keyCode) !== undefined) {
             this.addMoveKey(keyCode)
         } else if (keyCode === 'Space') {
-            player.setShooting(true)
+            this.setShooting(true)
         }
     }
 
     keyUp(keyCode) {
-        const player = this.dialog.gameView.player
-        if (!player) return
+        if (!this.dialog.gameView.player) return
 
-        if (MoveKeys.includes(keyCode)) {
+        if (codeToDir(keyCode) !== undefined) {
             this.removeMoveKey(keyCode)
         } else if (keyCode === 'Space') {
-            player.setShooting(false)
+            this.setShooting(false)
         }
+    }
+
+    setShooting(shooting) {
+        this.dialog.gameView.player?.setShooting(shooting)
     }
 
     addMoveKey(keyCode) {
@@ -46,26 +72,23 @@ export default class PlayInputMgr {
 
     checkMovePlayer() {
         const player = this.dialog.gameView.player
-        const last = this.moveKeys[this.moveKeys.length - 1]
+        if (!player) return
 
-        if (!last) {
+        const last = this.moveKeys[this.moveKeys.length - 1]
+        if (last === undefined) {
             player.setMoving(false)
-        } else if (last === 'ArrowUp' || last === 'KeyW') {
-            player.setDirection(0)
-            player.setMoving(true)
-        } else if (last === 'ArrowRight' || last === 'KeyD') {
-            player.setDirection(1)
-            player.setMoving(true)
-        } else if (last === 'ArrowDown' || last === 'KeyS') {
-            player.setDirection(2)
-            player.setMoving(true)
-        } else if (last === 'ArrowLeft' || last === 'KeyA') {
-            player.setDirection(3)
+        } else {
+            player.setDirection(codeToDir(last))
             player.setMoving(true)
         }
     }
 
+    layout(screen) {
+        this.gamepad?.layout(screen)
+    }
+
     destroy() {
+        this.gamepad = null
         this.dialog = null
     }
 }

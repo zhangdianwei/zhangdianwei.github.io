@@ -1,8 +1,7 @@
 import { WORLD } from './BallGameData.js'
 
 const collides = (a, b) => (
-  Math.abs(a.x - b.x) < (a.width + b.width) * 0.45
-  && Math.abs(a.y - b.y) < (a.height + b.height) * 0.45
+  Math.hypot(a.x - b.x, a.y - b.y) < a.radius + b.radius
 )
 
 export default class PlayRuleMgr {
@@ -12,47 +11,54 @@ export default class PlayRuleMgr {
 
   init(dialog) {
     this.dialog = dialog
-    this.position = 0
+    this.distance = 0
     this.direction = 1
     this.score = 0
     this.spawnElapsed = 0
     this.finished = false
-    dialog.gameView.setup(this.level)
+    this.track = dialog.gameView.setup(this.level)
   }
 
   reverse() {
     if (this.finished) return
     this.direction *= -1
+    this.dialog.gameView.reverse()
     this.dialog.app.audioMgr.play('click')
   }
 
   update(delta) {
     if (this.finished) return
     const step = Math.min(delta, 2.5)
-    this.position += this.level.speed * this.direction * step
+    const seconds = step / 60
+    this.distance += this.level.speed * this.direction * seconds
 
-    if (this.position >= 1 || this.position <= 0) {
-      this.position = Math.max(0, Math.min(1, this.position))
+    if (this.distance >= this.track.total || this.distance <= 0) {
+      this.distance = Math.max(0, Math.min(this.track.total, this.distance))
       this.direction *= -1
+      this.dialog.gameView.reverse()
     }
 
-    this.dialog.gameView.movePlayer(this.position, this.direction)
-    this.spawnElapsed += step * 1000 / 60
+    this.dialog.gameView.movePlayer(this.distance, this.direction, step)
+    this.spawnElapsed += seconds * 1000
     if (this.spawnElapsed >= this.level.interval) {
       this.spawnElapsed = 0
       const types = this.level.types
       this.dialog.gameView.spawn(types[Math.floor(Math.random() * types.length)])
     }
 
-    const player = this.dialog.gameView.player
-    const playerBox = { x: player.x, y: player.y, width: player.width, height: player.height }
+    const player = this.dialog.gameView.playerRoot
+    const playerBox = { x: player.x, y: player.y, radius: 43 }
     const obstacles = [...this.dialog.gameView.obstacles]
 
     for (const obstacle of obstacles) {
-      obstacle.sprite.y += 8 * step
-      if (obstacle.sprite.y > WORLD.height + 70) {
+      this.dialog.gameView.updateObstacle(obstacle, this.level.fallSpeed * seconds, step)
+      if (obstacle.root.y > WORLD.height + 70) {
         this.dialog.gameView.remove(obstacle)
-      } else if (collides(playerBox, obstacle.sprite)) {
+      } else if (collides(playerBox, {
+        x: obstacle.root.x,
+        y: obstacle.root.y,
+        radius: obstacle.type === 'bomb' ? 32 : 44,
+      })) {
         this.collect(obstacle)
         if (this.finished) break
       }
@@ -60,16 +66,18 @@ export default class PlayRuleMgr {
   }
 
   collect(obstacle) {
-    this.dialog.gameView.remove(obstacle)
-
     if (obstacle.type === 'bomb') {
       this.finished = true
+      this.dialog.gameView.explode(obstacle)
+      this.dialog.flash(0xff5f6d, 0.34)
       this.dialog.app.audioMgr.play('bomb')
       this.dialog.finish(false, this.score)
       return
     }
 
     this.score++
+    this.dialog.gameView.collect(obstacle)
+    this.dialog.flash(0xffd447, 0.1)
     this.dialog.hudView.setScore(this.score)
     this.dialog.app.audioMgr.play('collect')
     if (this.score >= this.level.target) {

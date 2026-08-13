@@ -8,6 +8,35 @@ import { projectCategories, projects } from './projects.js'
 const currentId = ref(window.location.hash.slice(1))
 const currentProject = computed(() => projects.find((project) => project.id === currentId.value))
 
+const updateViewportUnit = () => {
+  const height = window.visualViewport?.height || window.innerHeight
+  document.documentElement.style.setProperty('--app-vh', `${height * 0.01}px`)
+}
+let viewportRafId = null
+const scheduleViewportUpdate = () => {
+  if (viewportRafId) return
+  viewportRafId = requestAnimationFrame(() => {
+    viewportRafId = null
+    updateViewportUnit()
+  })
+}
+updateViewportUnit()
+const viewportEvents = [
+  [window, 'resize', scheduleViewportUpdate],
+  [window, 'orientationchange', scheduleViewportUpdate],
+  [document, 'fullscreenchange', scheduleViewportUpdate],
+  [document, 'webkitfullscreenchange', scheduleViewportUpdate],
+]
+if (window.visualViewport) {
+  viewportEvents.push([window.visualViewport, 'resize', scheduleViewportUpdate])
+  viewportEvents.push([window.visualViewport, 'scroll', scheduleViewportUpdate])
+}
+viewportEvents.forEach(([target, type, listener]) => target.addEventListener(type, listener))
+onBeforeUnmount(() => {
+  if (viewportRafId) cancelAnimationFrame(viewportRafId)
+  viewportEvents.forEach(([target, type, listener]) => target.removeEventListener(type, listener))
+})
+
 const platformNames = { mobile: '移动端', desktop: '桌面端' }
 const currentPlatform = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
 const supportsPlatform = (project) => !project.platforms || project.platforms.includes(currentPlatform())
@@ -15,6 +44,11 @@ const supportsPlatform = (project) => !project.platforms || project.platforms.in
 function selectProject(project) {
   if (!supportsPlatform(project)) {
     Message.warning(`该项目仅支持${project.platforms.map((platform) => platformNames[platform]).join('、')}`)
+    return
+  }
+  if (project.layout === 'fullscreen') {
+    const url = `${window.location.origin}${window.location.pathname}#${project.id}`
+    window.open(url, '_blank')
     return
   }
   if (currentPlatform() === 'mobile') {

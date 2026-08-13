@@ -29,6 +29,12 @@ export default class PlayGameView extends PIXI.Container {
         this.effects = []
     }
 
+    layout(viewport) {
+        const scale = Math.min(viewport.width / MapWidth, viewport.height / MapHeight)
+        this.scale.set(scale)
+        this.position.set(viewport.x + viewport.width / 2, viewport.y + viewport.height / 2)
+    }
+
     createMapBorder() {
         const border = new PIXI.Graphics()
         border.lineStyle(3, 0xFFFFFF, 0.5)

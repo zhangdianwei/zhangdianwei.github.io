@@ -23,6 +23,7 @@ defineExpose({ canvas })
   position: relative;
   width: 100%;
   height: 100dvh;
+  height: calc(var(--app-vh, 1vh) * 100);
   display: grid;
   place-items: center;
   overflow: hidden;

@@ -9,7 +9,7 @@ const props = defineProps({
 
 const frameStyle = computed(() => ({
   width: props.width ? `${props.width}px` : '100%',
-  height: props.height ? `${props.height}px` : '100dvh',
+  height: props.height ? `${props.height}px` : 'calc(var(--app-vh, 1vh) * 100)',
 }))
 </script>
 

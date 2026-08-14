@@ -14,7 +14,7 @@ export const projectCategories = [
       { id: 'BallGame', title: '抓住狗屎运', image: 'preview/BallGame.png', component: lazy(() => import('../ballgame/BallGame.vue')), layout: 'fullscreen' },
       { id: 'GameMatch', title: '色彩连线', image: 'preview/GameMatch.png', component: lazy(() => import('../match/GameMatch.vue')), layout: 'fullscreen' },
       { id: 'Game2048', title: '数字贪吃蛇', image: 'preview/Game2048.png', component: lazy(() => import('../game2048/Game2048.vue')), layout: 'fullscreen' },
-      { id: 'TankGame', title: '坦克大战', image: 'preview/TankMain.png', component: lazy(() => import('../tank2/TankGame.vue')), layout: 'fullscreen', platforms: ['desktop', 'mobile'] },
+      { id: 'TankGame', title: '坦克大战', image: 'preview/TankMain.png', component: lazy(() => import('../tank2/TankGame.vue')), layout: 'fullscreen' },
       { id: 'TetrisMain', title: '俄罗斯方块', image: 'preview/tetris.png', component: lazy(() => import('../tetris/TetrisMain.vue')), layout: 'fullscreen' },
       { id: 'MahjongGame', title: '青雀麻将', image: 'preview/mahjong.png', component: lazy(() => import('../majiang/MahjongGame.vue')), layout: 'fullscreen' },
     ],

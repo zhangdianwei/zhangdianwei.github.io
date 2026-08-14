@@ -1,5 +1,5 @@
 <script setup>
-import { Card, Icon, Tooltip } from 'view-ui-plus'
+import { Card, Icon } from 'view-ui-plus'
 
 defineProps({
   categories: { type: Array, required: true },
@@ -47,14 +47,6 @@ const emit = defineEmits(['select'])
           </div>
           <div class="project-meta">
             <h3>{{ project.title }}</h3>
-            <div v-if="project.platforms" class="platforms">
-              <Tooltip v-if="project.platforms.includes('mobile')" content="支持移动端" placement="top">
-                <Icon type="md-phone-portrait" size="16" />
-              </Tooltip>
-              <Tooltip v-if="project.platforms.includes('desktop')" content="支持桌面端" placement="top">
-                <Icon type="md-desktop" size="16" />
-              </Tooltip>
-            </div>
           </div>
         </Card>
       </div>
@@ -238,13 +230,6 @@ const emit = defineEmits(['select'])
   letter-spacing: 0;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.platforms {
-  display: flex;
-  gap: 6px;
-  flex: none;
-  color: var(--category-color);
 }
 
 @media (max-width: 920px) {

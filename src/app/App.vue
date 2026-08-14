@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { Message, Spin } from 'view-ui-plus'
+import { Spin } from 'view-ui-plus'
 import ProjectHome from './ProjectHome.vue'
 import ProjectShell from './ProjectShell.vue'
 import { projectCategories, projects } from './projects.js'
@@ -37,15 +37,9 @@ onBeforeUnmount(() => {
   viewportEvents.forEach(([target, type, listener]) => target.removeEventListener(type, listener))
 })
 
-const platformNames = { mobile: '移动端', desktop: '桌面端' }
 const currentPlatform = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
-const supportsPlatform = (project) => !project.platforms || project.platforms.includes(currentPlatform())
 
 function selectProject(project) {
-  if (!supportsPlatform(project)) {
-    Message.warning(`该项目仅支持${project.platforms.map((platform) => platformNames[platform]).join('、')}`)
-    return
-  }
   if (project.layout === 'fullscreen') {
     const url = `${window.location.origin}${window.location.pathname}#${project.id}`
     window.open(url, '_blank')
@@ -70,10 +64,6 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', updateHash))
 
 watch(currentProject, (project) => {
   document.title = project ? `${project.title} · ZhangDW` : 'ZhangDW Projects'
-  if (project && !supportsPlatform(project)) {
-    Message.warning(`该项目仅支持${project.platforms.map((platform) => platformNames[platform]).join('、')}`)
-    window.location.hash = ''
-  }
 }, { immediate: true })
 </script>
 

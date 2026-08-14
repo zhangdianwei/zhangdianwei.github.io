@@ -1,4 +1,4 @@
-import{k as z,x as W,G as Z}from"./trescientos-C4XzamHU.js";import{E as g,b,c as R}from"./index-CPSTaPT5.js";import{_ as $,r as p,A as M,f as q,w as J,z as v,o as _,h as T,j as t,e as n,a as D,F as I,x as E,d as a,t as L,k as C,u as P,p as K,l as O}from"./index-BvxA47Bm.js";const V=u=>(K("data-v-dc28537f"),u=u(),O(),u),Q=V(()=>a("TresPerspectiveCamera",{position:[0,0,5]},null,-1)),X=V(()=>a("TresAxesHelper",{args:[2]},null,-1)),Y=V(()=>a("TresBoxGeometry",{args:[2,2,2]},null,-1)),N=`
+import{k as z,x as W,G as Z}from"./trescientos-Szc8swVR.js";import{E as g,b,c as R}from"./index-CPSTaPT5.js";import{_ as $,r as p,A as M,e as q,w as J,z as v,o as _,d as T,i as t,h as n,a as D,F as I,x as E,g as a,t as L,j as C,u as P,p as K,l as O}from"./index-Csw3R96c.js";const V=u=>(K("data-v-dc28537f"),u=u(),O(),u),Q=V(()=>a("TresPerspectiveCamera",{position:[0,0,5]},null,-1)),X=V(()=>a("TresAxesHelper",{args:[2]},null,-1)),Y=V(()=>a("TresBoxGeometry",{args:[2,2,2]},null,-1)),N=`
 varying vec2 UV;
 void main() {
     UV = uv;

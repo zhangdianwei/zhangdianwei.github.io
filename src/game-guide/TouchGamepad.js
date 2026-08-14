@@ -11,17 +11,30 @@ export default class TouchGamepad extends PIXI.Container {
   constructor(options = {}) {
     super()
 
-    const { buttons = ['A'], onDirDown, onDirUp, onButtonDown, onButtonUp } = options
+    const {
+      buttons = ['A'],
+      buttonRadius = 60,
+      baseRadius = 95,
+      stickRadius = 42,
+      maxDistance = 72,
+      floatingJoystick = false,
+      onDirDown,
+      onDirUp,
+      onButtonDown,
+      onButtonUp,
+    } = options
     this.onDirDown = onDirDown
     this.onDirUp = onDirUp
     this.onButtonDown = onButtonDown
     this.onButtonUp = onButtonUp
 
-    this.buttonRadius = 60
-    this.baseRadius = 95
-    this.stickRadius = 42
-    this.maxDistance = 72
+    this.buttonRadius = buttonRadius
+    this.baseRadius = baseRadius
+    this.stickRadius = stickRadius
+    this.maxDistance = maxDistance
+    this.floatingJoystick = floatingJoystick
     this.joystickAnchor = { x: 0, y: 0 }
+    this.joystickHome = { x: 0, y: 0 }
 
     this.createJoystick()
 
@@ -69,8 +82,14 @@ export default class TouchGamepad extends PIXI.Container {
   onJoystickDown(event) {
     if (!TouchPointerTypes.includes(event.pointerType) || this.joystickPointerId !== null) return
 
+    const point = this.joystickHit.toLocal(event.global)
+    if (this.floatingJoystick) {
+      this.joystickAnchor.x = point.x
+      this.joystickAnchor.y = point.y
+      this.joystickVisual.position.set(point.x, point.y)
+    }
     const { x: dx, y: dy } = this.toAnchorOffset(event)
-    if (Math.hypot(dx, dy) > this.baseRadius * 1.6) return
+    if (!this.floatingJoystick && Math.hypot(dx, dy) > this.baseRadius * 1.6) return
 
     this.joystickPointerId = event.pointerId
     this.updateStick(dx, dy)
@@ -89,6 +108,11 @@ export default class TouchGamepad extends PIXI.Container {
     this.joystickPointerId = null
     this.joystickStick.position.set(0, 0)
     this.setJoystickDir(null)
+    if (this.floatingJoystick) {
+      this.joystickAnchor.x = this.joystickHome.x
+      this.joystickAnchor.y = this.joystickHome.y
+      this.joystickVisual.position.set(this.joystickHome.x, this.joystickHome.y)
+    }
   }
 
   toAnchorOffset(event) {
@@ -171,20 +195,35 @@ export default class TouchGamepad extends PIXI.Container {
     btn.on('pointercancel', release)
   }
 
-  layout(screen) {
+  layout(screen, slots = {}) {
     const margin = 28
 
-    this.joystickHit.hitArea = new PIXI.Rectangle(0, 0, screen.width, screen.height)
-    this.joystickAnchor.x = margin + this.baseRadius
-    this.joystickAnchor.y = screen.height - margin - this.baseRadius
-    this.joystickVisual.position.set(this.joystickAnchor.x, this.joystickAnchor.y)
+    const joystickArea = slots.joystickArea ?? { x: 0, y: 0, width: screen.width, height: screen.height }
+    this.joystickHit.hitArea = new PIXI.Rectangle(
+      joystickArea.x,
+      joystickArea.y,
+      joystickArea.width,
+      joystickArea.height,
+    )
+    this.joystickHome.x = slots.joystick?.x ?? margin + this.baseRadius
+    this.joystickHome.y = slots.joystick?.y ?? screen.height - margin - this.baseRadius
+    if (this.joystickPointerId === null) {
+      this.joystickAnchor.x = this.joystickHome.x
+      this.joystickAnchor.y = this.joystickHome.y
+      this.joystickVisual.position.set(this.joystickHome.x, this.joystickHome.y)
+    }
 
     const labels = Object.keys(this.actionButtons)
     labels.forEach((label, index) => {
       const btn = this.actionButtons[label]
-      const x = screen.width - margin - this.buttonRadius - index * (this.buttonRadius * 2.1)
-      const y = screen.height - margin - this.buttonRadius - (index % 2 === 1 ? this.buttonRadius * 1.3 : 0)
+      const slot = slots.buttons?.[label]
+      const x = slot?.x ?? screen.width - margin - this.buttonRadius - index * (this.buttonRadius * 2.1)
+      const y = slot?.y ?? screen.height - margin - this.buttonRadius - (index % 2 === 1 ? this.buttonRadius * 1.3 : 0)
       btn.position.set(x, y)
+      const area = slots.buttonAreas?.[label]
+      btn.hitArea = area
+        ? new PIXI.Rectangle(area.x - x, area.y - y, area.width, area.height)
+        : null
     })
   }
 }

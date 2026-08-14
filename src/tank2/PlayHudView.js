@@ -1,144 +1,103 @@
 import * as PIXI from 'pixi.js'
 import { theme } from './theme.js'
 
-const HudGap = 40
+export const HudWidth = 192
+const HudHeight = 832
+const MaxEnemies = 40
+
+function createTankIcon(color, markColor) {
+    const icon = new PIXI.Graphics()
+    icon.beginFill(color)
+    icon.drawRect(-14, -14, 6, 28)
+    icon.drawRect(8, -14, 6, 28)
+    icon.drawRect(-8, -11, 16, 22)
+    icon.drawRect(-3, -22, 6, 11)
+    icon.endFill()
+    if (markColor !== undefined) {
+        icon.beginFill(markColor)
+        icon.drawRect(-3, -3, 6, 6)
+        icon.endFill()
+    }
+    return icon
+}
 
 export default class PlayHudView extends PIXI.Container {
     constructor(dialog) {
         super()
         this.dialog = dialog
         this.app = dialog.app
-
-        this.panelWidth = 300
-        this.panelHeight = 600
-        this.barHeight = 90
     }
 
     init() {
-        this.createVerticalPanel()
-        this.createHorizontalBar()
-    }
+        const background = this.addChild(new PIXI.Graphics())
+        background.beginFill(0x777777)
+        background.drawRect(0, 0, HudWidth, HudHeight)
+        background.endFill()
 
-    createVerticalPanel() {
-        this.verticalPanel = this.addChild(new PIXI.Container())
+        this.enemyIcons = Array.from({ length: MaxEnemies }, () => {
+            const icon = createTankIcon(0x242424, 0x9d211b)
+            this.addChild(icon)
+            return icon
+        })
 
-        const panelBg = new PIXI.Graphics()
-        panelBg.beginFill(theme.panelBg, 0.8)
-        panelBg.drawRoundedRect(0, -this.panelHeight / 2, this.panelWidth, this.panelHeight, 10)
-        panelBg.endFill()
-        panelBg.lineStyle(2, theme.panelBorder, 0.8)
-        panelBg.drawRoundedRect(0, -this.panelHeight / 2, this.panelWidth, this.panelHeight, 10)
-        this.verticalPanel.addChild(panelBg)
-
-        const textStyle = new PIXI.TextStyle({
+        const labelStyle = {
             fontFamily: theme.fontFamily,
-            fontSize: 20,
-            fill: 0xFFFFFF,
-            align: 'left'
-        })
-
-        const titleStyle = new PIXI.TextStyle({
-            fontFamily: theme.fontFamily,
-            fontSize: 28,
-            fill: theme.win,
-            align: 'center',
-            fontWeight: 'bold'
-        })
-
-        const titleText = new PIXI.Text('游戏信息', titleStyle)
-        titleText.anchor.set(0.5, 0)
-        titleText.x = this.panelWidth / 2
-        titleText.y = -this.panelHeight / 2 + 30
-        this.verticalPanel.addChild(titleText)
-
-        this.vLevelText = new PIXI.Text('关卡: 1', textStyle)
-        this.vLevelText.x = 30
-        this.vLevelText.y = -this.panelHeight / 2 + 80
-        this.verticalPanel.addChild(this.vLevelText)
-
-        this.vLivesText = new PIXI.Text('生命: 3', textStyle)
-        this.vLivesText.x = 30
-        this.vLivesText.y = -this.panelHeight / 2 + 120
-        this.verticalPanel.addChild(this.vLivesText)
-
-        this.vEnemyText = new PIXI.Text('剩余敌人: 0/0', textStyle)
-        this.vEnemyText.x = 30
-        this.vEnemyText.y = -this.panelHeight / 2 + 160
-        this.verticalPanel.addChild(this.vEnemyText)
-
-        const line = new PIXI.Graphics()
-        line.lineStyle(2, 0xFFFFFF, 0.5)
-        line.moveTo(30, -this.panelHeight / 2 + 200)
-        line.lineTo(this.panelWidth - 30, -this.panelHeight / 2 + 200)
-        this.verticalPanel.addChild(line)
-    }
-
-    createHorizontalBar() {
-        this.horizontalBar = this.addChild(new PIXI.Container())
-
-        this.horizontalBarBg = new PIXI.Graphics()
-        this.horizontalBar.addChild(this.horizontalBarBg)
-
-        const textStyle = new PIXI.TextStyle({
-            fontFamily: theme.fontFamily,
-            fontSize: 18,
-            fill: 0xFFFFFF,
-            align: 'left'
-        })
-
-        this.hLevelText = new PIXI.Text('关卡: 1', textStyle)
-        this.hLivesText = new PIXI.Text('生命: 3', textStyle)
-        this.hEnemyText = new PIXI.Text('剩余敌人: 0/0', textStyle)
-        ;[this.hLevelText, this.hLivesText, this.hEnemyText].forEach((text) => {
-            text.anchor.set(0, 0.5)
-            this.horizontalBar.addChild(text)
-        })
-    }
-
-    layout(screen, viewport, portrait) {
-        this.verticalPanel.visible = !portrait
-        this.horizontalBar.visible = portrait
-
-        if (portrait) {
-            this.layoutHorizontalBar(screen)
-        } else {
-            this.verticalPanel.position.set(viewport.x + viewport.width + HudGap, screen.height / 2)
+            fontWeight: 'bold',
+            fill: 0x202020,
         }
-    }
+        const playerLabel = new PIXI.Text('1P', { ...labelStyle, fontSize: 34 })
+        playerLabel.anchor.set(0.5)
+        playerLabel.position.set(HudWidth / 2, 606)
+        this.addChild(playerLabel)
 
-    layoutHorizontalBar(screen) {
-        this.horizontalBarBg.clear()
-        this.horizontalBarBg.beginFill(theme.panelBg, 0.8)
-        this.horizontalBarBg.drawRect(0, 0, screen.width, this.barHeight)
-        this.horizontalBarBg.endFill()
+        const playerIcon = createTankIcon(theme.gold, theme.orange)
+        playerIcon.scale.set(1.25)
+        playerIcon.position.set(66, 660)
+        this.addChild(playerIcon)
 
-        const midY = this.barHeight / 2
-        const gap = Math.max(20, screen.width * 0.04)
-        this.hLevelText.position.set(gap, midY)
-        this.hLivesText.position.set(screen.width / 3, midY)
-        this.hEnemyText.position.set(screen.width * 2 / 3, midY)
+        this.livesText = new PIXI.Text('3', { ...labelStyle, fontSize: 42 })
+        this.livesText.anchor.set(0.5)
+        this.livesText.position.set(126, 660)
+        this.addChild(this.livesText)
+
+        const flag = new PIXI.Graphics()
+        flag.lineStyle(7, 0x292929)
+        flag.moveTo(-31, -33)
+        flag.lineTo(-31, 34)
+        flag.beginFill(theme.orange)
+        flag.moveTo(-25, -29)
+        flag.lineTo(33, -8)
+        flag.lineTo(-25, 13)
+        flag.closePath()
+        flag.endFill()
+        flag.position.set(HudWidth / 2, 746)
+        this.addChild(flag)
+
+        this.levelText = new PIXI.Text('1', { ...labelStyle, fontSize: 40 })
+        this.levelText.anchor.set(0.5)
+        this.levelText.position.set(HudWidth / 2, 804)
+        this.addChild(this.levelText)
     }
 
     updateView() {
-        const app = this.app
-        const levelText = `关卡: ${app.data.levelId + 1}`
-        const livesText = `生命: ${app.data.playerLives}`
-
-        this.vLevelText.text = levelText
-        this.vLivesText.text = livesText
-        this.hLevelText.text = levelText
-        this.hLivesText.text = livesText
-
+        this.levelText.text = String(this.app.data.levelId + 1)
+        this.livesText.text = String(this.app.data.playerLives)
         this.updateEnemyInfo()
     }
 
     updateEnemyInfo() {
-        const gameView = this.dialog.gameView
-        const totalEnemies = gameView.map.config.totalEnemies
-        const remainingEnemies = this.dialog.enemySpawner.getRemainingEnemies()
-        const enemyText = `剩余敌人: ${remainingEnemies}/${totalEnemies}`
+        const total = this.dialog.gameView.map.config.totalEnemies
+        const remaining = this.dialog.enemySpawner.getRemainingEnemies()
+        const columns = total <= 20 ? 2 : 4
+        const size = total <= 20 ? 38 : 26
+        const gapX = total <= 20 ? 54 : 39
+        const gapY = total <= 20 ? 48 : 31
+        const startX = (HudWidth - (columns - 1) * gapX) / 2
 
-        this.vEnemyText.text = enemyText
-        this.hEnemyText.text = enemyText
+        this.enemyIcons.forEach((icon, index) => {
+            icon.visible = index < remaining
+            icon.position.set(startX + index % columns * gapX, 34 + Math.floor(index / columns) * gapY)
+            icon.scale.set(size / 44)
+        })
     }
 }

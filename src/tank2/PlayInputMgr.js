@@ -24,6 +24,11 @@ export default class PlayInputMgr {
         if (isTouchDevice()) {
             this.gamepad = new TouchGamepad({
                 buttons: ['A'],
+                baseRadius: 135,
+                stickRadius: 58,
+                maxDistance: 102,
+                buttonRadius: 100,
+                floatingJoystick: true,
                 onDirDown: (dir) => this.addMoveKey(`Touch${dir}`),
                 onDirUp: (dir) => this.removeMoveKey(`Touch${dir}`),
                 onButtonDown: () => this.setShooting(true),
@@ -83,8 +88,8 @@ export default class PlayInputMgr {
         }
     }
 
-    layout(screen) {
-        this.gamepad?.layout(screen)
+    layout(screen, slots) {
+        this.gamepad?.layout(screen, slots)
     }
 
     destroy() {

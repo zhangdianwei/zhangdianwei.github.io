@@ -447,6 +447,8 @@ this.cleanup.add(() => this.app.pixi.ticker.remove(this.tick, this))
 
 `game-guide` 不提供颜色、字体、圆角、阴影或动效主题，也不要求不同游戏保持相同画风。
 
+动效语义、缓动、组件状态和 UI 层级统一参考 [游戏动效、缓动与 UI 设计指南](./motion-ui-guide.md)。该指南规定行为基线，各游戏仍在自己的 `theme.js` 中定义具体视觉令牌。
+
 - 主题属于游戏项目，在项目目录内定义；简单游戏可以直接写在自身组件中，复杂游戏可以建立 `theme.js`。
 - 同一游戏的开始、游戏、结算界面应复用自己的主题，避免各界面视觉割裂。
 - `GameCanvas` 默认透明，可通过 `GameApp` 的 `backgroundColor`、`backgroundAlpha` 或 `--game-background` 设置游戏背景。

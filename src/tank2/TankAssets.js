@@ -1,18 +1,18 @@
-import tileBrickUrl from './assets/bigtile_1_tile_1.png'
-import tileIronUrl from './assets/bigtile_2_tile_1.png'
+import tileBrickUrl from './assets/tile_brick.png'
+import tileIronUrl from './assets/tile_iron.png'
 import tileGrassUrl from './assets/bigtile_3_tile_1.png'
-import homeIntactUrl from './assets/bigtile_6.png'
-import homeDestroyedUrl from './assets/bigtile_7.png'
-import playerRun1Url from './assets/player1_run_1.png'
-import playerRun2Url from './assets/player1_run_2.png'
-import enemy1Run1Url from './assets/enermy_1_run_1.png'
-import enemy1Run2Url from './assets/enermy_1_run_2.png'
-import enemy2Run1Url from './assets/enermy_2_run_1.png'
-import enemy2Run2Url from './assets/enermy_2_run_2.png'
-import enemy3Run1Url from './assets/enermy_3_run_1.png'
-import enemy3Run2Url from './assets/enermy_3_run_2.png'
-import enemy4Run1Url from './assets/enermy_4_run_1.png'
-import enemy4Run2Url from './assets/enermy_4_run_2.png'
+import homeIntactUrl from './assets/home_intact.png'
+import homeDestroyedUrl from './assets/home_destroyed.png'
+import playerRun1Url from './assets/player_run_1.png'
+import playerRun2Url from './assets/player_run_2.png'
+import enemy1Run1Url from './assets/enemy1_run_1.png'
+import enemy1Run2Url from './assets/enemy1_run_2.png'
+import enemy2Run1Url from './assets/enemy2_run_1.png'
+import enemy2Run2Url from './assets/enemy2_run_2.png'
+import enemy3Run1Url from './assets/enemy3_run_1.png'
+import enemy3Run2Url from './assets/enemy3_run_2.png'
+import enemy4Run1Url from './assets/enemy4_run_1.png'
+import enemy4Run2Url from './assets/enemy4_run_2.png'
 import tankAppear1Url from './assets/born_1.png'
 import tankAppear2Url from './assets/born_2.png'
 import tankAppear3Url from './assets/born_3.png'
@@ -22,6 +22,14 @@ import tankAppear6Url from './assets/born_6.png'
 import tankExplode1Url from './assets/explode_1.png'
 import tankExplode2Url from './assets/explode_2.png'
 import tankExplode3Url from './assets/explode_3.png'
+import startLogoUrl from './assets/tank-battle-logo.png'
+import gameboyBgUrl from './assets/gameboy-bg.png'
+import gameboyAUrl from './assets/gameboy-a.png'
+import gameboyScreenUrl from './assets/gameboy-screen.png'
+import gameboySelectUrl from './assets/gameboy-select.png'
+import gameboyStartUrl from './assets/gameboy-start.png'
+import gameboyJoystickBaseUrl from './assets/gameboy-joystick-base.png'
+import gameboyJoystickKnobUrl from './assets/gameboy-joystick-knob.png'
 
 export const textures = {
   tileBrick: tileBrickUrl,
@@ -49,4 +57,15 @@ export const textures = {
   tankExplode1: tankExplode1Url,
   tankExplode2: tankExplode2Url,
   tankExplode3: tankExplode3Url,
+  startLogo: startLogoUrl,
+}
+
+export const shellAssets = {
+  background: gameboyBgUrl,
+  screen: gameboyScreenUrl,
+  a: gameboyAUrl,
+  select: gameboySelectUrl,
+  start: gameboyStartUrl,
+  joystickBase: gameboyJoystickBaseUrl,
+  joystickKnob: gameboyJoystickKnobUrl,
 }

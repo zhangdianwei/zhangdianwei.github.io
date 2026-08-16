@@ -37,9 +37,11 @@ export default class PlayGameView extends PIXI.Container {
 
     createMapBorder() {
         const border = new PIXI.Graphics()
-        border.lineStyle(3, 0xFFFFFF, 0.5)
-        border.drawRoundedRect(-MapWidth / 2, -MapHeight / 2, MapWidth, MapHeight, 8)
-        this.addChild(border)
+        border.beginFill(0x1B2524)
+        border.lineStyle(2, 0xD5DEDB, 0.65)
+        border.drawRoundedRect(-MapWidth / 2, -MapHeight / 2, MapWidth, MapHeight, 6)
+        border.endFill()
+        this.addChildAt(border, 0)
     }
 
     createRenderLayers() {

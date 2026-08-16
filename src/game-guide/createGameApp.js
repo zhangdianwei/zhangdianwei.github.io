@@ -15,12 +15,16 @@ const worldSize = (width, height, shortSide) => width <= height
 export function createGameApp(canvas, options = {}) {
   const {
     shortSide = 640,
+    worldWidth,
+    worldHeight,
     backgroundColor = 0x000000,
     backgroundAlpha = 0,
     antialias = true,
+    scaleToParent = false,
   } = options
+  const fixedWorld = Number.isFinite(worldWidth) && Number.isFinite(worldHeight)
   const size = viewportSize(canvas)
-  const world = worldSize(size.width, size.height, shortSide)
+  const world = fixedWorld ? { width: worldWidth, height: worldHeight } : worldSize(size.width, size.height, shortSide)
   const app = new PIXI.Application({
     view: canvas,
     width: world.width,
@@ -39,10 +43,10 @@ export function createGameApp(canvas, options = {}) {
   const resize = () => {
     if (destroyed) return
     const nextSize = viewportSize(canvas)
-    const nextWorld = worldSize(nextSize.width, nextSize.height, shortSide)
+    const nextWorld = fixedWorld ? world : worldSize(nextSize.width, nextSize.height, shortSide)
     app.renderer.resize(nextWorld.width, nextWorld.height)
-    canvas.style.width = `${nextSize.width}px`
-    canvas.style.height = `${nextSize.height}px`
+    canvas.style.width = scaleToParent ? '100%' : `${nextSize.width}px`
+    canvas.style.height = scaleToParent ? '100%' : `${nextSize.height}px`
     listeners.forEach((listener) => listener(app.screen))
   }
 

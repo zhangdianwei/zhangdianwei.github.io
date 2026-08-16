@@ -1,6 +1,5 @@
 import * as PIXI from 'pixi.js'
 import { Dialog } from '../game-guide/index.js'
-import TankButton from './TankButton.js'
 import StartDialog from './StartDialog.js'
 import PlayDialog from './PlayDialog.js'
 import { theme } from './theme.js'
@@ -14,7 +13,6 @@ export default class ResultDialog extends Dialog {
         this.createPanel()
         this.createTitle()
         this.createStats()
-        this.createButton()
     }
 
     onResize(screen) {
@@ -61,16 +59,7 @@ export default class ResultDialog extends Dialog {
         this.addChild(this.timeText)
     }
 
-    createButton() {
-        const win = this.app.data.levelEndType === 1
-        const text = win ? (this.isLastLevel() ? '返回菜单' : '下一关') : '重新开始'
-
-        this.actionButton = new TankButton(this.app, text, () => this.onActionButtonClick())
-        this.actionButton.position.set(0, 100)
-        this.addChild(this.actionButton)
-    }
-
-    onActionButtonClick() {
+    onAction() {
         if (this.app.data.levelEndType === 1) {
             if (this.isLastLevel()) {
                 this.onBackToStart()
@@ -99,5 +88,9 @@ export default class ResultDialog extends Dialog {
 
     isLastLevel() {
         return this.app.data.levelId >= allLevels.length - 1
+    }
+
+    onControl(control, pressed) {
+        if (pressed && (control === 'a' || control === 'start')) this.onAction()
     }
 }

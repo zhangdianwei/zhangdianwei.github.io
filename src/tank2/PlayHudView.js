@@ -1,7 +1,9 @@
 import * as PIXI from 'pixi.js'
 import { theme } from './theme.js'
 
-export const HudWidth = 192
+const HudSourceWidth = 192
+export const HudScale = 0.75
+export const HudWidth = HudSourceWidth * HudScale
 const HudHeight = 832
 const MaxEnemies = 40
 
@@ -30,8 +32,8 @@ export default class PlayHudView extends PIXI.Container {
 
     init() {
         const background = this.addChild(new PIXI.Graphics())
-        background.beginFill(0x777777)
-        background.drawRect(0, 0, HudWidth, HudHeight)
+        background.beginFill(0xD1D8D5)
+        background.drawRect(0, 0, HudSourceWidth, HudHeight)
         background.endFill()
 
         this.enemyIcons = Array.from({ length: MaxEnemies }, () => {
@@ -47,7 +49,7 @@ export default class PlayHudView extends PIXI.Container {
         }
         const playerLabel = new PIXI.Text('1P', { ...labelStyle, fontSize: 34 })
         playerLabel.anchor.set(0.5)
-        playerLabel.position.set(HudWidth / 2, 606)
+        playerLabel.position.set(HudSourceWidth / 2, 606)
         this.addChild(playerLabel)
 
         const playerIcon = createTankIcon(theme.gold, theme.orange)
@@ -70,12 +72,12 @@ export default class PlayHudView extends PIXI.Container {
         flag.lineTo(-25, 13)
         flag.closePath()
         flag.endFill()
-        flag.position.set(HudWidth / 2, 746)
+        flag.position.set(HudSourceWidth / 2, 746)
         this.addChild(flag)
 
         this.levelText = new PIXI.Text('1', { ...labelStyle, fontSize: 40 })
         this.levelText.anchor.set(0.5)
-        this.levelText.position.set(HudWidth / 2, 804)
+        this.levelText.position.set(HudSourceWidth / 2, 804)
         this.addChild(this.levelText)
     }
 
@@ -92,7 +94,7 @@ export default class PlayHudView extends PIXI.Container {
         const size = total <= 20 ? 38 : 26
         const gapX = total <= 20 ? 54 : 39
         const gapY = total <= 20 ? 48 : 31
-        const startX = (HudWidth - (columns - 1) * gapX) / 2
+        const startX = (HudSourceWidth - (columns - 1) * gapX) / 2
 
         this.enemyIcons.forEach((icon, index) => {
             icon.visible = index < remaining

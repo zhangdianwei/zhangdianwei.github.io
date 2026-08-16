@@ -13,7 +13,7 @@ export const Dir = {
     LEFT: 3
 };
 
-export const TileSize = 32; //每个小格子大小
+export const TileSize = 24;
 export const MapRows = 26;
 export const MapCols = 26;
 export const MapWidth = MapCols * TileSize;
@@ -29,27 +29,27 @@ export const TankType = {
 
 export const TankConfig = {
     [TankType.PLAYER]: {
-        speed: 200,
+        speed: 150,
         health: 1,
         power: 1
     },
     [TankType.ENEMY_1]: {
-        speed: 80,
+        speed: 60,
         health: 1,
         power: 1
     },
     [TankType.ENEMY_2]: {
-        speed: 100,
+        speed: 75,
         health: 2,
         power: 1
     },
     [TankType.ENEMY_3]: {
-        speed: 120,
+        speed: 90,
         health: 3,
         power: 1
     },
     [TankType.ENEMY_4]: {
-        speed: 100,
+        speed: 75,
         health: 4,
         power: 2
     }
@@ -71,4 +71,3 @@ export function moveByDir(obj, dir, distance) {
             break;
     }
 }
-

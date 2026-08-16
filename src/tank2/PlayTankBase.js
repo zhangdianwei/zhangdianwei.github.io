@@ -12,7 +12,7 @@ export default class PlayTankBase extends PIXI.Container {
 
     this.tankType = tankType
     this.direction = Dir.UP
-    this.size = 64
+    this.size = TileSize * 2
 
     this.isMoving = false
     this.isShooting = false
@@ -56,6 +56,8 @@ export default class PlayTankBase extends PIXI.Container {
     keys.forEach((key) => {
       const sprite = new PIXI.Sprite(this.app.textures[key])
       sprite.anchor.set(0.5)
+      sprite.width = this.size
+      sprite.height = this.size
       sprite.visible = false
       this.tankSprites.push(sprite)
       this.addChild(sprite)

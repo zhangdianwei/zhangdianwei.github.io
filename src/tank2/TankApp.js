@@ -4,8 +4,10 @@ import StartDialog from './StartDialog.js'
 export default class TankApp extends GameApp {
   constructor(textures) {
     super(textures, {
-      shortSide: 900,
-      backgroundColor: 0x000000,
+      worldWidth: 960,
+      worldHeight: 720,
+      scaleToParent: true,
+      backgroundColor: 0x1b2524,
       backgroundAlpha: 1,
     })
     this.resetPlayerData()
@@ -13,6 +15,10 @@ export default class TankApp extends GameApp {
 
   start() {
     this.dialogMgr.push(StartDialog)
+  }
+
+  setControl(control, pressed) {
+    this.dialogMgr?.current?.onControl?.(control, pressed)
   }
 
   resetPlayerData() {

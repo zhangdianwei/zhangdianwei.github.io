@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js'
-import { moveByDir, TankType } from './TileType.js'
+import { moveByDir, TankType, TileSize } from './TileType.js'
 
 export const BulletType = {
   PLAYER: 'player',
@@ -17,8 +17,8 @@ export default class PlayBullet extends PIXI.Container {
     this.bulletType = owner.tankType === TankType.PLAYER ? BulletType.PLAYER : BulletType.ENEMY
     this.direction = owner.direction
     this.power = 1
-    this.speed = 400
-    this.size = 20
+    this.speed = 300
+    this.size = TileSize * 0.625
 
     this.x = this.owner.x
     this.y = this.owner.y

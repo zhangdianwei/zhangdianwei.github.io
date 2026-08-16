@@ -123,7 +123,7 @@ export default class PlayMap {
         return tileType === TileType.EMPTY || tileType === TileType.GRASS; // 空地或草地可通行
     }
 
-    isRectWalkable(cx, cy, halfSize = 16) {
+    isRectWalkable(cx, cy, halfSize = TileSize) {
         const left = cx - halfSize;
         const right = cx + halfSize - 1;
         const top = cy - halfSize;
@@ -150,7 +150,7 @@ export default class PlayMap {
         const width = bounds.width;
         const height = bounds.height;
 
-        let t = 4;
+        const t = TileSize / 8;
         const srcPoses = [
             { x: centerX - width/2, y: centerY - height/2 },
             { x: centerX + width/2, y: centerY - height/2 },

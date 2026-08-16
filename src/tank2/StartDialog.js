@@ -1,86 +1,49 @@
 import * as PIXI from 'pixi.js'
 import { Dialog } from '../game-guide/index.js'
-import TankButton from './TankButton.js'
 import PlayDialog from './PlayDialog.js'
-import { theme } from './theme.js'
 
 export default class StartDialog extends Dialog {
     onCreate() {
-        this.createTitle()
-        this.createButtons()
-        this.createDecorativeBorder()
+        this.createLogo()
+        this.createMenu()
     }
 
     onResize(screen) {
         this.position.set(screen.width / 2, screen.height / 2)
     }
 
-    createTitle() {
-        this.titleText = new PIXI.Text('坦克大战', {
-            fontFamily: theme.fontFamily,
-            fontSize: 72,
-            fontWeight: 'bold',
-            fill: theme.gold,
-            align: 'center',
-            dropShadow: true,
-            dropShadowColor: 0x000000,
-            dropShadowBlur: 8,
-            dropShadowDistance: 4,
-            stroke: theme.brown,
-            strokeThickness: 3,
-        })
-        this.titleText.anchor.set(0.5, 0.5)
-        this.titleText.position.set(0, -140)
-        this.addChild(this.titleText)
-
-        const subtitleText = new PIXI.Text('TANK BATTLE', {
-            fontFamily: theme.fontFamily,
-            fontSize: 32,
-            fontWeight: 'bold',
-            fill: theme.orange,
-            align: 'center',
-            dropShadow: true,
-            dropShadowColor: 0x000000,
-            dropShadowBlur: 4,
-            dropShadowDistance: 2,
-        })
-        subtitleText.anchor.set(0.5, 0.5)
-        subtitleText.position.set(0, -85)
-        this.addChild(subtitleText)
+    createLogo() {
+        this.logo = this.addChild(new PIXI.Sprite(this.app.textures.startLogo))
+        this.logo.anchor.set(0.5)
+        this.logo.width = 720
+        this.logo.height = 720 * this.logo.texture.height / this.logo.texture.width
+        this.logo.position.set(0, -105)
     }
 
-    createButtons() {
-        const startButton = new TankButton(this.app, '开始游戏', () => this.onSinglePlayer())
-        startButton.position.set(0, 60)
-        this.addChild(startButton)
-    }
+    createMenu() {
+        const cursor = this.addChild(new PIXI.Sprite(this.app.textures.playerRun1))
+        cursor.anchor.set(0.5)
+        cursor.position.set(-132, 132)
+        cursor.width = 48
+        cursor.height = 48
 
-    createDecorativeBorder() {
-        const width = 700
-        const height = 500
-        const cornerSize = 20
-
-        const border = new PIXI.Graphics()
-        border.lineStyle(4, theme.gold, 0.8)
-        border.drawRoundedRect(-width / 2, -height / 2, width, height, cornerSize)
-
-        const corners = [
-            { x: -width / 2 + cornerSize, y: -height / 2 + cornerSize },
-            { x: width / 2 - cornerSize, y: -height / 2 + cornerSize },
-            { x: -width / 2 + cornerSize, y: height / 2 - cornerSize },
-            { x: width / 2 - cornerSize, y: height / 2 - cornerSize },
-        ]
-        corners.forEach((corner) => {
-            border.beginFill(theme.gold, 0.3)
-            border.drawRect(corner.x - cornerSize / 2, corner.y - cornerSize / 2, cornerSize, cornerSize)
-            border.endFill()
-        })
-
-        this.addChildAt(border, 0)
+        const label = this.addChild(new PIXI.Text('1 PLAYER', {
+            fontFamily: 'Courier New, monospace',
+            fontSize: 38,
+            fontWeight: 'bold',
+            fill: 0xF5EEE0,
+            letterSpacing: 2,
+        }))
+        label.anchor.set(0, 0.5)
+        label.position.set(-82, 132)
     }
 
     onSinglePlayer() {
         this.app.resetPlayerData()
         this.app.dialogMgr.replace(PlayDialog)
+    }
+
+    onControl(control, pressed) {
+        if (pressed && (control === 'a' || control === 'start')) this.onSinglePlayer()
     }
 }

@@ -1,15 +1,13 @@
 import * as PIXI from 'pixi.js'
 import { Dialog } from '../game-guide/index.js'
 import PlayGameView from './PlayGameView.js'
-import PlayHudView, { HudWidth } from './PlayHudView.js'
+import PlayHudView, { HudScale, HudWidth } from './PlayHudView.js'
 import PlayRuleMgr from './PlayRuleMgr.js'
 import PlayEnemySpawner from './PlayEnemySpawner.js'
 import PlayInputMgr from './PlayInputMgr.js'
 import { MapWidth, MapHeight } from './TileType.js'
 
 const CoreWidth = MapWidth + HudWidth
-const Margin = 24
-const TouchReserve = 570
 
 export default class PlayDialog extends Dialog {
     onCreate() {
@@ -19,7 +17,23 @@ export default class PlayDialog extends Dialog {
         this.gameView.position.set(MapWidth / 2, MapHeight / 2)
         this.hudView = this.contentRoot.addChild(new PlayHudView(this))
         this.hudView.init()
+        this.hudView.scale.set(HudScale)
         this.hudView.position.set(MapWidth, 0)
+
+        this.pauseOverlay = this.addChild(new PIXI.Container())
+        const shade = this.pauseOverlay.addChild(new PIXI.Graphics())
+        shade.beginFill(0x101817, 0.84)
+        shade.drawRoundedRect(-130, -55, 260, 110, 8)
+        shade.endFill()
+        const pauseText = this.pauseOverlay.addChild(new PIXI.Text('暂停', {
+            fontFamily: 'Arial Rounded MT Bold, Arial, sans-serif',
+            fontSize: 42,
+            fontWeight: 'bold',
+            fill: 0xF6F1E5,
+        }))
+        pauseText.anchor.set(0.5)
+        this.pauseOverlay.visible = false
+        this.paused = false
 
         this.ruleMgr = this.use(new PlayRuleMgr())
         this.enemySpawner = this.use(new PlayEnemySpawner())
@@ -30,30 +44,33 @@ export default class PlayDialog extends Dialog {
     }
 
     onUpdate() {
-        this.ruleMgr.update()
+        if (!this.paused) this.ruleMgr.update()
     }
 
     onResize(screen) {
-        const touch = Boolean(this.inputMgr.gamepad)
         const scale = Math.min(
-            1,
-            Math.max(0.25, (screen.width - (touch ? TouchReserve : Margin * 2)) / CoreWidth),
-            Math.max(0.25, (screen.height - Margin * 2) / MapHeight),
+            screen.width / CoreWidth,
+            screen.height / MapHeight,
         )
         this.contentRoot.scale.set(scale)
         this.contentRoot.position.set(
             (screen.width - CoreWidth * scale) / 2,
             (screen.height - MapHeight * scale) / 2,
         )
-        this.inputMgr.layout(screen, touch ? {
-            joystick: { x: Margin + this.inputMgr.gamepad.baseRadius, y: screen.height / 2 },
-            joystickArea: { x: 0, y: 0, width: screen.width / 2, height: screen.height },
-            buttons: {
-                A: { x: screen.width - Margin - this.inputMgr.gamepad.buttonRadius, y: screen.height / 2 },
-            },
-            buttonAreas: {
-                A: { x: screen.width / 2, y: 0, width: screen.width / 2, height: screen.height },
-            },
-        } : undefined)
+        this.pauseOverlay.position.set(screen.width / 2, screen.height / 2)
+    }
+
+    onControl(control, pressed, source = control) {
+        if (control === 'start' && pressed) {
+            this.togglePaused()
+            return
+        }
+        if (!this.paused) this.inputMgr.setControl(control, pressed, source)
+    }
+
+    togglePaused() {
+        this.paused = !this.paused
+        this.pauseOverlay.visible = this.paused
+        if (this.paused) this.inputMgr.releaseAll()
     }
 }

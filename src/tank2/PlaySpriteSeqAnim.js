@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js'
+import { TileSize } from './TileType.js'
 
 const animDefs = {
   tankAppear: {
@@ -25,6 +26,8 @@ export default class PlaySpriteSeqAnim extends PIXI.Container {
     this.sprites = keys.map((key) => {
       const sprite = new PIXI.Sprite(app.textures[key])
       sprite.anchor.set(0.5)
+      sprite.width = TileSize * 2
+      sprite.height = TileSize * 2
       sprite.visible = false
       this.addChild(sprite)
       return sprite

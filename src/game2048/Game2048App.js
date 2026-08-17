@@ -1,5 +1,5 @@
 import * as TWEEN from '@tweenjs/tween.js'
-import { GameApp } from '../game-guide/index.js'
+import GameApp from './GameApp.js'
 import StartDialog from './StartDialog.js'
 
 const names = [

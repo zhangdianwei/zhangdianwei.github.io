@@ -141,3 +141,4 @@ export default class Dialog extends PIXI.Container {
     super.destroy({ children: true })
   }
 }
+

@@ -1,4 +1,5 @@
-import { AudioMgr, GameApp } from '../game-guide/index.js'
+import AudioMgr from './AudioMgr.js'
+import GameApp from './GameApp.js'
 import { audioFiles } from './BallGameAssets.js'
 import StartDialog from './StartDialog.js'
 

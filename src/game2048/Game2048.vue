@@ -1,6 +1,6 @@
 <script setup>
 import { onBeforeUnmount, ref } from 'vue'
-import GameCanvas from '../game-guide/GameCanvas.vue'
+import GameCanvas from './GameCanvas.vue'
 import { textures } from './Game2048Assets.js'
 import Game2048App from './Game2048App.js'
 

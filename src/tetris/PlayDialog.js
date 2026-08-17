@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js'
-import { Dialog } from '../game-guide/index.js'
+import Dialog from './Dialog.js'
 import TetrisPlayer from './data/TetrisPlayer.js'
 import PlayGameView from './PlayGameView.js'
 import PlayHudView from './PlayHudView.js'

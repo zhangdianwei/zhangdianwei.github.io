@@ -1,24 +1,26 @@
-# 内置小游戏框架
+# 内置小游戏开发指南
 
-本目录用于重写项目内置小游戏。固定结构为：
+本目录只提供开发建议和参考结构，不提供任何运行时代码。每个游戏都在自己的目录内完整实现所需能力，可以从其他游戏复制起点，但复制后独立演进。
+
+推荐结构为：
 
 ```text
 Vue 入口 -> App -> DialogMgr -> Dialog -> 功能 Mgr
 ```
 
-金币骑士、田园扫雷、拼图游戏是内嵌网页，不使用本框架。
+金币骑士、田园扫雷、拼图游戏是内嵌网页，不使用这套结构。
 
 ## 依赖边界
 
 `src/pixi/` 是待删除的遗留目录。新增或修改游戏代码时不得从该目录导入任何内容；这项限制不影响直接使用 `pixi.js`。
 
-- 游戏独占的按钮、动画、输入和布局能力放在当前游戏目录中。
-- 确实被多个内置游戏共用的运行能力放入 `game-guide`，并从 `game-guide/index.js` 导出。
-- 修改仍依赖 `src/pixi/` 的旧代码时，不得扩大依赖范围；如果本次改动涉及所依赖的能力，应在本次改动中迁移到游戏目录或 `game-guide`。
-- 不把遗留辅助文件整体复制到新位置，只迁移当前确实需要的最小能力。
-- 删除 `src/pixi/` 后，新框架游戏应保持正常编译。
+- 游戏运行所需的画布、生命周期、界面栈、资源加载、音频、存储、输入和布局能力全部放在当前游戏目录中。
+- 业务代码不得导入 `game-guide`，也不得跨游戏目录导入运行代码。
+- 新游戏可以复制现有实现作为起点，但只复制实际需要的能力，复制后由新游戏独立维护。
+- 修改仍依赖 `src/pixi/` 的旧代码时，不得扩大依赖范围；如果本次改动涉及所依赖的能力，应迁移到当前游戏目录。
+- 删除 `src/pixi/` 后，相关游戏应保持正常编译。
 
-这条边界针对的是运行代码（JS 逻辑）的共享，不针对静态资源文件。字体等确实通用、体积不大的静态资源可以放在 `src/font/` 这样的项目级共享目录里，由各游戏自行静态导入，用法见下方"字体"一节。
+这条边界针对游戏运行代码，不禁止共享项目级基础资源。字体等确实通用、体积不大的静态资源可以放在 `src/font/` 这样的目录里，由各游戏自行静态导入，用法见下方“字体”一节。
 
 ## 所有权
 
@@ -53,6 +55,15 @@ src/xxx/
   XxxGame.vue
   XxxAssets.js
   XxxApp.js
+  GameCanvas.vue
+  TextureLoader.vue
+  GameApp.js
+  Dialog.js
+  DialogMgr.js
+  createGameApp.js
+  createCleanup.js
+  AudioMgr.js             可选
+  StorageMgr.js           可选
   theme.js                可选，当前游戏的颜色、字体和组件样式
   XxxData.js              可选
   assets/
@@ -75,7 +86,7 @@ src/xxx/
 ```vue
 <script setup>
 import { onBeforeUnmount, ref } from 'vue'
-import GameCanvas from '../game-guide/GameCanvas.vue'
+import GameCanvas from './GameCanvas.vue'
 import { textures } from './XxxAssets.js'
 import XxxApp from './XxxApp.js'
 
@@ -103,7 +114,7 @@ onBeforeUnmount(() => game?.destroy())
 继承 `GameApp`，通常只需要设置画布参数和打开第一个 Dialog。
 
 ```javascript
-import { GameApp } from '../game-guide/index.js'
+import GameApp from './GameApp.js'
 import { theme } from './theme.js'
 import StartDialog from './StartDialog.js'
 
@@ -191,7 +202,7 @@ async function start(textures) {
 - 不包含具体玩法和界面状态。
 - 离开任意一个 Dialog 后仍然有意义。
 
-框架只提供两个模板：
+游戏可以按需实现以下 App 级能力，不使用时无需保留对应文件：
 
 | Mgr | 职责 |
 | --- | --- |
@@ -199,11 +210,9 @@ async function start(textures) {
 | `StorageMgr` | 按游戏命名空间读写本地数据 |
 
 ```javascript
-import {
-  AudioMgr,
-  GameApp,
-  StorageMgr,
-} from '../game-guide/index.js'
+import AudioMgr from './AudioMgr.js'
+import GameApp from './GameApp.js'
+import StorageMgr from './StorageMgr.js'
 
 export default class XxxApp extends GameApp {
   constructor(textures) {
@@ -263,7 +272,7 @@ this.app.dialogMgr.pop()
 具体界面继承 `Dialog`，通过统一生命周期接口组织界面。`DialogMgr` 只调用 `mount/show/hide/activate/deactivate/update/layout/destroy`，不依赖具体游戏实现。
 
 ```javascript
-import { Dialog } from '../game-guide/index.js'
+import Dialog from './Dialog.js'
 import PlayInputMgr from './PlayInputMgr.js'
 import PlayRuleMgr from './PlayRuleMgr.js'
 import ResultDialog from './ResultDialog.js'
@@ -438,14 +447,14 @@ this.cleanup.add(() => this.app.pixi.ticker.remove(this.tick, this))
 - Dialog 创建的显示对象、事件和功能 Mgr 由 Dialog 销毁。
 - Mgr 创建的内部对象由 Mgr 销毁。
 - 项目独占图片、音频等实体资源放在项目的 `assets/`，由根目录的 `XxxAssets.js` 统一静态导入；`public` 只用于必须保留固定 URL 的独立页面或外部构建产物。
-- `GameCanvas` 加载的纹理由 `PIXI.Assets` 缓存共享；销毁显示对象时不销毁纹理，框架也不调用 `PIXI.Assets.unload()`。
+- `GameCanvas` 加载的纹理由 `PIXI.Assets` 缓存共享；销毁显示对象时不销毁纹理，游戏运行时也不调用 `PIXI.Assets.unload()`。
 - 确实需要释放某个独占资源时，由创建它的项目使用独立资源键并自行卸载，不能按公共 URL 批量卸载。
 
 `destroy()` 应允许重复调用。
 
 ## 主题与画风
 
-`game-guide` 不提供颜色、字体、圆角、阴影或动效主题，也不要求不同游戏保持相同画风。
+`game-guide` 只描述颜色、字体、圆角、阴影和动效的建议，不提供对应运行时，也不要求不同游戏保持相同画风。
 
 动效语义、缓动、组件状态和 UI 层级统一参考 [游戏动效、缓动与 UI 设计指南](./motion-ui-guide.md)。该指南规定行为基线，各游戏仍在自己的 `theme.js` 中定义具体视觉令牌。
 
@@ -453,11 +462,12 @@ this.cleanup.add(() => this.app.pixi.ticker.remove(this.tick, this))
 - 同一游戏的开始、游戏、结算界面应复用自己的主题，避免各界面视觉割裂。
 - `GameCanvas` 默认透明，可通过 `GameApp` 的 `backgroundColor`、`backgroundAlpha` 或 `--game-background` 设置游戏背景。
 - 资源加载层继承当前游戏样式，可按需设置 `--game-loading-background` 和 `--game-loading-color`。
-- 框架只约束运行环境、生命周期、布局边界和资源所有权，不参与具体美术方向。
+- 本指南只建议运行环境、生命周期、布局边界和资源所有权，不参与具体美术方向。
 
 ## 完成检查
 
 - 新增和修改的代码没有导入 `src/pixi/`。
+- 游戏没有导入 `game-guide` 或其他游戏目录中的运行代码。
 - 结构遵循 `App -> DialogMgr -> Dialog -> 功能 Mgr`。
 - 同一界面的代码优先聚合，拆出的文件使用 `Start`、`Play`、`Result` 等界面前缀，避免无必要的分类子目录。
 - 项目实体资源全部位于项目内的 `assets/`，业务代码只通过 `XxxAssets.js` 导出的逻辑键访问。

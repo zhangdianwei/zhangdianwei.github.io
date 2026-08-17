@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js'
-import { Dialog } from '../game-guide/index.js'
+import Dialog from './Dialog.js'
 import PlayDialog from './PlayDialog.js'
 
 export default class StartDialog extends Dialog {

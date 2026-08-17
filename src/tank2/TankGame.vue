@@ -1,6 +1,6 @@
 <script setup>
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import GameCanvas from '../game-guide/GameCanvas.vue'
+import GameCanvas from './GameCanvas.vue'
 import { shellAssets, textures } from './TankAssets.js'
 import TankApp from './TankApp.js'
 

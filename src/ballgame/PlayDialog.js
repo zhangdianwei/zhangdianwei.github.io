@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js'
-import { Dialog } from '../game-guide/index.js'
+import Dialog from './Dialog.js'
 import BallGameBackdrop from './BallGameBackdrop.js'
 import { levels } from './BallGameData.js'
 import PlayGameView from './PlayGameView.js'

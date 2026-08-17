@@ -65,3 +65,4 @@ export default class DialogMgr {
     this.app = null
   }
 }
+

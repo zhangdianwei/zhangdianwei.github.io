@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js'
-import { Dialog } from '../game-guide/index.js'
+import Dialog from './Dialog.js'
 import PlayGameView from './PlayGameView.js'
 import PlayHudView, { HudScale, HudWidth } from './PlayHudView.js'
 import PlayRuleMgr from './PlayRuleMgr.js'

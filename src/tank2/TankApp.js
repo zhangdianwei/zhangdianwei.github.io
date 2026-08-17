@@ -1,4 +1,4 @@
-import { GameApp } from '../game-guide/index.js'
+import GameApp from './GameApp.js'
 import StartDialog from './StartDialog.js'
 
 export default class TankApp extends GameApp {

@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js'
 import * as TWEEN from '@tweenjs/tween.js'
-import { Dialog } from '../game-guide/index.js'
+import Dialog from './Dialog.js'
 import TetrisButton from './TetrisButton.js'
 import StartDialog from './StartDialog.js'
 import { theme } from './theme.js'

@@ -1,4 +1,4 @@
-import { Dialog } from '../game-guide/index.js'
+import Dialog from './Dialog.js'
 import PlayMgr from './PlayMgr.js'
 import ResultDialog from './ResultDialog.js'
 

@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js'
-import { Dialog } from '../game-guide/index.js'
+import Dialog from './Dialog.js'
 import StartDialog from './StartDialog.js'
 import PlayDialog from './PlayDialog.js'
 import { theme } from './theme.js'

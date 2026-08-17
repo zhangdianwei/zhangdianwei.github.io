@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js'
-import { Dialog } from '../game-guide/index.js'
+import Dialog from './Dialog.js'
 import { appear, disappear, makeButton } from './Game2048UI.js'
 import { formatLevel } from './PlayCube.js'
 import StartDialog from './StartDialog.js'

@@ -58,8 +58,8 @@ export default class PlayRuleMgr {
     }
 
     resolvePairOverlap(tankA, tankB, allTanks) {
-        const a = tankA.getBounds();
-        const b = tankB.getBounds();
+        const a = tankA.getOccupancyBounds();
+        const b = tankB.getOccupancyBounds();
         if (!this.checkBoundsOverlap(a, b)) return false;
 
         const aLeft = a.x - a.width / 2;
@@ -124,7 +124,7 @@ export default class PlayRuleMgr {
     }
 
     canPlaceTank(tank, targetX, targetY, allTanks, ignoreTank) {
-        const half = tank.size / 2;
+        const half = tank.occupancySize / 2;
         if (!this.dialog.gameView.map.isRectWalkable(targetX, targetY, half)) {
             return false;
         }
@@ -132,12 +132,12 @@ export default class PlayRuleMgr {
         const candidate = {
             x: targetX,
             y: targetY,
-            width: tank.size,
-            height: tank.size
+            width: tank.occupancySize,
+            height: tank.occupancySize
         };
         for (const other of allTanks) {
             if (!other || other === tank || other === ignoreTank || other.isDead) continue;
-            if (this.checkBoundsOverlap(candidate, other.getBounds())) {
+            if (this.checkBoundsOverlap(candidate, other.getOccupancyBounds())) {
                 return false;
             }
         }
@@ -230,10 +230,10 @@ export default class PlayRuleMgr {
                bottom1 > top2;
     }
 
-    // 只判断坦克
     getMovableDistance(bounds, direction, excludeTank = null) {
         const gameView = this.dialog.gameView;
-        const allTanks = [gameView.player, ...gameView.enemies].filter((t) => t && t !== excludeTank);
+        const obstacles = [gameView.home, gameView.player, ...gameView.enemies]
+            .filter((item) => item && item !== excludeTank && !item.isDead);
         const selfLeft = bounds.x - bounds.width / 2;
         const selfRight = bounds.x + bounds.width / 2;
         const selfTop = bounds.y - bounds.height / 2;
@@ -241,12 +241,12 @@ export default class PlayRuleMgr {
 
         let minDistance = Infinity;
 
-        for (const tank of allTanks) {
-            const tankBounds = tank.getBounds();
-            const otherLeft = tankBounds.x - tankBounds.width / 2;
-            const otherRight = tankBounds.x + tankBounds.width / 2;
-            const otherTop = tankBounds.y - tankBounds.height / 2;
-            const otherBottom = tankBounds.y + tankBounds.height / 2;
+        for (const obstacle of obstacles) {
+            const obstacleBounds = obstacle.getOccupancyBounds();
+            const otherLeft = obstacleBounds.x - obstacleBounds.width / 2;
+            const otherRight = obstacleBounds.x + obstacleBounds.width / 2;
+            const otherTop = obstacleBounds.y - obstacleBounds.height / 2;
+            const otherBottom = obstacleBounds.y + obstacleBounds.height / 2;
 
             const overlapX = selfLeft < otherRight && selfRight > otherLeft;
             const overlapY = selfTop < otherBottom && selfBottom > otherTop;
@@ -288,7 +288,7 @@ export default class PlayRuleMgr {
         if (!Number.isFinite(minDistance)) {
             return minDistance;
         }
-        return Math.max(0, Math.floor(minDistance));
+        return Math.max(0, minDistance);
     }
 
     isInBounds(x, y) {

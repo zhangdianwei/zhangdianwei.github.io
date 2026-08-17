@@ -18,6 +18,9 @@ export const MapRows = 26;
 export const MapCols = 26;
 export const MapWidth = MapCols * TileSize;
 export const MapHeight = MapRows * TileSize;
+export const TankSize = TileSize * 2;
+export const TankBoundaryThreshold = 2;
+export const TankPositionStep = TileSize / 2;
 
 export const TankType = {
     PLAYER: 0,

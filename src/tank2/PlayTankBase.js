@@ -1,6 +1,14 @@
 import * as PIXI from 'pixi.js'
 import { createSpriteSeqAnim } from './PlaySpriteSeqAnim.js'
-import { Dir, moveByDir, TileSize, TankType, TankConfig } from './TileType.js'
+import {
+  Dir,
+  moveByDir,
+  TankBoundaryThreshold,
+  TankConfig,
+  TankPositionStep,
+  TankSize,
+  TankType,
+} from './TileType.js'
 import PlayBullet from './PlayBullet.js'
 
 export default class PlayTankBase extends PIXI.Container {
@@ -12,7 +20,8 @@ export default class PlayTankBase extends PIXI.Container {
 
     this.tankType = tankType
     this.direction = Dir.UP
-    this.size = TileSize * 2
+    this.size = TankSize
+    this.occupancySize = TankSize - TankBoundaryThreshold * 2
 
     this.isMoving = false
     this.isShooting = false
@@ -87,15 +96,26 @@ export default class PlayTankBase extends PIXI.Container {
   }
 
   setDirection(direction) {
-    if (this.direction !== direction) {
-      this.checkCorrectPath()
-    }
+    if (this.direction !== direction) this.normalizePosition()
     this.direction = direction
     this.tankSprites.forEach((sprite) => { sprite.rotation = direction * (Math.PI / 2) })
   }
 
   setMoving(moving) {
     this.isMoving = moving
+  }
+
+  normalizePosition() {
+    const vertical = this.direction === Dir.UP || this.direction === Dir.DOWN
+    const forward = this.direction === Dir.RIGHT || this.direction === Dir.DOWN
+    const position = vertical ? this.y : this.x
+    const unit = position / TankPositionStep
+    const nearest = Math.round(unit)
+    const target = Math.abs(unit - nearest) < 0.000001
+      ? nearest * TankPositionStep
+      : (forward ? Math.ceil(unit) : Math.floor(unit)) * TankPositionStep
+    const distance = Math.min(Math.abs(target - position), this.getAllowedDistance(this.direction))
+    if (distance > 0) moveByDir(this, this.direction, distance)
   }
 
   setShooting(shooting) {
@@ -120,32 +140,26 @@ export default class PlayTankBase extends PIXI.Container {
     }
   }
 
-  checkCorrectPath() {
-    const size = TileSize / 2
-    this.x = Math.round(this.x / size) * size
-    this.y = Math.round(this.y / size) * size
+  checkMoving(deltaTime) {
+    if (!this.isMoving) return
+
+    const planned = this.speed * deltaTime
+    const movable = Math.min(planned, this.getAllowedDistance(this.direction))
+    if (movable > 0) moveByDir(this, this.direction, movable)
+
+    if (movable <= 0) return
+    this.animationTimer += deltaTime
+    if (this.animationTimer >= this.animationSpeed) {
+      this.animationTimer = 0
+      this.enterNextFrame()
+    }
   }
 
-  checkMoving(deltaTime) {
-    if (this.isMoving) {
-      const allowedMap = this.dialog.gameView.map.getMovableDistance(this.getBounds(), this.direction)
-      const allowedTank = this.dialog.ruleMgr.getMovableDistance(this.getBounds(), this.direction, this)
-      const clampedMap = Number.isFinite(allowedMap) ? Math.max(0, Math.floor(allowedMap)) : allowedMap
-      const clampedTank = Number.isFinite(allowedTank) ? Math.max(0, Math.floor(allowedTank)) : allowedTank
-      const allowed = Math.min(clampedMap, clampedTank)
-      const frameSpeed = Math.floor(this.speed * deltaTime)
-      const movable = Math.min(allowed, frameSpeed)
-
-      if (movable > 0) {
-        moveByDir(this, this.direction, movable)
-      }
-
-      this.animationTimer += deltaTime
-      if (this.animationTimer >= this.animationSpeed) {
-        this.animationTimer = 0
-        this.enterNextFrame()
-      }
-    }
+  getAllowedDistance(direction) {
+    const bounds = this.getOccupancyBounds()
+    const allowedMap = this.dialog.gameView.map.getMovableDistance(bounds, direction)
+    const allowedTank = this.dialog.ruleMgr.getMovableDistance(bounds, direction, this)
+    return Math.max(0, Math.min(allowedMap, allowedTank))
   }
 
   checkShooting(deltaTime) {
@@ -214,6 +228,15 @@ export default class PlayTankBase extends PIXI.Container {
       y: this.y,
       width: this.size,
       height: this.size,
+    }
+  }
+
+  getOccupancyBounds() {
+    return {
+      x: this.x,
+      y: this.y,
+      width: this.occupancySize,
+      height: this.occupancySize,
     }
   }
 }

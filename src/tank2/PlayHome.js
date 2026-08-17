@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js'
-import { TileSize } from './TileType.js'
+import { TankSize } from './TileType.js'
 
 export default class PlayHome extends PIXI.Container {
   constructor(dialog) {
@@ -9,7 +9,7 @@ export default class PlayHome extends PIXI.Container {
     this.app = dialog.app
 
     this.isDead = false
-    this.size = TileSize * 2
+    this.size = TankSize
 
     this.sprite = new PIXI.Sprite(this.app.textures.homeIntact)
     this.sprite.width = this.size
@@ -32,6 +32,15 @@ export default class PlayHome extends PIXI.Container {
     return {
       x: this.x - this.size / 2,
       y: this.y - this.size / 2,
+      width: this.size,
+      height: this.size,
+    }
+  }
+
+  getOccupancyBounds() {
+    return {
+      x: this.x,
+      y: this.y,
       width: this.size,
       height: this.size,
     }

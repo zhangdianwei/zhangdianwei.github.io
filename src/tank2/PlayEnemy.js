@@ -45,9 +45,9 @@ export default class PlayEnemy extends PlayTankBase {
 
     onAppearFinish(){
         super.onAppearFinish();
-        this.setMoving(true);
         this.setShooting(false);
         this.chooseDirectionWeighted();
+        this.setMoving(true);
     }
 
     resetShootTimer() {
@@ -80,15 +80,8 @@ export default class PlayEnemy extends PlayTankBase {
         const allowed = this.getAllowedDistance(this.direction);
 
         if (allowed <= 0) {
-            // 遇阻立刻重选方向，避免顶墙发呆
             this.chooseDirectionWeighted(true);
         }
-    }
-
-    getAllowedDistance(dir) {
-        const allowedMap = this.dialog.gameView.map.getMovableDistance(this.getBounds(), dir);
-        const allowedTank = this.dialog.ruleMgr.getMovableDistance(this.getBounds(), dir, this);
-        return Math.min(allowedMap, allowedTank);
     }
 
     chooseDirectionWeighted(isBlockedReroll = false) {

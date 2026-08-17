@@ -1,6 +1,6 @@
 import PlayTile from './PlayTile.js'
 import allLevels from './level/levels.json' with { type: 'json' }
-import { TileType, TileSize } from './TileType.js'
+import { MapCols, MapRows, TileSize, TileType } from './TileType.js'
 
 export default class PlayMap {
     constructor(dialog) {
@@ -9,8 +9,8 @@ export default class PlayMap {
 
         // === 地图配置 ===
         this.config = null;
-        this.mapCols = 26;
-        this.mapRows = 26;
+        this.mapCols = MapCols;
+        this.mapRows = MapRows;
 
         this.tiles = [];
 
@@ -124,84 +124,49 @@ export default class PlayMap {
     }
 
     isRectWalkable(cx, cy, halfSize = TileSize) {
-        const left = cx - halfSize;
-        const right = cx + halfSize - 1;
-        const top = cy - halfSize;
-        const bottom = cy + halfSize - 1;
-        const colStart = Math.floor(left / TileSize);
-        const colEnd = Math.floor(right / TileSize);
-        const rowStart = Math.floor(top / TileSize);
-        const rowEnd = Math.floor(bottom / TileSize);
+        const { rowStart, rowEnd, colStart, colEnd } = this.getOccupiedGridRange({
+            x: cx,
+            y: cy,
+            width: halfSize * 2,
+            height: halfSize * 2,
+        });
         for (let r = rowStart; r <= rowEnd; r++) {
             for (let c = colStart; c <= colEnd; c++) {
-                const t = this.getTileType(r, c);
-                if (!(t === TileType.EMPTY || t === TileType.GRASS)) {
-                    return false;
-                }
+                if (!this.passable(r, c)) return false;
             }
         }
         return true;
     }
 
-    // 只判断地形
     getMovableDistance(bounds, direction) {
-        const centerX = bounds.x;
-        const centerY = bounds.y;
-        const width = bounds.width;
-        const height = bounds.height;
+        const range = this.getOccupiedGridRange(bounds);
+        const left = bounds.x - bounds.width / 2;
+        const right = bounds.x + bounds.width / 2;
+        const top = bounds.y - bounds.height / 2;
+        const bottom = bounds.y + bounds.height / 2;
+        let distance = Infinity;
 
-        const t = TileSize / 8;
-        const srcPoses = [
-            { x: centerX - width/2, y: centerY - height/2 },
-            { x: centerX + width/2, y: centerY - height/2 },
-            { x: centerX - width/2, y: centerY + height/2 },
-            { x: centerX + width/2, y: centerY + height/2 }
-        ]
-        const thresPoses = [
-            { x: centerX - width/2 + t, y: centerY - height/2 + t },
-            { x: centerX + width/2 - t, y: centerY - height/2 + t },
-            { x: centerX - width/2 + t, y: centerY + height/2 - t },
-            { x: centerX + width/2 - t, y: centerY + height/2 - t }
-        ];
-        const standRCs = thresPoses.map(p => this.worldToGrid(p.x, p.y));
-        const nextRCs = standRCs.map(rc => this.findNextNotWalkRC(rc, direction));
-        const nextPoses = nextRCs.map(rc => this.gridToWorld(rc.row, rc.col));
-        const diffs = [];
-        for (let i = 0; i < srcPoses.length; i++) {
-            if (direction === 0) diffs.push(srcPoses[i].y - (nextPoses[i].y + TileSize));
-            else if (direction === 1) diffs.push(nextPoses[i].x - srcPoses[i].x);
-            else if (direction === 2) diffs.push(nextPoses[i].y - srcPoses[i].y);
-            else diffs.push(srcPoses[i].x - (nextPoses[i].x + TileSize));
+        if (direction === 0 || direction === 2) {
+            for (let col = range.colStart; col <= range.colEnd; col++) {
+                let row = direction === 0 ? range.rowStart - 1 : range.rowEnd + 1;
+                while (this.passable(row, col)) row += direction === 0 ? -1 : 1;
+                const next = direction === 0
+                    ? top - (row + 1) * TileSize
+                    : row * TileSize - bottom;
+                distance = Math.min(distance, next);
+            }
+        } else {
+            for (let row = range.rowStart; row <= range.rowEnd; row++) {
+                let col = direction === 3 ? range.colStart - 1 : range.colEnd + 1;
+                while (this.passable(row, col)) col += direction === 3 ? -1 : 1;
+                const next = direction === 3
+                    ? left - (col + 1) * TileSize
+                    : col * TileSize - right;
+                distance = Math.min(distance, next);
+            }
         }
-        return Math.min(...diffs);
-    }
 
-    findNextCanWalkRC(rc, direction) {
-        let r = rc.row;
-        let c = rc.col;
-        const passable = (row, col) => {
-            const t = this.getTileType(row, col);
-            return t === TileType.EMPTY || t === TileType.GRASS;
-        };
-
-        if (direction === 0) {
-            // 向上移动，从当前位置开始搜索
-            while (r - 1 >= 0 && passable(r - 1, c)) r--;
-            return { row: r, col: c };
-        }
-        if (direction === 2) {
-            // 向下移动，从当前位置开始搜索
-            while (r + 1 < this.mapRows && passable(r + 1, c)) r++;
-            return { row: r, col: c };
-        }
-        if (direction === 1) {
-            // 向右移动，从当前位置开始搜索
-            while (c + 1 < this.mapCols && passable(r, c + 1)) c++;
-            return { row: r, col: c };
-        }
-        // 向左移动，从当前位置开始搜索
-        while (c - 1 >= 0 && passable(r, c - 1)) c--;
-        return { row: r, col: c };
+        return Math.max(0, distance);
     }
 
     passable(row, col) {
@@ -212,28 +177,17 @@ export default class PlayMap {
         return t === TileType.EMPTY || t === TileType.GRASS;
     }
 
-    findNextNotWalkRC(rc, direction) {
-        let r = rc.row;
-        let c = rc.col;
-
-        if (direction === 0) {
-            // 向上移动，从当前位置开始搜索
-            while (this.passable(r, c)) r--;
-            return { row: r, col: c };
-        }
-        if (direction === 2) {
-            // 向下移动，从当前位置开始搜索
-            while (this.passable(r, c)) r++;
-            return { row: r, col: c };
-        }
-        if (direction === 1) {
-            // 向右移动，从当前位置开始搜索
-            while (this.passable(r, c)) c++;
-            return { row: r, col: c };
-        }
-        // 向左移动，从当前位置开始搜索
-        while (this.passable(r, c)) c--;
-        return { row: r, col: c };
+    getOccupiedGridRange(bounds) {
+        const left = bounds.x - bounds.width / 2;
+        const right = bounds.x + bounds.width / 2;
+        const top = bounds.y - bounds.height / 2;
+        const bottom = bounds.y + bounds.height / 2;
+        return {
+            rowStart: Math.floor(top / TileSize),
+            rowEnd: Math.ceil(bottom / TileSize) - 1,
+            colStart: Math.floor(left / TileSize),
+            colEnd: Math.ceil(right / TileSize) - 1,
+        };
     }
 
     // 世界坐标转换为网格坐标

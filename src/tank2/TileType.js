@@ -32,27 +32,27 @@ export const TankType = {
 
 export const TankConfig = {
     [TankType.PLAYER]: {
-        speed: 150,
+        speed: 100,
         health: 1,
         power: 1
     },
     [TankType.ENEMY_1]: {
-        speed: 60,
+        speed: 80,
         health: 1,
         power: 1
     },
     [TankType.ENEMY_2]: {
-        speed: 75,
+        speed: 80,
         health: 2,
         power: 1
     },
     [TankType.ENEMY_3]: {
-        speed: 90,
+        speed: 100,
         health: 3,
         power: 1
     },
     [TankType.ENEMY_4]: {
-        speed: 75,
+        speed: 120,
         health: 4,
         power: 2
     }

@@ -107,15 +107,15 @@ export default class PlayTankBase extends PIXI.Container {
 
   normalizePosition() {
     const vertical = this.direction === Dir.UP || this.direction === Dir.DOWN
-    const forward = this.direction === Dir.RIGHT || this.direction === Dir.DOWN
     const position = vertical ? this.y : this.x
-    const unit = position / TankPositionStep
-    const nearest = Math.round(unit)
-    const target = Math.abs(unit - nearest) < 0.000001
-      ? nearest * TankPositionStep
-      : (forward ? Math.ceil(unit) : Math.floor(unit)) * TankPositionStep
-    const distance = Math.min(Math.abs(target - position), this.getAllowedDistance(this.direction))
-    if (distance > 0) moveByDir(this, this.direction, distance)
+    const target = Math.round(position / TankPositionStep) * TankPositionStep
+    const offset = target - position
+    if (Math.abs(offset) < 0.000001) return
+    const direction = vertical
+      ? (offset < 0 ? Dir.UP : Dir.DOWN)
+      : (offset < 0 ? Dir.LEFT : Dir.RIGHT)
+    const distance = Math.min(Math.abs(offset), this.getAllowedDistance(direction))
+    if (distance > 0) moveByDir(this, direction, distance)
   }
 
   setShooting(shooting) {

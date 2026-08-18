@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js'
 import PlayMap from './PlayMap.js'
 import PlayPlayer from './PlayPlayer.js'
 import PlayHome from './PlayHome.js'
+import PlayBulletSpark from './PlayBulletSpark.js'
 import { createSpriteSeqAnim } from './PlaySpriteSeqAnim.js'
 import { TileSize, MapWidth, MapHeight, TankBoundaryThreshold, TankSize, TankType } from './TileType.js'
 
@@ -102,6 +103,19 @@ export default class PlayGameView extends PIXI.Container {
         })
         effect.x = x
         effect.y = y
+        this.renderLayers.effect.addChild(effect)
+        this.effects.push(effect)
+    }
+
+    addBulletSpark(x, y) {
+        const effect = new PlayBulletSpark(() => {
+            const index = this.effects.indexOf(effect)
+            if (index !== -1) this.effects.splice(index, 1)
+        })
+        effect.position.set(
+            Math.max(1, Math.min(MapWidth - 1, x)),
+            Math.max(1, Math.min(MapHeight - 1, y)),
+        )
         this.renderLayers.effect.addChild(effect)
         this.effects.push(effect)
     }

@@ -59,7 +59,7 @@ export default class PlayRuleMgr {
                 if (bullet.isDead) continue;
                 if (gameView.home.checkCollision(bullet.x, bullet.y)) {
                     gameView.home.takeDamage(bullet.power);
-                    bullet.makeDead();
+                    bullet.hit();
                 }
             }
         }
@@ -69,7 +69,7 @@ export default class PlayRuleMgr {
             enemies.forEach((enemy) => {
                 if (this.checkBulletTankCollision(bullet, enemy)) {
                     enemy.takeDamage(bullet.power);
-                    bullet.makeDead();
+                    bullet.hit();
                 }
             });
         });
@@ -78,7 +78,7 @@ export default class PlayRuleMgr {
         enemyBullets.forEach((bullet) => {
             if (player && this.checkBulletTankCollision(bullet, player)) {
                 player.takeDamage(bullet.power);
-                bullet.makeDead();
+                bullet.hit();
             }
         });
 
@@ -86,8 +86,8 @@ export default class PlayRuleMgr {
         playerBullets.forEach((playerBullet) => {
             enemyBullets.forEach((enemyBullet) => {
                 if (this.checkBulletBulletCollision(playerBullet, enemyBullet)) {
-                    playerBullet.makeDead();
-                    enemyBullet.makeDead();
+                    playerBullet.hit();
+                    enemyBullet.hit();
                 }
             });
         });

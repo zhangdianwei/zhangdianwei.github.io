@@ -249,6 +249,6 @@ export default class PlayMap {
                 hit = true;
             }
         }
-        if (hit) bullet.makeDead();
+        if (hit) bullet.hit();
     }
 }

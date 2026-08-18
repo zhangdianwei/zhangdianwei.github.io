@@ -66,8 +66,14 @@ export default class PlayBullet extends PIXI.Container {
     moveByDir(this, this.direction, this.speed * deltaTime)
 
     if (!this.dialog.ruleMgr.isInBounds(this.x, this.y)) {
-      this.makeDead()
+      this.hit()
     }
+  }
+
+  hit() {
+    if (this.isDead) return
+    this.dialog.gameView.addBulletSpark(this.x, this.y)
+    this.makeDead()
   }
 
   makeDead() {

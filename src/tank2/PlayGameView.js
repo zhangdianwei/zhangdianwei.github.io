@@ -3,7 +3,7 @@ import PlayMap from './PlayMap.js'
 import PlayPlayer from './PlayPlayer.js'
 import PlayHome from './PlayHome.js'
 import { createSpriteSeqAnim } from './PlaySpriteSeqAnim.js'
-import { TileSize, MapWidth, MapHeight, TankType } from './TileType.js'
+import { TileSize, MapWidth, MapHeight, TankBoundaryThreshold, TankSize, TankType } from './TileType.js'
 
 export default class PlayGameView extends PIXI.Container {
     constructor(dialog) {
@@ -130,6 +130,17 @@ export default class PlayGameView extends PIXI.Container {
     }
 
     createPlayer() {
+        const baseRow = this.map.mapRows - 1
+        const baseCol = this.map.mapCols / 2 - 1
+        const playerRow = baseRow
+        const playerCol = baseCol - 2
+        const position = { x: playerCol * TileSize, y: playerRow * TileSize }
+        const size = TankSize - TankBoundaryThreshold * 2
+        const bounds = { ...position, width: size, height: size }
+        const occupied = this.enemies.some((enemy) => !enemy.isDead &&
+            this.dialog.ruleMgr.checkBoundsOverlap(bounds, enemy.getOccupancyBounds()))
+        if (occupied) return false
+
         if (this.player?.parent) {
             this.player.parent.removeChild(this.player)
         }
@@ -137,15 +148,11 @@ export default class PlayGameView extends PIXI.Container {
         this.player = new PlayPlayer(this.dialog, TankType.PLAYER)
         this.renderLayers.tank.addChild(this.player)
 
-        // 设置玩家初始位置（基地左边2个格子）
-        const baseRow = this.map.mapRows - 1
-        const baseCol = this.map.mapCols / 2 - 1
-        const playerRow = baseRow
-        const playerCol = baseCol - 2
-        this.player.x = playerCol * TileSize
-        this.player.y = playerRow * TileSize
+        this.player.position.set(position.x, position.y)
 
         this.player.appear()
+        this.dialog.inputMgr?.syncPlayer()
+        return true
     }
 
     createHome() {

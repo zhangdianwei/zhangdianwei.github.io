@@ -4,144 +4,39 @@ import ResultDialog from './ResultDialog.js';
 export default class PlayRuleMgr {
     init(dialog) {
         this.dialog = dialog;
+        this.playerRespawnPending = false;
+        this.playerRespawnTimer = 0;
     }
 
     update() {
         const app = this.dialog.app;
         if (app.data.levelEndType !== 0) return;
 
-        const deltaTime = app.pixi.ticker.deltaMS / 1000;
+        const deltaTime = Math.min(app.pixi.ticker.deltaMS / 1000, 0.05);
         const gameView = this.dialog.gameView;
 
         this.dialog.enemySpawner.update(deltaTime);
+        this.updatePlayerRespawn(deltaTime);
 
         if (gameView.player) {
             gameView.player.update(deltaTime);
         }
 
-        gameView.enemies.forEach((enemy) => {
+        gameView.enemies.slice().forEach((enemy) => {
             enemy.update(deltaTime);
         });
 
-        this.resolveAllTankOverlaps();
-
-        gameView.playerBullets.forEach((bullet) => {
+        gameView.playerBullets.slice().forEach((bullet) => {
             bullet.update(deltaTime);
         });
 
-        gameView.enemyBullets.forEach((bullet) => {
+        gameView.enemyBullets.slice().forEach((bullet) => {
             bullet.update(deltaTime);
         });
 
         gameView.updateEffects(deltaTime);
 
         this.checkCollisions();
-    }
-
-    resolveAllTankOverlaps() {
-        const gameView = this.dialog.gameView;
-        const tanks = [gameView.player, ...gameView.enemies].filter((t) => t && !t.isDead);
-        if (tanks.length < 2) return;
-
-        // 小迭代次数即可处理常见链式重叠
-        for (let iter = 0; iter < 4; iter++) {
-            let changed = false;
-            for (let i = 0; i < tanks.length; i++) {
-                for (let j = i + 1; j < tanks.length; j++) {
-                    if (this.resolvePairOverlap(tanks[i], tanks[j], tanks)) {
-                        changed = true;
-                    }
-                }
-            }
-            if (!changed) break;
-        }
-    }
-
-    resolvePairOverlap(tankA, tankB, allTanks) {
-        const a = tankA.getOccupancyBounds();
-        const b = tankB.getOccupancyBounds();
-        if (!this.checkBoundsOverlap(a, b)) return false;
-
-        const aLeft = a.x - a.width / 2;
-        const aRight = a.x + a.width / 2;
-        const aTop = a.y - a.height / 2;
-        const aBottom = a.y + a.height / 2;
-        const bLeft = b.x - b.width / 2;
-        const bRight = b.x + b.width / 2;
-        const bTop = b.y - b.height / 2;
-        const bBottom = b.y + b.height / 2;
-
-        const overlapX = Math.min(aRight, bRight) - Math.max(aLeft, bLeft);
-        const overlapY = Math.min(aBottom, bBottom) - Math.max(aTop, bTop);
-        if (overlapX <= 0 || overlapY <= 0) return false;
-
-        const epsilon = 0.01;
-        let moveAX = 0, moveAY = 0, moveBX = 0, moveBY = 0;
-
-        if (overlapX <= overlapY) {
-            const dir = a.x <= b.x ? -1 : 1;
-            const sep = (overlapX + epsilon) / 2;
-            moveAX = dir * sep;
-            moveBX = -dir * sep;
-        } else {
-            const dir = a.y <= b.y ? -1 : 1;
-            const sep = (overlapY + epsilon) / 2;
-            moveAY = dir * sep;
-            moveBY = -dir * sep;
-        }
-
-        const aCanHalf = this.canPlaceTank(tankA, tankA.x + moveAX, tankA.y + moveAY, allTanks, tankB);
-        const bCanHalf = this.canPlaceTank(tankB, tankB.x + moveBX, tankB.y + moveBY, allTanks, tankA);
-
-        if (aCanHalf) {
-            tankA.x += moveAX;
-            tankA.y += moveAY;
-        }
-        if (bCanHalf) {
-            tankB.x += moveBX;
-            tankB.y += moveBY;
-        }
-        if (aCanHalf || bCanHalf) return true;
-
-        // 半分都不可行，尝试只移动一侧全部位移
-        const fullAX = moveAX * 2;
-        const fullAY = moveAY * 2;
-        const fullBX = moveBX * 2;
-        const fullBY = moveBY * 2;
-
-        if (this.canPlaceTank(tankA, tankA.x + fullAX, tankA.y + fullAY, allTanks, tankB)) {
-            tankA.x += fullAX;
-            tankA.y += fullAY;
-            return true;
-        }
-        if (this.canPlaceTank(tankB, tankB.x + fullBX, tankB.y + fullBY, allTanks, tankA)) {
-            tankB.x += fullBX;
-            tankB.y += fullBY;
-            return true;
-        }
-
-        return false;
-    }
-
-    canPlaceTank(tank, targetX, targetY, allTanks, ignoreTank) {
-        const half = tank.occupancySize / 2;
-        if (!this.dialog.gameView.map.isRectWalkable(targetX, targetY, half)) {
-            return false;
-        }
-
-        const candidate = {
-            x: targetX,
-            y: targetY,
-            width: tank.occupancySize,
-            height: tank.occupancySize
-        };
-        for (const other of allTanks) {
-            if (!other || other === tank || other === ignoreTank || other.isDead) continue;
-            if (this.checkBoundsOverlap(candidate, other.getOccupancyBounds())) {
-                return false;
-            }
-        }
-        return true;
     }
 
     checkCollisions() {
@@ -161,6 +56,7 @@ export default class PlayRuleMgr {
         if (gameView.home && !gameView.home.isDead) {
             for (let i = 0; i < allBullets.length; i++) {
                 const bullet = allBullets[i];
+                if (bullet.isDead) continue;
                 if (gameView.home.checkCollision(bullet.x, bullet.y)) {
                     gameView.home.takeDamage(bullet.power);
                     bullet.makeDead();
@@ -321,7 +217,19 @@ export default class PlayRuleMgr {
         const app = this.dialog.app;
         if (app.data.playerLives > 0) {
             app.data.playerLives--;
-            this.dialog.gameView.createPlayer();
+            this.playerRespawnPending = true;
+            this.playerRespawnTimer = 0.4;
+        }
+    }
+
+    updatePlayerRespawn(deltaTime) {
+        if (!this.playerRespawnPending) return;
+        this.playerRespawnTimer -= deltaTime;
+        if (this.playerRespawnTimer > 0) return;
+        if (this.dialog.gameView.createPlayer()) {
+            this.playerRespawnPending = false;
+        } else {
+            this.playerRespawnTimer = 0.2;
         }
     }
 
@@ -341,7 +249,7 @@ export default class PlayRuleMgr {
                 break;
             }
 
-            if (!gameView.player && app.data.playerLives === 0) {
+            if (!gameView.player && app.data.playerLives === 0 && !this.playerRespawnPending) {
                 app.data.levelEndType = 2;
                 break;
             }

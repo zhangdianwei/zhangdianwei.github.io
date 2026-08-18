@@ -57,7 +57,7 @@ export default class PlayHudView extends PIXI.Container {
         playerIcon.position.set(66, 660)
         this.addChild(playerIcon)
 
-        this.livesText = new PIXI.Text('3', { ...labelStyle, fontSize: 42 })
+        this.livesText = new PIXI.Text('2', { ...labelStyle, fontSize: 42 })
         this.livesText.anchor.set(0.5)
         this.livesText.position.set(126, 660)
         this.addChild(this.livesText)

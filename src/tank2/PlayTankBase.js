@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js'
 import { createSpriteSeqAnim } from './PlaySpriteSeqAnim.js'
 import {
+  BulletLevelConfig,
   Dir,
   moveByDir,
   TankBoundaryThreshold,
@@ -51,6 +52,8 @@ export default class PlayTankBase extends PIXI.Container {
     this.speed = config.speed
     this.health = config.health
     this.power = config.power
+    this.bulletLevel = config.bulletLevel
+    this.bulletSpeed = config.bulletSpeed || BulletLevelConfig[this.bulletLevel].speed
 
     this.initSprites()
   }
@@ -126,6 +129,15 @@ export default class PlayTankBase extends PIXI.Container {
     this.shootOnce = true
   }
 
+  setBulletLevel(level) {
+    this.bulletLevel = Math.max(1, Math.min(3, level))
+    this.bulletSpeed = BulletLevelConfig[this.bulletLevel].speed
+  }
+
+  upgradeBullet() {
+    this.setBulletLevel(this.bulletLevel + 1)
+  }
+
   shoot() {
     return new PlayBullet(this.dialog, this)
   }
@@ -196,6 +208,7 @@ export default class PlayTankBase extends PIXI.Container {
   }
 
   makeDead() {
+    if (this.isDead) return
     this.isDead = true
     this.visible = false
     this.dialog.gameView.addEffect('tankExplode', this.x, this.y, () => this.onDeadFinish())
@@ -207,7 +220,11 @@ export default class PlayTankBase extends PIXI.Container {
 
   update(deltaTime) {
     if (this.isDead) return
-    this.appearAnim?.update(deltaTime)
+    if (this.appearAnim) {
+      this.appearAnim.update(deltaTime)
+      this.checkInvincible(deltaTime)
+      return
+    }
     this.checkMoving(deltaTime)
     this.checkShooting(deltaTime)
     this.checkInvincible(deltaTime)

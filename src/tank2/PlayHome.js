@@ -30,8 +30,8 @@ export default class PlayHome extends PIXI.Container {
 
   getBounds() {
     return {
-      x: this.x - this.size / 2,
-      y: this.y - this.size / 2,
+      x: this.x,
+      y: this.y,
       width: this.size,
       height: this.size,
     }
@@ -48,7 +48,7 @@ export default class PlayHome extends PIXI.Container {
 
   checkCollision(x, y) {
     const bounds = this.getBounds()
-    return x >= bounds.x && x <= bounds.x + bounds.width &&
-      y >= bounds.y && y <= bounds.y + bounds.height
+    return Math.abs(x - bounds.x) <= bounds.width / 2 &&
+      Math.abs(y - bounds.y) <= bounds.height / 2
   }
 }

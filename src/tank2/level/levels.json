@@ -31,12 +31,7 @@
         ],
         "totalEnemies": 20,
         "maxEnemiesOnScreen": 4,
-        "enemySpawnRates": {
-            "type1": 0.4,
-            "type2": 0.3,
-            "type3": 0.2,
-            "type4": 0.1
-        },
+        "enemyCounts": [18, 2, 0, 0],
         "itemDropRates": {
             "life": 0.1,
             "stop": 0.15,
@@ -77,14 +72,9 @@
             0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0,
             0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0
         ],
-        "totalEnemies": 25,
+        "totalEnemies": 20,
         "maxEnemiesOnScreen": 4,
-        "enemySpawnRates": {
-            "type1": 0.35,
-            "type2": 0.35,
-            "type3": 0.2,
-            "type4": 0.1
-        },
+        "enemyCounts": [14, 4, 0, 2],
         "itemDropRates": {
             "life": 0.12,
             "stop": 0.12,
@@ -125,14 +115,9 @@
             3, 3, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0,
             3, 3, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0
         ],
-        "totalEnemies": 30,
+        "totalEnemies": 20,
         "maxEnemiesOnScreen": 4,
-        "enemySpawnRates": {
-            "type1": 0.3,
-            "type2": 0.35,
-            "type3": 0.25,
-            "type4": 0.1
-        },
+        "enemyCounts": [14, 4, 0, 2],
         "itemDropRates": {
             "life": 0.15,
             "stop": 0.1,
@@ -146,14 +131,9 @@
         "id": 4,
         "name": "第四关",
         "map": [],
-        "totalEnemies": 35,
+        "totalEnemies": 20,
         "maxEnemiesOnScreen": 4,
-        "enemySpawnRates": {
-            "type1": 0.25,
-            "type2": 0.35,
-            "type3": 0.3,
-            "type4": 0.1
-        },
+        "enemyCounts": [2, 5, 10, 3],
         "itemDropRates": {
             "life": 0.18,
             "stop": 0.08,
@@ -167,14 +147,9 @@
         "id": 5,
         "name": "第五关",
         "map": [],
-        "totalEnemies": 40,
+        "totalEnemies": 20,
         "maxEnemiesOnScreen": 4,
-        "enemySpawnRates": {
-            "type1": 0.2,
-            "type2": 0.35,
-            "type3": 0.35,
-            "type4": 0.1
-        },
+        "enemyCounts": [8, 5, 5, 2],
         "itemDropRates": {
             "life": 0.2,
             "stop": 0.05,

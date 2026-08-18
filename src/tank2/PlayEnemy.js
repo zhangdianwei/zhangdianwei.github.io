@@ -1,42 +1,27 @@
 import PlayTankBase from './PlayTankBase.js'
-import { Dir } from './TileType.js'
+import { Dir, TankType } from './TileType.js'
 
-const ENEMY_AI_CONFIG = {
-    // 换向决策间隔（秒）：越小越频繁换方向
-    directionIntervalMin: 6,
-    directionIntervalMax: 10,
-    // 射击决策间隔（秒）：到点后按概率判断是否开火
-    shootIntervalMin: 4,
-    shootIntervalMax: 8,
-    // 与当前方向相反方向的权重惩罚（<1表示不爱掉头）
-    reversePenalty: 0.5,
-    // 维持当前方向的轻微加权（>1表示更容易保持方向）
-    keepDirectionBoost: 1.15,
-    // 遇阻重选时，对“继续原方向”的额外惩罚
-    blockedKeepDirectionPenalty: 0.3,
-    // 常态开火概率
-    baseShootChance: 0.5,
-    // 前方同轴看到目标时的开火概率
-    lineupShootChance: 0.65,
-    // 方向基础权重（下方权重更高，营造压家感）
-    directionWeights: {
-        [Dir.UP]: 0.2,
-        [Dir.RIGHT]: 0.2,
-        [Dir.DOWN]: 0.4,
-        [Dir.LEFT]: 0.2
-    }
+const AI_CONFIG = {
+    [TankType.ENEMY_1]: { direction: [1.5, 3], shoot: [1.4, 2.6], shootChance: 0.5 },
+    [TankType.ENEMY_2]: { direction: [0.8, 1.8], shoot: [2.2, 4], shootChance: 0.4 },
+    [TankType.ENEMY_3]: { direction: [1.2, 2.5], shoot: [0.8, 1.6], shootChance: 0.7 },
+    [TankType.ENEMY_4]: { direction: [1.5, 3], shoot: [1.2, 2.4], shootChance: 0.6 },
+};
+
+const DIRECTION_WEIGHTS = {
+    [Dir.UP]: 0.2,
+    [Dir.RIGHT]: 0.2,
+    [Dir.DOWN]: 0.4,
+    [Dir.LEFT]: 0.2
 };
 
 export default class PlayEnemy extends PlayTankBase {
     constructor(dialog, tankType) {
         super(dialog, tankType);
 
-        this.directionTimer = this.random(ENEMY_AI_CONFIG.directionIntervalMin, ENEMY_AI_CONFIG.directionIntervalMax);
-        this.resetShootTimer();
-
-        this.reversePenalty = ENEMY_AI_CONFIG.reversePenalty;
-        this.baseShootChance = ENEMY_AI_CONFIG.baseShootChance;
-        this.lineupShootChance = ENEMY_AI_CONFIG.lineupShootChance;
+        this.aiConfig = AI_CONFIG[tankType];
+        this.resetDirectionTimer();
+        this.resetShootDecisionTimer();
     }
 
     random(min, max) {
@@ -50,29 +35,33 @@ export default class PlayEnemy extends PlayTankBase {
         this.setMoving(true);
     }
 
-    resetShootTimer() {
-        this.shootTimer = this.random(ENEMY_AI_CONFIG.shootIntervalMin, ENEMY_AI_CONFIG.shootIntervalMax);
+    resetDirectionTimer() {
+        this.directionTimer = this.random(...this.aiConfig.direction);
+    }
+
+    resetShootDecisionTimer() {
+        this.shootDecisionTimer = this.random(...this.aiConfig.shoot);
     }
 
     update(deltaTime) {
-        this.checkAI(deltaTime);
+        if (!this.appearAnim) this.checkAI(deltaTime);
         super.update(deltaTime);
     }
 
     checkAI(deltaTime) {
         this.directionTimer -= deltaTime;
-        this.shootTimer -= deltaTime;
+        this.shootDecisionTimer -= deltaTime;
 
         if (this.directionTimer <= 0) {
-            this.directionTimer = this.random(ENEMY_AI_CONFIG.directionIntervalMin, ENEMY_AI_CONFIG.directionIntervalMax);
+            this.resetDirectionTimer();
             this.chooseDirectionWeighted();
         }
 
         this.executeMovement();
 
-        if (this.shootTimer <= 0) {
+        if (this.shootDecisionTimer <= 0) {
             this.tryShoot();
-            this.resetShootTimer();
+            this.resetShootDecisionTimer();
         }
     }
 
@@ -100,10 +89,10 @@ export default class PlayEnemy extends PlayTankBase {
 
         let totalWeight = 0;
         const weighted = candidates.map((dir) => {
-            let w = ENEMY_AI_CONFIG.directionWeights[dir] ?? 0.2;
-            if (dir === reverseDirection) w *= this.reversePenalty;
-            if (dir === oldDirection) w *= ENEMY_AI_CONFIG.keepDirectionBoost;
-            if (isBlockedReroll && dir === oldDirection) w *= ENEMY_AI_CONFIG.blockedKeepDirectionPenalty;
+            let w = DIRECTION_WEIGHTS[dir] ?? 0.2;
+            if (dir === reverseDirection) w *= 0.5;
+            if (dir === oldDirection) w *= 1.15;
+            if (isBlockedReroll && dir === oldDirection) w *= 0.3;
             totalWeight += w;
             return { dir, w };
         });
@@ -127,7 +116,7 @@ export default class PlayEnemy extends PlayTankBase {
 
     tryShoot() {
         const hasLineup = this.hasFrontLineupTarget();
-        const chance = hasLineup ? this.lineupShootChance : this.baseShootChance;
+        const chance = hasLineup ? Math.min(1, this.aiConfig.shootChance + 0.2) : this.aiConfig.shootChance;
         if (Math.random() < chance) {
             this.setShootOnce(true);
         }

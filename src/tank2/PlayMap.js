@@ -209,9 +209,9 @@ export default class PlayMap {
         const bottom = bounds.y + bounds.height / 2;
 
         const startRow = Math.floor(top / TileSize);
-        const endRow = Math.floor(bottom / TileSize);
+        const endRow = Math.ceil(bottom / TileSize) - 1;
         const startCol = Math.floor(left / TileSize);
-        const endCol = Math.floor(right / TileSize);
+        const endCol = Math.ceil(right / TileSize) - 1;
 
         for (let row = startRow; row <= endRow; row++) {
             for (let col = startCol; col <= endCol; col++) {
@@ -227,26 +227,28 @@ export default class PlayMap {
     checkCollisionBullet(bullet) {
         if (bullet.isDead) return;
 
-        let bounds = bullet.getBounds();
-        let rcs = this.findRCsInBounds(bounds);
+        const bounds = bullet.getBounds();
+        const rcs = this.findRCsInBounds(bounds);
+        let hit = false;
         for (let i = 0; i < rcs.length; i++) {
-            let rc = rcs[i];
-            let tile = this.tiles[rc.row][rc.col];
+            const rc = rcs[i];
+            const tile = this.tiles[rc.row][rc.col];
             if (!tile) continue;
 
             if (tile.type === TileType.BRICK) {
-                tile.setBlood(tile.getBlood() - bullet.getPower());
+                tile.setBlood(tile.getBlood() - bullet.getBrickDamage());
                 if (tile.getBlood() <= 0) {
                     this.setTileType(rc.row, rc.col, TileType.EMPTY);
                 }
-                bullet.makeDead();
+                hit = true;
             }
             else if (tile.type === TileType.IRON) {
-                if (bullet.getPower() >= 2) {
+                if (bullet.canBreakIron()) {
                     this.setTileType(rc.row, rc.col, TileType.EMPTY);
                 }
-                bullet.makeDead();
+                hit = true;
             }
         }
+        if (hit) bullet.makeDead();
     }
 }

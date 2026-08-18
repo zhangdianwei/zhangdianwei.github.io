@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js'
-import { moveByDir, TankType, TileSize } from './TileType.js'
+import { BulletLevelConfig, moveByDir, TankType, TileSize } from './TileType.js'
 
 export const BulletType = {
   PLAYER: 'player',
@@ -16,12 +16,16 @@ export default class PlayBullet extends PIXI.Container {
     this.owner = owner
     this.bulletType = owner.tankType === TankType.PLAYER ? BulletType.PLAYER : BulletType.ENEMY
     this.direction = owner.direction
-    this.power = 1
-    this.speed = 300
-    this.size = TileSize * 0.625
+    this.power = owner.power
+    this.level = owner.bulletLevel
+    this.brickDamage = BulletLevelConfig[this.level].brickDamage
+    this.breaksIron = BulletLevelConfig[this.level].breaksIron
+    this.speed = owner.bulletSpeed
+    this.size = TileSize * 0.4
 
     this.x = this.owner.x
     this.y = this.owner.y
+    moveByDir(this, this.direction, owner.size / 2 + this.size / 2)
 
     this.createSprite()
 
@@ -37,6 +41,14 @@ export default class PlayBullet extends PIXI.Container {
     this.power = power
   }
 
+  getBrickDamage() {
+    return this.brickDamage
+  }
+
+  canBreakIron() {
+    return this.breaksIron
+  }
+
   createSprite() {
     const graphics = new PIXI.Graphics()
     graphics.beginFill(this.bulletType === BulletType.PLAYER ? 0x00FF00 : 0xFF0000)
@@ -50,6 +62,7 @@ export default class PlayBullet extends PIXI.Container {
   }
 
   update(deltaTime) {
+    if (this.isDead) return
     moveByDir(this, this.direction, this.speed * deltaTime)
 
     if (!this.dialog.ruleMgr.isInBounds(this.x, this.y)) {
@@ -58,6 +71,7 @@ export default class PlayBullet extends PIXI.Container {
   }
 
   makeDead() {
+    if (this.isDead) return
     this.isDead = true
     this.visible = false
 

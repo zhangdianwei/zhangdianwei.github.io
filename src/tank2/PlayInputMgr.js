@@ -20,7 +20,7 @@ export default class PlayInputMgr {
         } else if (control === 'a' || control === 'b') {
             if (pressed) this.shootKeys.add(source)
             else this.shootKeys.delete(source)
-            this.dialog.gameView.player?.setShooting(this.shootKeys.size > 0)
+            this.syncPlayer()
         }
     }
 
@@ -48,6 +48,11 @@ export default class PlayInputMgr {
             player.setDirection(last.dir)
             player.setMoving(true)
         }
+    }
+
+    syncPlayer() {
+        this.checkMovePlayer()
+        this.dialog.gameView.player?.setShooting(this.shootKeys.size > 0)
     }
 
     releaseAll() {

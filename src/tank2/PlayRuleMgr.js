@@ -1,4 +1,5 @@
-import { MapWidth, MapHeight } from './TileType.js';
+import { MapWidth, MapHeight, TileType } from './TileType.js';
+import { PowerUpType } from './PlayPowerUp.js';
 import ResultDialog from './ResultDialog.js';
 
 export default class PlayRuleMgr {
@@ -6,6 +7,9 @@ export default class PlayRuleMgr {
         this.dialog = dialog;
         this.playerRespawnPending = false;
         this.playerRespawnTimer = 0;
+        this.enemyFreezeTime = 0;
+        this.helmetTime = 0;
+        this.baseShieldTime = 0;
     }
 
     update() {
@@ -17,13 +21,14 @@ export default class PlayRuleMgr {
 
         this.dialog.enemySpawner.update(deltaTime);
         this.updatePlayerRespawn(deltaTime);
+        this.updatePowerUpTimers(deltaTime);
 
         if (gameView.player) {
             gameView.player.update(deltaTime);
         }
 
         gameView.enemies.slice().forEach((enemy) => {
-            enemy.update(deltaTime);
+            enemy.update(deltaTime, this.enemyFreezeTime > 0);
         });
 
         gameView.playerBullets.slice().forEach((bullet) => {
@@ -35,6 +40,7 @@ export default class PlayRuleMgr {
         });
 
         gameView.updateEffects(deltaTime);
+        gameView.updatePowerUp(deltaTime);
 
         this.checkCollisions();
     }
@@ -46,6 +52,10 @@ export default class PlayRuleMgr {
         const allBullets = [...playerBullets, ...enemyBullets];
         const player = gameView.player;
         const enemies = gameView.enemies;
+
+        if (player) gameView.powerUps.slice().forEach((powerUp) => {
+            if (this.checkBoundsOverlap(player.getBounds(), powerUp.getBounds())) powerUp.collect(player);
+        });
 
         // 子弹与地图碰撞
         for (let i = 0; i < allBullets.length; i++) {
@@ -194,11 +204,14 @@ export default class PlayRuleMgr {
     onTankDeadFinish(tank) {
         const gameView = this.dialog.gameView;
         if (tank === gameView.player) {
+            this.dialog.app.data.playerStarLevel = 0;
+            this.helmetTime = 0;
             gameView.removePlayer(tank);
             this.checkCreatePlayer();
         } else {
             gameView.removeEnemy(tank);
             this.dialog.app.addEnemyDestroyed(tank.tankType, 1);
+            if (!tank.suppressPowerUpDrop) gameView.spawnPowerUp();
         }
         this.dialog.hudView.updateView();
         this.checkGameState();
@@ -211,6 +224,47 @@ export default class PlayRuleMgr {
 
     onBulletDeadFinish(bullet) {
         this.dialog.gameView.removeBullet(bullet);
+    }
+
+    applyPowerUp(type, player) {
+        const gameView = this.dialog.gameView;
+        if (type === PowerUpType.STAR) player?.upgradeBullet();
+        if (type === PowerUpType.HELMET) {
+            this.helmetTime = 10;
+            player?.setInvincible(10);
+        }
+        if (type === PowerUpType.TANK) {
+            this.dialog.app.data.playerLives++;
+            this.dialog.hudView.updateView();
+        }
+        if (type === PowerUpType.CLOCK) this.enemyFreezeTime = 10;
+        if (type === PowerUpType.SHOVEL) {
+            this.baseShieldTime = 21.3;
+            gameView.map.setHomeWallType(TileType.IRON);
+            gameView.map.setHomeWallTint(0xFFFFFF);
+        }
+        if (type === PowerUpType.GRENADE) gameView.enemies.slice().forEach((enemy) => {
+            if (enemy.isDead) return;
+            enemy.suppressPowerUpDrop = true;
+            enemy.makeDead();
+        });
+        this.dialog.hudView.updatePowerUpStatus();
+    }
+
+    updatePowerUpTimers(deltaTime) {
+        this.enemyFreezeTime = Math.max(0, this.enemyFreezeTime - deltaTime);
+        this.helmetTime = Math.max(0, this.helmetTime - deltaTime);
+        this.dialog.hudView.updatePowerUpStatus();
+        if (this.baseShieldTime <= 0) return;
+        this.baseShieldTime -= deltaTime;
+        const map = this.dialog.gameView.map;
+        if (this.baseShieldTime > 0 && this.baseShieldTime <= 3) {
+            map.setHomeWallTint(Math.floor(this.baseShieldTime * 5) % 2 ? 0xFFFFFF : 0xFFD15A);
+        }
+        if (this.baseShieldTime <= 0) {
+            map.setHomeWallType(TileType.BRICK);
+            map.setHomeWallTint(0xFFFFFF);
+        }
     }
 
     checkCreatePlayer() {

@@ -22,6 +22,12 @@ import tankAppear6Url from './assets/born_6.png'
 import tankExplode1Url from './assets/explode_1.png'
 import tankExplode2Url from './assets/explode_2.png'
 import tankExplode3Url from './assets/explode_3.png'
+import itemStarUrl from './assets/item_star.png'
+import itemHelmetUrl from './assets/item_helmet.png'
+import itemGrenadeUrl from './assets/item_grenade.png'
+import itemClockUrl from './assets/item_clock.png'
+import itemShovelUrl from './assets/item_shovel.png'
+import itemTankUrl from './assets/item_tank.png'
 import startLogoUrl from './assets/tank-battle-logo.png'
 import gameboyBgUrl from './assets/gameboy-bg.png'
 import gameboyAUrl from './assets/gameboy-a.png'
@@ -57,6 +63,12 @@ export const textures = {
   tankExplode1: tankExplode1Url,
   tankExplode2: tankExplode2Url,
   tankExplode3: tankExplode3Url,
+  itemStar: itemStarUrl,
+  itemHelmet: itemHelmetUrl,
+  itemGrenade: itemGrenadeUrl,
+  itemClock: itemClockUrl,
+  itemShovel: itemShovelUrl,
+  itemTank: itemTankUrl,
   startLogo: startLogoUrl,
 }
 

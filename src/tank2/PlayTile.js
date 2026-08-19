@@ -61,6 +61,7 @@ export default class PlayTile extends PIXI.Container {
 
   setType(newType) {
     this.type = newType
+    this.blood = 2
     this.removeChild(this.sprite)
     this.createSprite()
     this.setPosition()

@@ -76,6 +76,7 @@ export default class ResultDialog extends Dialog {
     }
 
     onRestart() {
+        this.app.data.playerStarLevel = 0
         this.app.resetOneLevelData()
         this.app.dialogMgr.replace(PlayDialog)
     }

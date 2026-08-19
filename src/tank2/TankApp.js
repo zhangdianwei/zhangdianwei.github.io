@@ -24,6 +24,7 @@ export default class TankApp extends GameApp {
   resetPlayerData() {
     this.data.levelId = 0
     this.data.playerLives = 2
+    this.data.playerStarLevel = 0
     this.resetOneLevelData()
   }
 

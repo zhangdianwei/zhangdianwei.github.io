@@ -115,6 +115,30 @@ export default class PlayMap {
         }
     }
 
+    setHomeWallType(type) {
+        this.getHomeWallCells().forEach(({row, col}) => this.setTileType(row, col, type));
+    }
+
+    getHomeWallCells() {
+        const homeRow = this.mapRows - 1;
+        const homeCol = this.mapCols / 2 - 1;
+        return [homeCol - 1, homeCol, homeCol + 1, homeCol + 2]
+            .map((col) => ({row: homeRow - 2, col}))
+            .concat([
+                {row: homeRow - 1, col: homeCol - 1},
+                {row: homeRow - 1, col: homeCol + 2},
+                {row: homeRow, col: homeCol - 1},
+                {row: homeRow, col: homeCol + 2},
+            ]);
+    }
+
+    setHomeWallTint(tint) {
+        this.getHomeWallCells().forEach(({row, col}) => {
+            const tile = this.tiles[row]?.[col];
+            if (tile?.sprite) tile.sprite.tint = tint;
+        });
+    }
+
     // 检查位置是否可通行
     isWalkable(worldX, worldY) {
         const col = Math.floor(worldX / TileSize);

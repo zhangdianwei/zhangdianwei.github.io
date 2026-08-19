@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js'
 import { theme } from './theme.js'
+import { PowerUpType } from './PlayPowerUp.js'
 
 const HudSourceWidth = 192
 export const HudScale = 0.75
@@ -47,6 +48,12 @@ export default class PlayHudView extends PIXI.Container {
             fontWeight: 'bold',
             fill: 0x202020,
         }
+        this.enemyCountText = new PIXI.Text('x0', { ...labelStyle, fontSize: 38 })
+        this.enemyCountText.anchor.set(0.5)
+        this.enemyCountText.position.set(124, 70)
+        this.addChild(this.enemyCountText)
+        this.createPowerUpArea(labelStyle)
+
         const playerLabel = new PIXI.Text('1P', { ...labelStyle, fontSize: 34 })
         playerLabel.anchor.set(0.5)
         playerLabel.position.set(HudSourceWidth / 2, 606)
@@ -81,25 +88,105 @@ export default class PlayHudView extends PIXI.Container {
         this.addChild(this.levelText)
     }
 
+    createPowerUpArea(labelStyle) {
+        this.powerUpOrder = []
+        this.pendingPowerUps = new Set()
+        this.powerUpSlots = {}
+
+        const createSlot = (type, texture) => {
+            const root = this.addChild(new PIXI.Container())
+            root.position.set(40, 535)
+            root.visible = false
+            const icon = root.addChild(new PIXI.Sprite(this.app.textures[texture]))
+            icon.anchor.set(0.5)
+            icon.width = 42
+            icon.height = 42
+            this.powerUpSlots[type] = { root, icon, targetX: 40 }
+            return this.powerUpSlots[type]
+        }
+
+        const star = createSlot(PowerUpType.STAR, 'itemStar')
+        const helmet = createSlot(PowerUpType.HELMET, 'itemHelmet')
+        const clock = createSlot(PowerUpType.CLOCK, 'itemClock')
+        helmet.ring = helmet.root.addChild(new PIXI.Graphics())
+        clock.ring = clock.root.addChild(new PIXI.Graphics())
+
+        star.count = star.root.addChild(new PIXI.Text('x0', {
+            ...labelStyle,
+            fontSize: 18,
+            stroke: 0xF2F5F3,
+            strokeThickness: 4,
+        }))
+        star.count.anchor.set(0.5)
+        star.count.position.set(17, 17)
+    }
+
     updateView() {
         this.levelText.text = String(this.app.data.levelId + 1)
         this.livesText.text = String(this.app.data.playerLives)
         this.updateEnemyInfo()
+        this.updatePowerUpStatus()
+    }
+
+    updatePowerUpStatus() {
+        const ruleMgr = this.dialog.ruleMgr
+        const starLevel = this.app.data.playerStarLevel || 0
+        const active = {
+            [PowerUpType.STAR]: starLevel > 0,
+            [PowerUpType.HELMET]: ruleMgr.helmetTime > 0,
+            [PowerUpType.CLOCK]: ruleMgr.enemyFreezeTime > 0,
+        }
+        this.powerUpOrder = this.powerUpOrder.filter((type) => active[type] || this.pendingPowerUps.has(type))
+        this.powerUpOrder.forEach((type, index) => {
+            this.powerUpSlots[type].targetX = 40 + index * 56
+        })
+        Object.entries(this.powerUpSlots).forEach(([type, slot]) => {
+            slot.root.visible = !!active[type]
+            slot.root.x += (slot.targetX - slot.root.x) * 0.22
+        })
+        this.powerUpSlots[PowerUpType.STAR].count.text = `x${starLevel}`
+        this.drawTimer(this.powerUpSlots[PowerUpType.HELMET].ring, ruleMgr.helmetTime, 0x55B8FF)
+        this.drawTimer(this.powerUpSlots[PowerUpType.CLOCK].ring, ruleMgr.enemyFreezeTime, 0xF4A629)
+    }
+
+    drawTimer(graphics, remaining, color) {
+        graphics.clear()
+        if (remaining <= 0) return
+        graphics.lineStyle(5, 0x6D7975, 0.45)
+        graphics.drawCircle(0, 0, 27)
+        graphics.lineStyle(5, color, 1)
+        graphics.arc(0, 0, 27, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, remaining / 10))
+    }
+
+    getPowerUpTargetGlobal(type) {
+        const target = type === PowerUpType.TANK ? this.livesText : this.powerUpSlots[type].root
+        return target.getGlobalPosition()
+    }
+
+    reservePowerUp(type) {
+        if (!this.powerUpOrder.includes(type)) {
+            this.powerUpOrder.push(type)
+            const slot = this.powerUpSlots[type]
+            slot.root.x = 40 + (this.powerUpOrder.length - 1) * 56
+            slot.targetX = slot.root.x
+        }
+        this.pendingPowerUps.add(type)
+        return this.getPowerUpTargetGlobal(type)
+    }
+
+    commitPowerUp(type) {
+        this.pendingPowerUps.delete(type)
+        this.updatePowerUpStatus()
     }
 
     updateEnemyInfo() {
-        const total = this.dialog.gameView.map.config.totalEnemies
         const remaining = this.dialog.enemySpawner.getRemainingEnemies()
-        const columns = total <= 20 ? 2 : 4
-        const size = total <= 20 ? 38 : 26
-        const gapX = total <= 20 ? 54 : 39
-        const gapY = total <= 20 ? 48 : 31
-        const startX = (HudSourceWidth - (columns - 1) * gapX) / 2
-
         this.enemyIcons.forEach((icon, index) => {
-            icon.visible = index < remaining
-            icon.position.set(startX + index % columns * gapX, 34 + Math.floor(index / columns) * gapY)
-            icon.scale.set(size / 44)
+            icon.visible = index === 0 && remaining > 0
+            icon.position.set(52, 70)
+            icon.scale.set(1)
         })
+        this.enemyCountText.visible = remaining > 0
+        this.enemyCountText.text = `x${remaining}`
     }
 }

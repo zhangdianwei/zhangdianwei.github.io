@@ -52,8 +52,8 @@ export default class PlayTankBase extends PIXI.Container {
     this.speed = config.speed
     this.health = config.health
     this.power = config.power
-    this.bulletLevel = config.bulletLevel
-    this.bulletSpeed = config.bulletSpeed || BulletLevelConfig[this.bulletLevel].speed
+    this.setBulletLevel(config.bulletLevel)
+    this.bulletSpeed = config.bulletSpeed || this.bulletSpeed
 
     this.initSprites()
   }
@@ -130,8 +130,10 @@ export default class PlayTankBase extends PIXI.Container {
   }
 
   setBulletLevel(level) {
-    this.bulletLevel = Math.max(1, Math.min(3, level))
-    this.bulletSpeed = BulletLevelConfig[this.bulletLevel].speed
+    this.bulletLevel = Math.max(0, Math.min(3, level))
+    const config = BulletLevelConfig[this.bulletLevel]
+    this.bulletSpeed = config.speed
+    this.maxBullets = config.maxBullets
   }
 
   upgradeBullet() {

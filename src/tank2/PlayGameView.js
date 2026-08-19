@@ -3,8 +3,12 @@ import PlayMap from './PlayMap.js'
 import PlayPlayer from './PlayPlayer.js'
 import PlayHome from './PlayHome.js'
 import PlayBulletSpark from './PlayBulletSpark.js'
+import PlayPowerUp, { PowerUpType } from './PlayPowerUp.js'
 import { createSpriteSeqAnim } from './PlaySpriteSeqAnim.js'
 import { TileSize, MapWidth, MapHeight, TankBoundaryThreshold, TankSize, TankType } from './TileType.js'
+
+const PowerUpCells = [3, 9, 16, 22].flatMap((row) =>
+    [3, 9, 16, 22].map((col) => ({ row, col })))
 
 export default class PlayGameView extends PIXI.Container {
     constructor(dialog) {
@@ -28,6 +32,8 @@ export default class PlayGameView extends PIXI.Container {
         this.playerBullets = []
         this.enemyBullets = []
         this.effects = []
+        this.powerUps = []
+        this.powerUpEffects = []
     }
 
     layout(viewport) {
@@ -52,6 +58,7 @@ export default class PlayGameView extends PIXI.Container {
             tank: this.tileRoot.addChild(new PIXI.Container()),       // 坦克层（玩家、敌人、基地）
             bullets: this.tileRoot.addChild(new PIXI.Container()),    // 子弹层
             grass: this.tileRoot.addChild(new PIXI.Container()),      // 草地（装饰层）
+            items: this.tileRoot.addChild(new PIXI.Container()),
             effect: this.tileRoot.addChild(new PIXI.Container()),     // 效果层
         }
     }
@@ -124,6 +131,87 @@ export default class PlayGameView extends PIXI.Container {
         this.effects.slice().forEach((effect) => effect.update(deltaTime))
     }
 
+    spawnPowerUp() {
+        const available = PowerUpCells.filter(({ row, col }) => {
+            const bounds = { x: col * TileSize, y: row * TileSize, width: TankSize, height: TankSize }
+            return this.map.isRectWalkable(bounds.x, bounds.y, TankSize / 2) &&
+                this.powerUps.every((item) => !this.dialog.ruleMgr.checkBoundsOverlap(bounds, item.getBounds()))
+        })
+        const cells = available.length ? available : PowerUpCells
+        const cell = cells[Math.floor(Math.random() * cells.length)]
+        const powerUp = new PlayPowerUp(this.dialog, PowerUpType.STAR)
+        powerUp.position.set(cell.col * TileSize, cell.row * TileSize)
+        this.renderLayers.items.addChild(powerUp)
+        this.powerUps.push(powerUp)
+    }
+
+    removePowerUp(powerUp) {
+        powerUp.removeFromParent()
+        const index = this.powerUps.indexOf(powerUp)
+        if (index !== -1) this.powerUps.splice(index, 1)
+    }
+
+    collectPowerUp(powerUp, player) {
+        const globalPosition = powerUp.getGlobalPosition()
+        const worldScale = Math.hypot(powerUp.worldTransform.a, powerUp.worldTransform.b)
+        this.removePowerUp(powerUp)
+        this.dialog.addChild(powerUp)
+        powerUp.position.copyFrom(this.dialog.toLocal(globalPosition))
+        powerUp.scale.set(worldScale)
+        this.powerUpEffects.push(powerUp)
+
+        const finish = () => {
+            powerUp.removeFromParent()
+            const index = this.powerUpEffects.indexOf(powerUp)
+            if (index !== -1) this.powerUpEffects.splice(index, 1)
+            powerUp.destroy({ children: true })
+        }
+        const apply = () => this.dialog.ruleMgr.applyPowerUp(powerUp.type, player)
+        const flyTo = (target, options, afterApply) => {
+            powerUp.startFlight(this.dialog.toLocal(target), {
+                endScale: worldScale * 0.62,
+                ...options,
+            }, () => {
+                apply()
+                afterApply?.()
+                finish()
+            })
+        }
+
+        const hudFlight = {
+            [PowerUpType.STAR]: { arc: 90, turns: 1 },
+            [PowerUpType.HELMET]: { arc: 45, turns: 0.25 },
+            [PowerUpType.CLOCK]: { arc: 65, turns: 1.5 },
+        }
+        if (hudFlight[powerUp.type]) {
+            const target = this.dialog.hudView.reservePowerUp(powerUp.type)
+            flyTo(target, hudFlight[powerUp.type], () => this.dialog.hudView.commitPowerUp(powerUp.type))
+            return
+        }
+        if (powerUp.type === PowerUpType.TANK) {
+            flyTo(this.dialog.hudView.getPowerUpTargetGlobal(powerUp.type), { arc: 55, turns: 0.25 })
+            return
+        }
+        if (powerUp.type === PowerUpType.SHOVEL) {
+            flyTo(this.home.getGlobalPosition(), { arc: 70, turns: 0.5 }, () => this.addHomeWallTransformEffect())
+            return
+        }
+
+        apply()
+        powerUp.startBurst(0xFF5A3D, 0.48, finish)
+    }
+
+    addHomeWallTransformEffect() {
+        this.map.getHomeWallCells().forEach(({ row, col }) => {
+            this.addBulletSpark((col + 0.5) * TileSize, (row + 0.5) * TileSize)
+        })
+    }
+
+    updatePowerUp(deltaTime) {
+        this.powerUps.slice().forEach((powerUp) => powerUp.update(deltaTime))
+        this.powerUpEffects.slice().forEach((powerUp) => powerUp.update(deltaTime))
+    }
+
     startLevel(levelId) {
         this.clearLevel()
         this.map.loadLevel(levelId)
@@ -137,6 +225,9 @@ export default class PlayGameView extends PIXI.Container {
         this.playerBullets = []
         this.enemyBullets = []
         this.effects = []
+        this.powerUps = []
+        this.powerUpEffects.forEach((powerUp) => powerUp.removeFromParent())
+        this.powerUpEffects = []
 
         for (const name in this.renderLayers) {
             this.renderLayers[name]?.removeChildren()

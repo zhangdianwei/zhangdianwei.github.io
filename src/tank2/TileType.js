@@ -31,9 +31,10 @@ export const TankType = {
 };
 
 export const BulletLevelConfig = {
-    1: { brickDamage: 1, speed: 300, breaksIron: false },
-    2: { brickDamage: 2, speed: 420, breaksIron: false },
-    3: { brickDamage: 2, speed: 420, breaksIron: true }
+    0: { brickDamage: 1, speed: 300, breaksIron: false, maxBullets: 1 },
+    1: { brickDamage: 1, speed: 420, breaksIron: false, maxBullets: 1 },
+    2: { brickDamage: 1, speed: 420, breaksIron: false, maxBullets: 2 },
+    3: { brickDamage: 2, speed: 420, breaksIron: true, maxBullets: 2 }
 };
 
 export const TankConfig = {
@@ -41,7 +42,7 @@ export const TankConfig = {
         speed: 110,
         health: 1,
         power: 1,
-        bulletLevel: 1
+        bulletLevel: 0
     },
     [TankType.ENEMY_1]: {
         speed: 80,

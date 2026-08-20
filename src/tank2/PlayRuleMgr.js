@@ -1,4 +1,4 @@
-import { MapWidth, MapHeight, TileType } from './TileType.js';
+import { Dir, MapWidth, MapHeight, TileType } from './TileType.js';
 import { PowerUpType } from './PlayPowerUp.js';
 import ResultDialog from './ResultDialog.js';
 
@@ -157,6 +157,12 @@ export default class PlayRuleMgr {
             const overlapX = selfLeft < otherRight && selfRight > otherLeft;
             const overlapY = selfTop < otherBottom && selfBottom > otherTop;
             if (overlapX && overlapY) {
+                const separating =
+                    direction === Dir.UP && bounds.y <= obstacleBounds.y ||
+                    direction === Dir.RIGHT && bounds.x >= obstacleBounds.x ||
+                    direction === Dir.DOWN && bounds.y >= obstacleBounds.y ||
+                    direction === Dir.LEFT && bounds.x <= obstacleBounds.x;
+                if (separating) continue;
                 return 0;
             }
 

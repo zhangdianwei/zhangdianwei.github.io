@@ -1,5 +1,7 @@
+import AudioMgr from './AudioMgr.js'
 import GameApp from './GameApp.js'
 import StartDialog from './StartDialog.js'
+import { audioFiles } from './TankAssets.js'
 
 export default class TankApp extends GameApp {
   constructor(textures) {
@@ -10,10 +12,12 @@ export default class TankApp extends GameApp {
       backgroundColor: 0x1b2524,
       backgroundAlpha: 1,
     })
+    this.audioMgr = this.use(new AudioMgr({ volume: 0.8 }))
     this.resetPlayerData()
   }
 
   start() {
+    void this.audioMgr.loadAll(audioFiles)
     this.dialogMgr.push(StartDialog)
   }
 

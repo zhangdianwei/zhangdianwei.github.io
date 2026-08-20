@@ -153,6 +153,9 @@ export default class PlayTankBase extends PIXI.Container {
   }
 
   shoot() {
+    if (this.tankType === TankType.PLAYER) {
+      this.app.audioMgr.play('hit', { volume: 0.7, rate: 1.1, maxVoices: 3 })
+    }
     return new PlayBullet(this.dialog, this)
   }
 
@@ -232,6 +235,7 @@ export default class PlayTankBase extends PIXI.Container {
     if (this.isDead) return
     this.isDead = true
     this.visible = false
+    this.app.audioMgr.play('shortBomb', { volume: 0.65, maxVoices: 3 })
     this.dialog.gameView.addEffect('tankExplode', this.x, this.y, () => this.onDeadFinish())
   }
 

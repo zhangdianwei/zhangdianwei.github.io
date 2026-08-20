@@ -38,6 +38,10 @@ import gameboySelectUrl from './assets/gameboy-select.png'
 import gameboyStartUrl from './assets/gameboy-start.png'
 import gameboyJoystickBaseUrl from './assets/gameboy-joystick-base.png'
 import gameboyJoystickKnobUrl from './assets/gameboy-joystick-knob.png'
+import hitSoundUrl from './assets/sound/hit.mp3'
+import moveSoundUrl from './assets/sound/move.mp3'
+import shortBombSoundUrl from './assets/sound/short_bomb.mp3'
+import startSoundUrl from './assets/sound/start.mp3'
 
 export const textures = {
   tileBrick: tileBrickUrl,
@@ -84,4 +88,11 @@ export const shellAssets = {
   start: gameboyStartUrl,
   joystickBase: gameboyJoystickBaseUrl,
   joystickKnob: gameboyJoystickKnobUrl,
+}
+
+export const audioFiles = {
+  hit: hitSoundUrl,
+  move: moveSoundUrl,
+  shortBomb: shortBombSoundUrl,
+  start: startSoundUrl,
 }

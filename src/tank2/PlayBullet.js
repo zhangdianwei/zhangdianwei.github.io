@@ -72,6 +72,7 @@ export default class PlayBullet extends PIXI.Container {
 
   hit() {
     if (this.isDead) return
+    this.app.audioMgr.play('hit', { volume: 0.45, rate: 0.8, maxVoices: 3 })
     this.dialog.gameView.addBulletSpark(this.x, this.y)
     this.makeDead()
   }

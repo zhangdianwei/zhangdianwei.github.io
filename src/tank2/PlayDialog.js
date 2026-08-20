@@ -41,6 +41,7 @@ export default class PlayDialog extends Dialog {
         this.gameView.startLevel(this.app.data.levelId)
         this.gameView.createPlayer()
         this.hudView.updateView()
+        this.app.audioMgr.play('start', { volume: 0.9 })
     }
 
     onUpdate() {
@@ -72,5 +73,10 @@ export default class PlayDialog extends Dialog {
         this.paused = !this.paused
         this.pauseOverlay.visible = this.paused
         if (this.paused) this.inputMgr.releaseAll()
+    }
+
+    onDestroy() {
+        this.app.audioMgr.stop('move')
+        this.app.audioMgr.stop('start')
     }
 }

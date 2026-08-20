@@ -22,6 +22,7 @@ export default class PlayHome extends PIXI.Container {
     if (this.isDead) return
 
     this.isDead = true
+    this.app.audioMgr.play('shortBomb', { volume: 0.8, maxVoices: 3 })
     this.sprite.texture = this.app.textures.homeDestroyed
     this.dialog.gameView.addEffect('tankExplode', this.x, this.y, () => {
       this.dialog.ruleMgr.onHomeDeadFinish(this)

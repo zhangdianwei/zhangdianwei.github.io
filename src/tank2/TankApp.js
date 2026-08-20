@@ -25,15 +25,10 @@ export default class TankApp extends GameApp {
     this.dialogMgr?.current?.onControl?.(control, pressed)
   }
 
-  setNextPowerUp(type) {
-    this.data.nextPowerUpType = type
-  }
-
   resetPlayerData() {
-    this.data.levelId = 0
+    this.data.levelId = 1
     this.data.playerLives = 2
     this.data.playerStarLevel = 0
-    this.data.nextPowerUpType = 'star'
     this.resetOneLevelData()
   }
 

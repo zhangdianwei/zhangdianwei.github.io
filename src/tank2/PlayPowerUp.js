@@ -10,8 +10,6 @@ export const PowerUpType = {
   TANK: 'tank',
 }
 
-export const PowerUpTypes = Object.values(PowerUpType)
-
 const textureKeys = {
   [PowerUpType.STAR]: 'itemStar',
   [PowerUpType.HELMET]: 'itemHelmet',

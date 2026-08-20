@@ -39,34 +39,34 @@ export const BulletLevelConfig = {
 
 export const TankConfig = {
     [TankType.PLAYER]: {
-        speed: 110,
+        speed: 95,
         health: 1,
         power: 1,
         bulletLevel: 0
     },
     [TankType.ENEMY_1]: {
-        speed: 80,
+        speed: 70,
         health: 1,
         power: 1,
         bulletLevel: 1,
         bulletSpeed: 270
     },
     [TankType.ENEMY_2]: {
-        speed: 140,
+        speed: 120,
         health: 1,
         power: 1,
         bulletLevel: 1,
         bulletSpeed: 270
     },
     [TankType.ENEMY_3]: {
-        speed: 100,
+        speed: 85,
         health: 1,
         power: 1,
         bulletLevel: 1,
         bulletSpeed: 400
     },
     [TankType.ENEMY_4]: {
-        speed: 70,
+        speed: 60,
         health: 4,
         power: 1,
         bulletLevel: 1,

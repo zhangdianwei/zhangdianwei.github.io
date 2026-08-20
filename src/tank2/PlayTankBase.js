@@ -29,6 +29,8 @@ export default class PlayTankBase extends PIXI.Container {
     this.shootOnce = false
 
     this.invincibleTime = 0
+    this.invincibleFrame = 0
+    this.invincibleFrameTimer = 0
 
     this.currentFrame = 0
     this.animationTimer = 0
@@ -73,6 +75,16 @@ export default class PlayTankBase extends PIXI.Container {
       sprite.visible = false
       this.tankSprites.push(sprite)
       this.addChild(sprite)
+    })
+
+    this.invincibleSprites = ['tankInvincible1', 'tankInvincible2'].map((key) => {
+      const sprite = new PIXI.Sprite(this.app.textures[key])
+      sprite.anchor.set(0.5)
+      sprite.width = 56
+      sprite.height = 56
+      sprite.visible = false
+      this.addChild(sprite)
+      return sprite
     })
   }
 
@@ -194,10 +206,17 @@ export default class PlayTankBase extends PIXI.Container {
   checkInvincible(deltaTime) {
     if (this.invincibleTime > 0) {
       this.invincibleTime -= deltaTime
-      this.alpha = Math.sin(Date.now() * 0.01) > 0 ? 1 : 0.5
-    } else {
-      this.alpha = 1
+      this.invincibleFrameTimer += deltaTime
+      if (this.invincibleFrameTimer >= 0.12) {
+        this.invincibleFrameTimer -= 0.12
+        this.invincibleFrame = (this.invincibleFrame + 1) % this.invincibleSprites.length
+      }
+      this.invincibleSprites.forEach((sprite, index) => { sprite.visible = index === this.invincibleFrame })
+      return
     }
+    this.invincibleSprites.forEach((sprite) => { sprite.visible = false })
+    this.invincibleFrameTimer = 0
+    this.invincibleFrame = 0
   }
 
   takeDamage(damage) {

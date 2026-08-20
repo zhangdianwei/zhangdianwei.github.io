@@ -139,7 +139,7 @@ export default class PlayGameView extends PIXI.Container {
         })
         const cells = available.length ? available : PowerUpCells
         const cell = cells[Math.floor(Math.random() * cells.length)]
-        const powerUp = new PlayPowerUp(this.dialog, PowerUpType.STAR)
+        const powerUp = new PlayPowerUp(this.dialog, this.app.data.nextPowerUpType || PowerUpType.STAR)
         powerUp.position.set(cell.col * TileSize, cell.row * TileSize)
         this.renderLayers.items.addChild(powerUp)
         this.powerUps.push(powerUp)
@@ -179,9 +179,9 @@ export default class PlayGameView extends PIXI.Container {
         }
 
         const hudFlight = {
-            [PowerUpType.STAR]: { arc: 90, turns: 1 },
-            [PowerUpType.HELMET]: { arc: 45, turns: 0.25 },
-            [PowerUpType.CLOCK]: { arc: 65, turns: 1.5 },
+            [PowerUpType.STAR]: { arc: 68, tilt: 0.28 },
+            [PowerUpType.HELMET]: { arc: 42, tilt: -0.14 },
+            [PowerUpType.CLOCK]: { arc: 54, tilt: 0.2 },
         }
         if (hudFlight[powerUp.type]) {
             const target = this.dialog.hudView.reservePowerUp(powerUp.type)
@@ -189,11 +189,11 @@ export default class PlayGameView extends PIXI.Container {
             return
         }
         if (powerUp.type === PowerUpType.TANK) {
-            flyTo(this.dialog.hudView.getPowerUpTargetGlobal(powerUp.type), { arc: 55, turns: 0.25 })
+            flyTo(this.dialog.hudView.getPowerUpTargetGlobal(powerUp.type), { arc: 46, tilt: -0.12 })
             return
         }
         if (powerUp.type === PowerUpType.SHOVEL) {
-            flyTo(this.home.getGlobalPosition(), { arc: 70, turns: 0.5 }, () => this.addHomeWallTransformEffect())
+            flyTo(this.home.getGlobalPosition(), { arc: 58, tilt: 0.18 }, () => this.addHomeWallTransformEffect())
             return
         }
 

@@ -22,6 +22,8 @@ import tankAppear6Url from './assets/born_6.png'
 import tankExplode1Url from './assets/explode_1.png'
 import tankExplode2Url from './assets/explode_2.png'
 import tankExplode3Url from './assets/explode_3.png'
+import tankInvincible1Url from './assets/tank_invincible_1.png'
+import tankInvincible2Url from './assets/tank_invincible_2.png'
 import itemStarUrl from './assets/item_star.png'
 import itemHelmetUrl from './assets/item_helmet.png'
 import itemGrenadeUrl from './assets/item_grenade.png'
@@ -63,6 +65,8 @@ export const textures = {
   tankExplode1: tankExplode1Url,
   tankExplode2: tankExplode2Url,
   tankExplode3: tankExplode3Url,
+  tankInvincible1: tankInvincible1Url,
+  tankInvincible2: tankInvincible2Url,
   itemStar: itemStarUrl,
   itemHelmet: itemHelmetUrl,
   itemGrenade: itemGrenadeUrl,

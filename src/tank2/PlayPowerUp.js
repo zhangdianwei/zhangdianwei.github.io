@@ -71,6 +71,8 @@ export default class PlayPowerUp extends PIXI.Container {
   }
 
   startFlight(target, options, onComplete) {
+    const distance = Math.hypot(target.x - this.x, target.y - this.y)
+    const arc = options.arc || 0
     this.state = 'flight'
     this.stateTime = 0
     this.flight = {
@@ -78,10 +80,16 @@ export default class PlayPowerUp extends PIXI.Container {
       startY: this.y,
       startScale: this.scale.x,
       target,
-      duration: options.duration || 0.55,
-      arc: options.arc || 0,
-      turns: options.turns || 0,
-      endScale: options.endScale || this.scale.x * 0.6,
+      control1X: this.x + (target.x - this.x) * 0.3,
+      control1Y: this.y + (target.y - this.y) * 0.12 - arc,
+      control2X: this.x + (target.x - this.x) * 0.72,
+      control2Y: this.y + (target.y - this.y) * 0.78 - arc * 0.65,
+      pickupDuration: options.pickupDuration || 0.12,
+      pickupScale: this.scale.x * 0.6,
+      duration: options.duration || Math.max(0.58, Math.min(0.82, distance / 900)),
+      tilt: options.tilt || 0,
+      startRotation: this.rotation,
+      endScale: options.endScale || this.scale.x,
       onComplete,
     }
   }
@@ -98,13 +106,27 @@ export default class PlayPowerUp extends PIXI.Container {
 
   updateFlight() {
     const data = this.flight
-    const progress = Math.min(1, this.stateTime / data.duration)
-    const eased = 1 - (1 - progress) ** 3
-    this.x = data.startX + (data.target.x - data.startX) * eased
-    this.y = data.startY + (data.target.y - data.startY) * eased - Math.sin(progress * Math.PI) * data.arc
-    this.rotation = progress * Math.PI * 2 * data.turns
-    this.scale.set(data.startScale + (data.endScale - data.startScale) * eased)
-    if (progress === 1) data.onComplete()
+    if (this.stateTime < data.pickupDuration) {
+      const progress = this.stateTime / data.pickupDuration
+      const eased = progress * progress * (3 - 2 * progress)
+      this.scale.set(data.startScale + (data.pickupScale - data.startScale) * eased)
+      return
+    }
+    const progress = Math.min(1, (this.stateTime - data.pickupDuration) / data.duration)
+    const eased = progress ** 3 * (progress * (progress * 6 - 15) + 10)
+    const rest = 1 - eased
+    this.x = rest ** 3 * data.startX + 3 * rest ** 2 * eased * data.control1X +
+      3 * rest * eased ** 2 * data.control2X + eased ** 3 * data.target.x
+    this.y = rest ** 3 * data.startY + 3 * rest ** 2 * eased * data.control1Y +
+      3 * rest * eased ** 2 * data.control2Y + eased ** 3 * data.target.y
+    this.rotation = data.startRotation * rest + Math.sin(eased * Math.PI) * data.tilt
+    this.scale.set(data.pickupScale + (data.endScale - data.pickupScale) * eased)
+    if (progress === 1) {
+      this.state = 'arrived'
+      this.rotation = 0
+      this.scale.set(data.endScale)
+      data.onComplete()
+    }
   }
 
   updateBurst() {

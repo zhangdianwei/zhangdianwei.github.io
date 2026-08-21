@@ -141,13 +141,18 @@ export default class PlayGameView extends PIXI.Container {
     }
 
     spawnPowerUp() {
-        let roll = Math.random()
-        const rates = this.map.config.itemDropRates || {}
-        const entry = PowerUpRates.find(([key]) => {
-            roll -= (rates[key] || 0) * PowerUpDropScale
-            return roll < 0
-        })
-        if (!entry) return
+        const forcedType = this.app.data.nextPowerUpType
+        let type = forcedType
+        if (!type) {
+            let roll = Math.random()
+            const rates = this.map.config.itemDropRates || {}
+            const entry = PowerUpRates.find(([key]) => {
+                roll -= (rates[key] || 0) * PowerUpDropScale
+                return roll < 0
+            })
+            if (!entry) return
+            type = entry[1]
+        }
 
         const available = PowerUpCells.filter(({ row, col }) => {
             const bounds = { x: col * TileSize, y: row * TileSize, width: TankSize, height: TankSize }
@@ -156,10 +161,11 @@ export default class PlayGameView extends PIXI.Container {
         })
         if (!available.length) return
         const cell = available[Math.floor(Math.random() * available.length)]
-        const powerUp = new PlayPowerUp(this.dialog, entry[1])
+        const powerUp = new PlayPowerUp(this.dialog, type)
         powerUp.position.set(cell.col * TileSize, cell.row * TileSize)
         this.renderLayers.items.addChild(powerUp)
         this.powerUps.push(powerUp)
+        if (forcedType) this.app.consumeNextPowerUp()
     }
 
     removePowerUp(powerUp) {

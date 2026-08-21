@@ -1,7 +1,9 @@
 import AudioMgr from './AudioMgr.js'
 import GameApp from './GameApp.js'
+import PlayDialog from './PlayDialog.js'
 import StartDialog from './StartDialog.js'
 import { audioFiles } from './TankAssets.js'
+import allLevels from './level/levels.json' with { type: 'json' }
 
 export default class TankApp extends GameApp {
   constructor(textures) {
@@ -13,6 +15,7 @@ export default class TankApp extends GameApp {
       backgroundAlpha: 1,
     })
     this.audioMgr = this.use(new AudioMgr({ volume: 0.8 }))
+    this.data.nextPowerUpType = null
     this.resetPlayerData()
   }
 
@@ -25,8 +28,24 @@ export default class TankApp extends GameApp {
     this.dialogMgr?.current?.onControl?.(control, pressed)
   }
 
-  resetPlayerData() {
-    this.data.levelId = 2
+  setNextPowerUp(type) {
+    this.data.nextPowerUpType = type || null
+  }
+
+  consumeNextPowerUp() {
+    const type = this.data.nextPowerUpType
+    this.data.nextPowerUpType = null
+    return type
+  }
+
+  startDebugLevel(levelId) {
+    const next = Math.max(0, Math.min(allLevels.length - 1, Number(levelId) || 0))
+    this.resetPlayerData(next)
+    this.dialogMgr.replace(PlayDialog)
+  }
+
+  resetPlayerData(levelId = 0) {
+    this.data.levelId = levelId
     this.data.playerLives = 2
     this.data.playerStarLevel = 0
     this.resetOneLevelData()

@@ -1,10 +1,24 @@
 <script setup>
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { Button, Drawer, Form, FormItem, Option, Select } from 'view-ui-plus'
 import GameCanvas from './GameCanvas.vue'
 import { shellAssets, textures } from './TankAssets.js'
 import TankApp from './TankApp.js'
+import allLevels from './level/levels.json' with { type: 'json' }
 
 const view = ref(null)
+const debugOpen = ref(false)
+const debugLevel = ref(0)
+const debugPowerUp = ref('random')
+const powerUpOptions = [
+  ['star', '星星'],
+  ['helmet', '头盔'],
+  ['grenade', '炸弹'],
+  ['clock', '时钟'],
+  ['shovel', '铁锹'],
+  ['tank', '加命坦克'],
+]
+const levelOptions = allLevels.map((_, index) => index)
 const pressed = reactive({ up: false, right: false, down: false, left: false, a: false, select: false, start: false })
 const directions = ['up', 'right', 'down', 'left']
 const labels = { up: '上', right: '右', down: '下', left: '左', a: 'A键', select: '选择', start: '开始' }
@@ -24,10 +38,26 @@ let game
 function start(loadedTextures) {
   game?.destroy()
   game = new TankApp(loadedTextures)
+  if (debugPowerUp.value !== 'random') game.setNextPowerUp(debugPowerUp.value)
   game.init(view.value.canvas)
   Object.keys(pressed).forEach((control) => {
     if (pressed[control]) game.setControl(control, true)
   })
+}
+
+function openDebug() {
+  debugLevel.value = game?.data.levelId || 0
+  debugPowerUp.value = game?.data.nextPowerUpType || 'random'
+  debugOpen.value = true
+}
+
+function setDebugPowerUp(type) {
+  game?.setNextPowerUp(type === 'random' ? null : type)
+}
+
+function startDebugLevel() {
+  game?.startDebugLevel(debugLevel.value)
+  debugOpen.value = false
 }
 
 function setControl(control, source, active) {
@@ -123,6 +153,32 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="tank-stage">
+    <Button
+      class="debug-trigger"
+      shape="circle"
+      icon="md-build"
+      title="打开调试功能"
+      aria-label="打开调试功能"
+      @click="openDebug"
+    />
+
+    <Drawer v-model="debugOpen" title="调试" :width="280">
+      <Form label-position="top">
+        <FormItem label="下一个道具">
+          <Select v-model="debugPowerUp" @on-change="setDebugPowerUp">
+            <Option value="random">正常概率</Option>
+            <Option v-for="[value, label] in powerUpOptions" :key="value" :value="value">{{ label }}</Option>
+          </Select>
+        </FormItem>
+        <FormItem label="关卡">
+          <Select v-model="debugLevel">
+            <Option v-for="level in levelOptions" :key="level" :value="level">第 {{ level + 1 }} 关</Option>
+          </Select>
+        </FormItem>
+        <Button type="primary" icon="md-play" long @click="startDebugLevel">进入关卡</Button>
+      </Form>
+    </Drawer>
+
     <div class="background" :style="{ borderImageSource: `url(${shellAssets.background})` }" />
 
     <div class="screen-shell">
@@ -194,6 +250,13 @@ onBeforeUnmount(() => {
   overflow: hidden;
   background: #bfd1da;
   user-select: none;
+}
+
+.debug-trigger {
+  position: absolute;
+  z-index: 10;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
 }
 
 .background {

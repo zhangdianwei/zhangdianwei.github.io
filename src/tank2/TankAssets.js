@@ -1,6 +1,8 @@
 import tileBrickUrl from './assets/tile_brick.png'
 import tileIronUrl from './assets/tile_iron.png'
 import tileGrassUrl from './assets/bigtile_3_tile_1.png'
+import tileWaterUrl from './assets/tile_water.png'
+import tileIceUrl from './assets/tile_ice.png'
 import homeIntactUrl from './assets/home_intact.png'
 import homeDestroyedUrl from './assets/home_destroyed.png'
 import playerRun1Url from './assets/player_run_1.png'
@@ -47,7 +49,8 @@ export const textures = {
   tileBrick: tileBrickUrl,
   tileIron: tileIronUrl,
   tileGrass: tileGrassUrl,
-  tileWater: tileGrassUrl,
+  tileWater: tileWaterUrl,
+  tileIce: tileIceUrl,
   homeIntact: homeIntactUrl,
   homeDestroyed: homeDestroyedUrl,
   playerRun1: playerRun1Url,

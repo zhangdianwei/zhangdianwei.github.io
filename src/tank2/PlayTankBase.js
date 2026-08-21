@@ -25,6 +25,7 @@ export default class PlayTankBase extends PIXI.Container {
     this.occupancySize = TankSize - TankBoundaryThreshold * 2
 
     this.isMoving = false
+    this.slideSpeed = 0
     this.isShooting = false
     this.shootOnce = false
 
@@ -111,13 +112,25 @@ export default class PlayTankBase extends PIXI.Container {
   }
 
   setDirection(direction) {
-    if (this.direction !== direction) this.normalizePosition()
+    if (this.direction !== direction) {
+      this.normalizePosition()
+      this.slideSpeed = 0
+    }
     this.direction = direction
     this.tankSprites.forEach((sprite) => { sprite.rotation = direction * (Math.PI / 2) })
   }
 
   setMoving(moving) {
+    if (this.isMoving === moving) return
+    if (!moving && this.isMoving && this.dialog.gameView.map.isIce(this.x, this.y)) {
+      this.slideSpeed = this.speed
+    }
+    if (moving) this.slideSpeed = 0
     this.isMoving = moving
+  }
+
+  isSliding() {
+    return !this.isMoving && this.slideSpeed > 0
   }
 
   normalizePosition() {
@@ -170,11 +183,18 @@ export default class PlayTankBase extends PIXI.Container {
   }
 
   checkMoving(deltaTime) {
-    if (!this.isMoving) return
+    const sliding = this.isSliding()
+    if (!this.isMoving && !sliding) return
 
-    const planned = this.speed * deltaTime
+    const planned = (sliding ? this.slideSpeed : this.speed) * deltaTime
     const movable = Math.min(planned, this.getAllowedDistance(this.direction))
     if (movable > 0) moveByDir(this, this.direction, movable)
+
+    if (sliding) {
+      this.slideSpeed = movable < planned
+        ? 0
+        : Math.max(0, this.slideSpeed - this.speed * 1.6 * deltaTime)
+    }
 
     if (movable <= 0) return
     this.animationTimer += deltaTime
@@ -234,6 +254,7 @@ export default class PlayTankBase extends PIXI.Container {
   makeDead() {
     if (this.isDead) return
     this.isDead = true
+    this.slideSpeed = 0
     this.visible = false
     this.app.audioMgr.play('shortBomb', { volume: 0.65, maxVoices: 3 })
     this.dialog.gameView.addEffect('tankExplode', this.x, this.y, () => this.onDeadFinish())

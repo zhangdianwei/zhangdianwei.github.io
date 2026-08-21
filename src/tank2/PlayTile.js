@@ -42,6 +42,9 @@ export default class PlayTile extends PIXI.Container {
       case TileType.WATER:
         this.sprite = new PIXI.Sprite(this.app.textures.tileWater)
         break
+      case TileType.ICE:
+        this.sprite = new PIXI.Sprite(this.app.textures.tileIce)
+        break
       default:
         this.sprite = new PIXI.Graphics()
         this.sprite.beginFill(0x808080)

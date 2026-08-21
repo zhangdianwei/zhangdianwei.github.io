@@ -4,6 +4,7 @@ export const TileType = {
     IRON: 2,
     GRASS: 3,
     WATER: 4,
+    ICE: 5,
 };
 
 export const Dir = {

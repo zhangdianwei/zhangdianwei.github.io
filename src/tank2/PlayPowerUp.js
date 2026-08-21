@@ -1,6 +1,9 @@
 import * as PIXI from 'pixi.js'
 import { TankSize } from './TileType.js'
 
+const LifeTime = 10
+const WarningTime = 3
+
 export const PowerUpType = {
   STAR: 'star',
   HELMET: 'helmet',
@@ -29,6 +32,7 @@ export default class PlayPowerUp extends PIXI.Container {
     this.stateTime = 0
     this.state = 'appearing'
     this.collected = false
+    this.lifeTime = LifeTime
 
     this.sprite = new PIXI.Sprite(dialog.app.textures[textureKeys[type]])
     this.sprite.anchor.set(0.5)
@@ -41,6 +45,15 @@ export default class PlayPowerUp extends PIXI.Container {
   update(deltaTime) {
     this.elapsed += deltaTime
     this.stateTime += deltaTime
+    if (!this.collected) {
+      this.lifeTime -= deltaTime
+      if (this.lifeTime <= 0) {
+        this.dialog.gameView.removePowerUp(this)
+        this.destroy({ children: true })
+        return
+      }
+      this.sprite.alpha = this.lifeTime <= WarningTime && Math.floor(this.lifeTime * 6) % 2 === 0 ? 0.25 : 1
+    }
     if (this.state === 'appearing') {
       const progress = Math.min(1, this.stateTime / 0.32)
       const value = progress - 1
@@ -65,6 +78,7 @@ export default class PlayPowerUp extends PIXI.Container {
   collect(player) {
     if (this.collected) return
     this.collected = true
+    this.sprite.alpha = 1
     this.dialog.gameView.collectPowerUp(this, player)
   }
 

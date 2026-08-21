@@ -24,7 +24,7 @@ export default class PlayPlayer extends PlayTankBase {
     }
 
     syncMoveSound() {
-        const playing = this.isMoving && !this.isDead && !this.appearAnim
+        const playing = (this.isMoving || this.isSliding()) && !this.isDead && !this.appearAnim
         if (playing === this.moveSoundPlaying) return
         this.moveSoundPlaying = playing
         if (playing) this.app.audioMgr.play('move', { loop: true, volume: 1.3 })
@@ -33,6 +33,11 @@ export default class PlayPlayer extends PlayTankBase {
 
     makeDead() {
         super.makeDead()
+        this.syncMoveSound()
+    }
+
+    update(deltaTime) {
+        super.update(deltaTime)
         this.syncMoveSound()
     }
 }

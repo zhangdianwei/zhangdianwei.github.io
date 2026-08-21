@@ -52,6 +52,7 @@ export default class PlayMap {
             case TileType.BRICK:
             case TileType.IRON:
             case TileType.WATER:
+            case TileType.ICE:
                 renderLayers.tiles.addChild(tile);
                 break;
             case TileType.GRASS:
@@ -144,7 +145,7 @@ export default class PlayMap {
         const col = Math.floor(worldX / TileSize);
         const row = Math.floor(worldY / TileSize);
         const tileType = this.getTileType(row, col);
-        return tileType === TileType.EMPTY || tileType === TileType.GRASS; // 空地或草地可通行
+        return tileType === TileType.EMPTY || tileType === TileType.GRASS || tileType === TileType.ICE;
     }
 
     isRectWalkable(cx, cy, halfSize = TileSize) {
@@ -198,7 +199,12 @@ export default class PlayMap {
             return false;
         }
         const t = this.getTileType(row, col);
-        return t === TileType.EMPTY || t === TileType.GRASS;
+        return t === TileType.EMPTY || t === TileType.GRASS || t === TileType.ICE;
+    }
+
+    isIce(worldX, worldY) {
+        const {row, col} = this.worldToGrid(worldX, worldY);
+        return this.getTileType(row, col) === TileType.ICE;
     }
 
     getOccupiedGridRange(bounds) {

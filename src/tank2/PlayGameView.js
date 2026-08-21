@@ -9,6 +9,7 @@ import { TileSize, MapWidth, MapHeight, TankBoundaryThreshold, TankSize, TankTyp
 
 const PowerUpCells = [3, 9, 16, 22].flatMap((row) =>
     [3, 9, 16, 22].map((col) => ({ row, col })))
+const PowerUpDropScale = 0.35
 const PowerUpRates = [
     ['life', PowerUpType.TANK],
     ['stop', PowerUpType.CLOCK],
@@ -143,22 +144,18 @@ export default class PlayGameView extends PIXI.Container {
         let roll = Math.random()
         const rates = this.map.config.itemDropRates || {}
         const entry = PowerUpRates.find(([key]) => {
-            roll -= rates[key] || 0
+            roll -= (rates[key] || 0) * PowerUpDropScale
             return roll < 0
         })
         if (!entry) return
 
-        this.powerUps.slice().forEach((powerUp) => {
-            this.removePowerUp(powerUp)
-            powerUp.destroy({ children: true })
-        })
         const available = PowerUpCells.filter(({ row, col }) => {
             const bounds = { x: col * TileSize, y: row * TileSize, width: TankSize, height: TankSize }
             return this.map.isRectWalkable(bounds.x, bounds.y, TankSize / 2) &&
                 this.powerUps.every((item) => !this.dialog.ruleMgr.checkBoundsOverlap(bounds, item.getBounds()))
         })
-        const cells = available.length ? available : PowerUpCells
-        const cell = cells[Math.floor(Math.random() * cells.length)]
+        if (!available.length) return
+        const cell = available[Math.floor(Math.random() * available.length)]
         const powerUp = new PlayPowerUp(this.dialog, entry[1])
         powerUp.position.set(cell.col * TileSize, cell.row * TileSize)
         this.renderLayers.items.addChild(powerUp)

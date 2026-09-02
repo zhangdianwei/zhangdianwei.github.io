@@ -50,8 +50,18 @@ export default class PlayBullet extends PIXI.Container {
   }
 
   createSprite() {
+    const color = this.bulletType === BulletType.PLAYER ? 0x00FF00 : 0xFF0000
+    this.trail = this.addChild(new PIXI.Graphics())
+    const segmentHeight = this.size / 4
+    for (let index = 0; index < 8; index++) {
+      this.trail.beginFill(color, 1 - index / 8)
+      this.trail.drawRect(-this.size / 2, this.size / 2 + segmentHeight * index, this.size, segmentHeight)
+      this.trail.endFill()
+    }
+    this.trail.rotation = this.direction * Math.PI / 2
+
     const graphics = new PIXI.Graphics()
-    graphics.beginFill(this.bulletType === BulletType.PLAYER ? 0x00FF00 : 0xFF0000)
+    graphics.beginFill(color)
     graphics.drawRect(-this.size / 2, -this.size / 2, this.size, this.size)
     graphics.endFill()
 
